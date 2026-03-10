@@ -1,0 +1,45 @@
+Coup is a 2–6 player bluffing game where you aim to be the last player with hidden influence (cards) remaining. Each player starts with two face-down cards and two coins. On your turn, take one action to gain money, steal, or eliminate others, often lying about which characters you hold to win. 
+Objective
+Be the last player with at least one hidden card. If both your cards are revealed (face up), you are out. 
+YouTube
+YouTube
+ +1
+Setup
+Deal Cards: Give each player 2 cards face-down (keep them secret).
+Coins: Give each player 2 coins.
+Treasury: Place remaining cards and coins in the middle. 
+YouTube
+YouTube
+ +2
+Turn Actions
+On your turn, take one action: 
+YouTube
+YouTube
+Income: Take 1 coin from the treasury (cannot be blocked).
+Foreign Aid: Take 2 coins from the treasury (can be blocked by Duke).
+Coup: Pay 7 coins to force another player to lose 1 influence (cannot be blocked).
+Character Actions: Claim to have a character to use their special ability (even if you don't actually have the card).
+Duke (Tax): Take 3 coins from the treasury.
+Assassin (Assassinate): Pay 3 coins to force a player to lose 1 influence.
+Captain (Steal): Steal 2 coins from another player.
+Ambassador (Exchange): Draw 2 cards, return 2 to the deck. 
+YouTube
+YouTube
+ +1
+This video shows a full, fast-paced game of Coup:
+Related video thumbnail
+04:22
+
+
+Geek & Sundry
+YouTube • 10 Jul 2018
+Challenges and Blocks
+Challenge: If you claim a character action, any player can challenge you. You must show the card. If you cannot (or won't), you lose an influence. If you can, the challenger loses an influence.
+Block: Certain actions can be blocked by specific characters (e.g., Contessa blocks Assassination, Captain/Ambassador blocks Stealing). A block can also be challenged. 
+Reddit
+Reddit
+ +4
+Key Rules
+If you start your turn with 10 or more coins, you must perform a Coup.
+When a card is revealed (lost influence), it stays face-up on the table.
+If you lose a challenge, you lose an influence
