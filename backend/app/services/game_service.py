@@ -203,6 +203,26 @@ class GameService:
             await self._save(state)
             return state
 
+    async def set_player_connected(
+        self, game_id: str, player_id: str, connected: bool
+    ) -> GameState | None:
+        """Update and persist a player's connection status."""
+        async with self._get_game_lock(game_id):
+            state = await self.get_game(game_id)
+            if state is None:
+                return None
+
+            player = state.get_player(player_id)
+            if player is None:
+                return state
+
+            if player.connected == connected:
+                return state
+
+            player.connected = connected
+            await self._save(state)
+            return state
+
     async def advance_turn(self, game_id: str) -> GameState:
         """Explicitly advance to next turn."""
         async with self._get_game_lock(game_id):

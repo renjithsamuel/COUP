@@ -15,7 +15,7 @@ Multiplayer Coup card game — FastAPI backend + Next.js 14 frontend. Real-time 
 Engine (pure logic, no I/O) → Services (orchestration) → Repositories (data access) → API (REST + WebSocket)
 
 - Game constants: `backend/app/config.py` (`Settings` class) — single source of truth for defaults
-- Per-game config: `backend/app/models/game.py` (`GameConfig`) — host-configurable settings (timers, starting coins) sent at game start and stored in `GameState.config`
+- Per-game config: `backend/app/models/game.py` (`GameConfig`) — host-configurable settings (timers, starting coins) sent at game start and stored in `GameState.config` (timer values may be set to `0` for timerless/Peaceful mode)
 - Action rules: `backend/app/models/action.py` (`ACTION_RULES` dict) — single source of truth
 - WebSocket messages: discriminated union JSON `{ type, payload }`
 - WebSocket broadcasts: game events (ACTION_DECLARED, CHALLENGE_RESULT, BLOCK_DECLARED, INFLUENCE_LOST, TURN_CHANGED) are sent as separate messages before GAME_STATE

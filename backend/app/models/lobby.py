@@ -79,7 +79,7 @@ class GameConfig(BaseModel):
 
     model_config = ConfigDict(strict=True)
 
-    turn_timer_seconds: int = Field(default=30, ge=10, le=120)
-    challenge_window_seconds: int = Field(default=10, ge=5, le=30)
-    block_window_seconds: int = Field(default=10, ge=5, le=30)
+    turn_timer_seconds: int = Field(default=30, ge=0, le=120)
+    challenge_window_seconds: int = Field(default=10, ge=0, le=30)
+    block_window_seconds: int = Field(default=10, ge=0, le=30)
     starting_coins: int = Field(default=2, ge=1, le=5)

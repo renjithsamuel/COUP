@@ -38,10 +38,11 @@ src/
 │   ├── Timer/              # Countdown progress bar
 │   ├── GameOverModal/      # Victory modal with GSAP celebration
 │   ├── GuideModal/         # Game rules/help modal
-│   ├── PreGameConfig/      # Pre-game configuration with host-configurable dropdowns (timers, coins)
+│   ├── CoupBackgroundSVG/  # Subtle abstract ambient background motif
+│   ├── PreGameConfig/      # Pre-game configuration with timer controls + Peaceful Mode toggle
 │   └── TurnIndicator/      # Active turn display
 ├── containers/             # Stateful composite containers
-│   ├── GameBoard/          # Main game board (orchestrates everything + queued action event animations)
+│   ├── GameBoard/          # Main game board (queued event overlays, card-target highlights, response status strip, winner confetti)
 │   ├── PlayerHand/         # Current player's card hand
 │   ├── ActionPanel/        # Action selection with target picker
 │   ├── OpponentArea/       # Opponents display with stats
@@ -148,6 +149,12 @@ Add the export to `src/components/index.ts`.
 - **Framer Motion variants**: `src/animations/variants.ts`
 - **Complex GSAP timelines**: `src/animations/gsapTimelines.ts`
 - **Gameplay event sequencing**: `src/containers/GameBoard/GameBoard.hooks.ts` uses `useAnimationQueue` to play action/challenge/block/elimination overlays in order
+- **Action-specific event effects**: `src/containers/GameBoard/GameBoard.tsx` and `GameBoard.styles.ts` render coins, shield, slash, impact, reveal, and victory effects over the event overlay
+- **Card-local highlights**: `src/containers/OpponentArea/OpponentArea.tsx` and `src/containers/PlayerHand/PlayerHand.tsx` show actor/target/blocker emphasis directly on card zones
+- **Response clarity**: `src/containers/GameBoard/GameBoard.tsx` and `src/containers/ChallengeBlockOverlay/ChallengeBlockOverlay.tsx` show persistent waiting/approval guidance during challenge and block windows
+- **Persistent status capsule**: `src/containers/GameBoard/GameBoard.tsx` keeps a fixed-height status slot (dynamic-island style) so card layout does not shift when status changes
+- **Ambient background motif**: `src/components/CoupBackgroundSVG/CoupBackgroundSVG.tsx` provides subtle abstract Coup symbolism, used as full-page ambient art in lobby and as low-opacity atmosphere in-game
+- **Exit controls**: `src/containers/LobbyRoom/LobbyRoom.tsx` exposes room leave action and `src/containers/GameBoard/GameBoard.tsx` includes an explicit top-bar Exit button
 
 ## Routes
 

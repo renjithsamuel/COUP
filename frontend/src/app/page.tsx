@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCreateLobby, useJoinLobby } from '@/queries/useLobbyQueries';
 import { fadeInVariants, slideUpVariants, scalePopVariants } from '@/animations';
+import { CoupBackgroundSVG } from '@/components/CoupBackgroundSVG';
 import { tokens } from '@/theme/tokens';
 import { GAME_CONSTANTS } from '@/utils/constants';
 
@@ -12,10 +13,13 @@ const s = {
   page: {
     minHeight: '100vh',
     background: tokens.board.bg,
+    position: 'relative' as const,
+    overflow: 'hidden' as const,
     display: 'flex',
     flexDirection: 'column' as const,
     alignItems: 'center',
     padding: tokens.spacing.xxl,
+    zIndex: 1,
   },
   title: {
     fontSize: 52,
@@ -155,6 +159,33 @@ export default function HomePage() {
 
   return (
     <motion.div style={s.page} variants={fadeInVariants} initial="hidden" animate="visible">
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          justifyContent: 'flex-end',
+          pointerEvents: 'none',
+          opacity: 0.88,
+          zIndex: 0,
+        }}
+      >
+        <div
+          style={{
+            width: '64vw',
+            minWidth: 360,
+            maxWidth: 940,
+            height: '100%',
+            transform: 'translateX(12%)',
+            maskImage: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.86) 30%, rgba(0,0,0,1) 100%)',
+            WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.86) 30%, rgba(0,0,0,1) 100%)',
+          }}
+        >
+          <CoupBackgroundSVG />
+        </div>
+      </div>
+
       <div style={s.title}>COUP</div>
       <div style={s.subtitle}>
         Bluff, deceive, and outmanoeuvre your opponents.

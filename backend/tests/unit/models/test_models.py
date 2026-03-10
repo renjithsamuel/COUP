@@ -5,6 +5,7 @@ import pytest
 from app.models.action import ACTION_RULES, ActionType
 from app.models.card import Card, Character
 from app.models.game import GameConfig, GamePhase, GameState, GameStatus
+from app.models.lobby import GameConfig as LobbyGameConfig
 from app.models.lobby import Lobby, LobbyCreate, LobbyJoin, LobbyPlayer
 from app.models.player import Player, to_public
 
@@ -96,3 +97,18 @@ class TestLobbyModels:
             max_players=6,
         )
         assert lobby.is_full is True
+
+    def test_lobby_game_config_allows_zero_timers(self):
+        config = LobbyGameConfig(
+            turn_timer_seconds=0,
+            challenge_window_seconds=0,
+            block_window_seconds=0,
+            starting_coins=2,
+        )
+        assert config.turn_timer_seconds == 0
+        assert config.challenge_window_seconds == 0
+        assert config.block_window_seconds == 0
+
+    def test_lobby_game_config_rejects_invalid_coin_range(self):
+        with pytest.raises(Exception):
+            LobbyGameConfig(starting_coins=0)

@@ -54,6 +54,52 @@ function s(mobile: boolean) {
       gap: mobile ? 2 : 0,
     } satisfies CSSProperties,
 
+    statusBar: {
+      minHeight: mobile ? 54 : 68,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: mobile ? `${tokens.spacing.xs}px 0` : `${tokens.spacing.sm}px 0`,
+    } satisfies CSSProperties,
+
+    responseStatus: (tone: 'danger' | 'warn' | 'info' | 'ok'): CSSProperties => {
+      const palette = {
+        danger: { border: '#FB7185', glow: 'rgba(251,113,133,0.2)' },
+        warn: { border: '#F59E0B', glow: 'rgba(245,158,11,0.18)' },
+        info: { border: '#60A5FA', glow: 'rgba(96,165,250,0.16)' },
+        ok: { border: '#34D399', glow: 'rgba(52,211,153,0.16)' },
+      }[tone];
+
+      return {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 2,
+        padding: mobile ? '6px 10px' : '8px 14px',
+        borderRadius: 12,
+        border: `1px solid ${palette.border}`,
+        background: 'linear-gradient(145deg, rgba(12, 18, 34, 0.9) 0%, rgba(8, 12, 24, 0.88) 100%)',
+        boxShadow: `0 8px 28px ${palette.glow}`,
+        textAlign: 'center',
+        maxWidth: mobile ? '100%' : 560,
+      };
+    },
+
+    responseStatusTitle: {
+      fontSize: mobile ? 11 : 12,
+      fontWeight: 800,
+      letterSpacing: 0.9,
+      textTransform: 'uppercase',
+      color: tokens.text.primary,
+    } satisfies CSSProperties,
+
+    responseStatusDetail: {
+      fontSize: mobile ? 10 : 12,
+      fontWeight: 600,
+      color: tokens.text.secondary,
+      letterSpacing: 0.2,
+    } satisfies CSSProperties,
+
     turnArea: {
       display: 'flex',
       justifyContent: 'center',
@@ -188,6 +234,24 @@ function s(mobile: boolean) {
       padding: 0,
     } satisfies CSSProperties,
 
+    exitBtn: {
+      height: mobile ? 30 : 34,
+      borderRadius: 999,
+      border: '1px solid rgba(239,83,80,0.38)',
+      background: 'rgba(239,83,80,0.12)',
+      color: '#EF5350',
+      fontSize: mobile ? 11 : 12,
+      fontWeight: 800,
+      letterSpacing: 0.4,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      transition: 'all 0.15s ease',
+      flexShrink: 0,
+      padding: mobile ? '0 10px' : '0 12px',
+    } satisfies CSSProperties,
+
     eventOverlay: (accent: string): CSSProperties => {
       return {
         position: 'fixed',
@@ -208,8 +272,17 @@ function s(mobile: boolean) {
         pointerEvents: 'none',
         boxShadow: `0 18px 60px rgba(0,0,0,0.45), 0 0 32px ${accent}22`,
         overflow: 'hidden',
+        isolation: 'isolate',
       };
     },
+
+    eventEffectLayer: {
+      position: 'absolute',
+      inset: 0,
+      overflow: 'hidden',
+      pointerEvents: 'none',
+      zIndex: 0,
+    } satisfies CSSProperties,
 
     eventSymbol: (accent: string): CSSProperties => ({
       width: mobile ? 52 : 64,
@@ -228,6 +301,107 @@ function s(mobile: boolean) {
       boxShadow: `0 0 18px ${accent}22 inset`,
       position: 'relative',
       zIndex: 2,
+    }),
+
+    eventCoin: (accent: string): CSSProperties => ({
+      position: 'absolute',
+      left: '18%',
+      bottom: '20%',
+      width: mobile ? 12 : 14,
+      height: mobile ? 12 : 14,
+      borderRadius: '50%',
+      background: `radial-gradient(circle at 35% 35%, #FFE082 0%, ${accent} 65%, rgba(0,0,0,0.2) 100%)`,
+      boxShadow: `0 0 14px ${accent}77`,
+    }),
+
+    eventSlash: (accent: string): CSSProperties => ({
+      position: 'absolute',
+      left: '-10%',
+      top: '48%',
+      width: '60%',
+      height: 3,
+      background: `linear-gradient(90deg, transparent 0%, ${accent} 22%, #FFF1 55%, ${accent} 86%, transparent 100%)`,
+      boxShadow: `0 0 16px ${accent}88`,
+    }),
+
+    eventSlashGlow: (accent: string): CSSProperties => ({
+      position: 'absolute',
+      right: '10%',
+      top: '44%',
+      width: '42%',
+      height: 38,
+      borderRadius: 999,
+      background: `radial-gradient(circle, ${accent}22 0%, transparent 70%)`,
+      filter: 'blur(2px)',
+    }),
+
+    eventShield: (accent: string): CSSProperties => ({
+      position: 'absolute',
+      right: '10%',
+      top: '18%',
+      width: mobile ? 90 : 110,
+      height: mobile ? 90 : 110,
+      borderRadius: '30% 30% 40% 40%',
+      border: `1px solid ${accent}AA`,
+      background: `radial-gradient(circle at 50% 35%, ${accent}22 0%, transparent 72%)`,
+      boxShadow: `0 0 28px ${accent}22 inset`,
+      clipPath: 'polygon(50% 0%, 88% 18%, 82% 78%, 50% 100%, 18% 78%, 12% 18%)',
+    }),
+
+    eventSwapOrb: (accent: string): CSSProperties => ({
+      position: 'absolute',
+      right: '12%',
+      top: '30%',
+      width: mobile ? 14 : 16,
+      height: mobile ? 14 : 16,
+      borderRadius: '50%',
+      background: accent,
+      boxShadow: `0 0 16px ${accent}88`,
+    }),
+
+    eventImpactRing: (accent: string): CSSProperties => ({
+      position: 'absolute',
+      right: '14%',
+      top: '22%',
+      width: mobile ? 84 : 108,
+      height: mobile ? 84 : 108,
+      borderRadius: '50%',
+      border: `2px solid ${accent}99`,
+      boxShadow: `0 0 24px ${accent}33`,
+    }),
+
+    eventRevealCard: (accent: string): CSSProperties => ({
+      position: 'absolute',
+      right: '11%',
+      top: '24%',
+      width: mobile ? 54 : 64,
+      height: mobile ? 76 : 88,
+      borderRadius: 12,
+      border: `1px solid ${accent}88`,
+      background: `linear-gradient(160deg, ${accent}22 0%, rgba(255,255,255,0.05) 100%)`,
+      boxShadow: `0 0 22px ${accent}1f`,
+    }),
+
+    eventChallengeMark: (accent: string): CSSProperties => ({
+      position: 'absolute',
+      right: '15%',
+      top: '22%',
+      color: accent,
+      fontSize: mobile ? 48 : 62,
+      fontWeight: 900,
+      lineHeight: 1,
+      textShadow: `0 0 24px ${accent}55`,
+    }),
+
+    eventVictoryGlow: (accent: string): CSSProperties => ({
+      position: 'absolute',
+      right: '12%',
+      top: '18%',
+      width: mobile ? 96 : 122,
+      height: mobile ? 96 : 122,
+      borderRadius: '50%',
+      background: `radial-gradient(circle, ${accent}33 0%, ${accent}11 42%, transparent 74%)`,
+      boxShadow: `0 0 32px ${accent}22`,
     }),
 
     eventTextGroup: {
@@ -265,6 +439,26 @@ function s(mobile: boolean) {
       boxShadow: `0 0 12px ${accent}66`,
       transformOrigin: 'center',
       zIndex: 1,
+    }),
+
+    confettiLayer: {
+      position: 'fixed',
+      inset: 0,
+      pointerEvents: 'none',
+      overflow: 'hidden',
+      zIndex: 210,
+    } satisfies CSSProperties,
+
+    confettiPiece: (xPercent: number, color: string): CSSProperties => ({
+      position: 'absolute',
+      left: `${xPercent}%`,
+      top: '-10vh',
+      width: mobile ? 7 : 9,
+      height: mobile ? 12 : 14,
+      borderRadius: 2,
+      background: color,
+      boxShadow: `0 0 12px ${color}66`,
+      transformOrigin: 'center',
     }),
   };
 }

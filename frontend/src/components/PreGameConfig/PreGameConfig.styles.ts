@@ -71,6 +71,56 @@ export const preGameConfigStyles = {
     textAlign: 'right',
   } satisfies CSSProperties,
 
+  peacefulRow: {
+    marginTop: tokens.spacing.md,
+    padding: `${tokens.spacing.sm}px 0`,
+    borderBottom: `1px solid ${tokens.surface.border}`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.spacing.md,
+  } satisfies CSSProperties,
+
+  peacefulTextWrap: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
+    minWidth: 0,
+  } satisfies CSSProperties,
+
+  peacefulLabel: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: tokens.text.primary,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  } satisfies CSSProperties,
+
+  peacefulHint: {
+    fontSize: 11,
+    fontWeight: 500,
+    color: tokens.text.muted,
+    lineHeight: 1.35,
+  } satisfies CSSProperties,
+
+  peacefulToggle: (enabled: boolean): CSSProperties => ({
+    padding: '6px 14px',
+    minWidth: 56,
+    borderRadius: 999,
+    border: `1px solid ${enabled ? '#7DD3FC' : tokens.surface.borderLight}`,
+    background: enabled
+      ? 'linear-gradient(135deg, rgba(14, 116, 144, 0.22), rgba(3, 105, 161, 0.2))'
+      : tokens.surface.elevated,
+    color: enabled ? '#BAE6FD' : tokens.text.secondary,
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    flexShrink: 0,
+  }),
+
   buttons: {
     display: 'flex',
     gap: tokens.spacing.md,

@@ -10,11 +10,21 @@ import { GAME_CONSTANTS } from '@/utils/constants';
 
 export interface GameEvent {
   accent: string;
+  effect: 'coins' | 'slash' | 'shield' | 'swap' | 'impact' | 'reveal' | 'challenge' | 'victory';
   message: string;
   symbol: string;
   title: string;
   type: 'action' | 'challenge' | 'block' | 'elimination' | 'turn' | 'system';
   id: number;
+  actorId?: string;
+  targetId?: string;
+  blockerId?: string;
+}
+
+export interface ResponseStatus {
+  tone: 'danger' | 'warn' | 'info' | 'ok';
+  title: string;
+  detail: string;
 }
 
 let eventIdCounter = 0;
@@ -30,25 +40,57 @@ function wait(ms: number) {
 function getActionPresentation(actionType: string) {
   switch (actionType) {
     case ActionType.INCOME:
-      return { accent: '#F6C445', symbol: '+1', title: ACTION_RULES[ActionType.INCOME].label };
+      return { accent: '#F6C445', effect: 'coins' as const, symbol: '+1', title: ACTION_RULES[ActionType.INCOME].label };
     case ActionType.FOREIGN_AID:
-      return { accent: '#7DD3FC', symbol: '+2', title: ACTION_RULES[ActionType.FOREIGN_AID].label };
+      return { accent: '#7DD3FC', effect: 'coins' as const, symbol: '+2', title: ACTION_RULES[ActionType.FOREIGN_AID].label };
     case ActionType.TAX:
-      return { accent: '#F59E0B', symbol: '+3', title: ACTION_RULES[ActionType.TAX].label };
+      return { accent: '#F59E0B', effect: 'coins' as const, symbol: '+3', title: ACTION_RULES[ActionType.TAX].label };
     case ActionType.STEAL:
-      return { accent: '#38BDF8', symbol: '2C', title: ACTION_RULES[ActionType.STEAL].label };
+      return { accent: '#38BDF8', effect: 'coins' as const, symbol: '2C', title: ACTION_RULES[ActionType.STEAL].label };
     case ActionType.EXCHANGE:
-      return { accent: '#34D399', symbol: 'SWAP', title: ACTION_RULES[ActionType.EXCHANGE].label };
+      return { accent: '#34D399', effect: 'swap' as const, symbol: 'SWAP', title: ACTION_RULES[ActionType.EXCHANGE].label };
     case ActionType.ASSASSINATE:
-      return { accent: '#F97316', symbol: 'HIT', title: ACTION_RULES[ActionType.ASSASSINATE].label };
+      return { accent: '#F97316', effect: 'slash' as const, symbol: 'HIT', title: ACTION_RULES[ActionType.ASSASSINATE].label };
     case ActionType.COUP:
-      return { accent: '#EF4444', symbol: 'KO', title: ACTION_RULES[ActionType.COUP].label };
+      return { accent: '#EF4444', effect: 'impact' as const, symbol: 'KO', title: ACTION_RULES[ActionType.COUP].label };
     default:
       return {
         accent: '#90A4AE',
+        effect: 'challenge' as const,
         symbol: actionType.replace(/_/g, ' ').slice(0, 6).toUpperCase(),
         title: actionType.replace(/_/g, ' '),
       };
+  }
+}
+
+function getTimerExpiredConsequence(phase: GamePhase): ResponseStatus | null {
+  switch (phase) {
+    case GamePhase.CHALLENGE_WINDOW:
+      return {
+        tone: 'ok',
+        title: '⏱ Time Expired',
+        detail: 'No one challenged — the action succeeds.',
+      };
+    case GamePhase.BLOCK_WINDOW:
+      return {
+        tone: 'ok',
+        title: '⏱ Time Expired',
+        detail: 'No one blocked — the action proceeds.',
+      };
+    case GamePhase.BLOCK_CHALLENGE_WINDOW:
+      return {
+        tone: 'ok',
+        title: '⏱ Time Expired',
+        detail: 'Block not challenged — it stands.',
+      };
+    case GamePhase.TURN_START:
+      return {
+        tone: 'warn',
+        title: '⏱ Time Expired',
+        detail: 'Turn ended — no action was taken.',
+      };
+    default:
+      return null;
   }
 }
 
@@ -122,10 +164,13 @@ export function useGameBoard(gameId: string, playerId: string) {
               : `${actorName} makes a move`;
             queueEvent({
               accent: presentation.accent,
+              effect: presentation.effect,
               message: text,
               symbol: presentation.symbol,
               title: presentation.title,
               type: 'action',
+              actorId: String(msg.payload.actorId ?? ''),
+              targetId: targetName ? String(msg.payload.targetId ?? '') : undefined,
             });
             dispatch({
               type: 'ADD_LOG',
@@ -144,10 +189,12 @@ export function useGameBoard(gameId: string, playerId: string) {
             const name = String(msg.payload.challengerName ?? '');
             queueEvent({
               accent: '#FACC15',
+              effect: 'challenge',
               message: `${name} calls the bluff`,
               symbol: '?!',
               title: 'Challenge',
               type: 'challenge',
+              actorId: String(msg.payload.challengerId ?? ''),
             });
             dispatch({
               type: 'ADD_LOG',
@@ -161,6 +208,7 @@ export function useGameBoard(gameId: string, playerId: string) {
             const text = `Challenge ${won ? 'succeeded' : 'failed'}`;
             queueEvent({
               accent: won ? '#EF4444' : '#10B981',
+              effect: 'challenge',
               message: won ? 'The claim collapses' : 'The claim stands',
               symbol: won ? 'WIN' : 'SAFE',
               title: text,
@@ -180,10 +228,12 @@ export function useGameBoard(gameId: string, playerId: string) {
             const text = `${blockerName} blocks as ${char}`;
             queueEvent({
               accent: '#C084FC',
+              effect: 'shield',
               message: blockerName ? `${blockerName} steps in` : 'A defense is declared',
               symbol: 'BLOCK',
               title: char ? `${char} block` : 'Block',
               type: 'block',
+              blockerId: String(msg.payload.blockerId ?? ''),
             });
             dispatch({
               type: 'ADD_LOG',
@@ -199,10 +249,12 @@ export function useGameBoard(gameId: string, playerId: string) {
             const text = `${name} lost ${char}`;
             queueEvent({
               accent: '#FB7185',
+              effect: 'reveal',
               message: name ? `${name} reveals ${char}` : `${char} is revealed`,
               symbol: 'LOSS',
               title: 'Influence lost',
               type: 'elimination',
+              targetId: String(msg.payload.playerId ?? ''),
             });
             dispatch({
               type: 'ADD_LOG',
@@ -216,6 +268,7 @@ export function useGameBoard(gameId: string, playerId: string) {
             const name = String(msg.payload.playerName ?? '');
             queueEvent({
               accent: '#EF4444',
+              effect: 'reveal',
               message: `${name} is out of the game`,
               symbol: 'OUT',
               title: 'Eliminated',
@@ -232,7 +285,8 @@ export function useGameBoard(gameId: string, playerId: string) {
             const name = String(msg.payload.playerName ?? '');
             const turn = Number(msg.payload.turnNumber ?? 0);
             const currentPlayerId = String(msg.payload.playerId ?? '');
-            if (currentPlayerId) {
+            // Trust GAME_STATE when present to avoid one-tick stale turn UI.
+            if (currentPlayerId && !msg.gameState) {
               dispatch({
                 type: 'UPDATE_TURN',
                 payload: {
@@ -241,6 +295,9 @@ export function useGameBoard(gameId: string, playerId: string) {
                 },
               });
             }
+            // Clear action emphasis when the turn advances.
+            clear();
+            setActiveEvent(null);
             dispatch({
               type: 'ADD_LOG',
               payload: { message: `Turn ${turn}: ${name}'s turn`, type: 'turn' },
@@ -253,6 +310,7 @@ export function useGameBoard(gameId: string, playerId: string) {
             const name = String(msg.payload.winnerName ?? '');
             queueEvent({
               accent: '#FBBF24',
+              effect: 'victory',
               message: `${name} takes the table`,
               symbol: 'WIN',
               title: 'Game over',
@@ -288,7 +346,7 @@ export function useGameBoard(gameId: string, playerId: string) {
           if (msg.gameState) dispatch({ type: 'SET_GAME_STATE', payload: msg.gameState });
       }
     },
-    [dispatch, queueEvent],
+    [dispatch, queueEvent, clear],
   );
 
   const { status, send } = useWebSocket({ gameId, playerId, onMessage });
@@ -339,15 +397,33 @@ export function useGameBoard(gameId: string, playerId: string) {
     }
   }, [isRunning]);
 
+  // Track timer expiration to show consequence
+  const timerExpiredRef = useRef(false);
+  const [timerExpiredMessage, setTimerExpiredMessage] = useState<ResponseStatus | null>(null);
+
   useEffect(() => {
-    // Don't auto-accept until the timer has actually started and completed.
+    timerExpiredRef.current = false;
+    setTimerExpiredMessage(null);
+  }, [currentPhase]);
+
+  useEffect(() => {
+    // Show timer expiration consequence and auto-accept
     // This prevents a race condition where deferred state updates from
     // startTimer() haven't applied yet (remaining=0, isRunning=false from
     // the previous phase), which would cause immediate auto-accept.
     if (!timerHasStartedRef.current) return;
     if (remaining > 0 || isRunning || autoAcceptedRef.current) return;
-    // Don't auto-accept if we're the actor (can't challenge/block ourselves)
-    // or the blocker (can't challenge our own block)
+
+    // Compute and show the consequence
+    if (!timerExpiredRef.current && currentPhase) {
+      timerExpiredRef.current = true;
+      const consequence = getTimerExpiredConsequence(currentPhase);
+      if (consequence) {
+        setTimerExpiredMessage(consequence);
+      }
+    }
+
+    // Auto-accept if we can respond
     const canRespond =
       (currentPhase === GamePhase.CHALLENGE_WINDOW && !amIActor) ||
       (currentPhase === GamePhase.BLOCK_WINDOW && !amIActor) ||
@@ -371,6 +447,147 @@ export function useGameBoard(gameId: string, playerId: string) {
 
   const isGameOver = currentPhase === GamePhase.GAME_OVER;
 
+  const responseStatus: ResponseStatus | null = useMemo(() => {
+    const gameState = state.gameState;
+    if (!gameState) return null;
+
+    const pending = gameState.pendingAction;
+    const me = gameState.players.find((p) => p.id === playerId);
+    const myName = me?.name ?? 'You';
+
+    if (gameState.phase === GamePhase.AWAITING_INFLUENCE_LOSS) {
+      const losingPlayer = gameState.players.find((p) => p.id === gameState.awaitingInfluenceLossFrom);
+      if (gameState.awaitingInfluenceLossFrom === playerId) {
+        return {
+          tone: 'danger',
+          title: 'Choose Influence To Lose',
+          detail: 'Select one of your unrevealed cards to continue the turn.',
+        };
+      }
+      return {
+        tone: 'warn',
+        title: 'Waiting For Influence Choice',
+        detail: `${losingPlayer?.name ?? 'A player'} must reveal a card.`,
+      };
+    }
+
+    if (gameState.phase === GamePhase.AWAITING_EXCHANGE && pending) {
+      const actor = gameState.players.find((p) => p.id === pending.actorId);
+      if (pending.actorId === playerId) {
+        return {
+          tone: 'info',
+          title: 'Exchange In Progress',
+          detail: 'Pick which cards to keep, then confirm.',
+        };
+      }
+      return {
+        tone: 'info',
+        title: 'Waiting For Exchange',
+        detail: `${actor?.name ?? 'A player'} is choosing exchanged cards.`,
+      };
+    }
+
+    if (gameState.phase === GamePhase.TURN_START) {
+      if (gameState.currentPlayerId === playerId) {
+        return {
+          tone: 'warn',
+          title: 'Your Move',
+          detail: 'Choose an action for this turn.',
+        };
+      }
+      const activePlayer = gameState.players.find((p) => p.id === gameState.currentPlayerId);
+      return {
+        tone: 'info',
+        title: 'Waiting For Turn',
+        detail: `${activePlayer?.name ?? 'A player'} is deciding an action.`,
+      };
+    }
+
+    const isResponseWindow =
+      gameState.phase === GamePhase.CHALLENGE_WINDOW ||
+      gameState.phase === GamePhase.BLOCK_WINDOW ||
+      gameState.phase === GamePhase.BLOCK_CHALLENGE_WINDOW;
+
+    if (!isResponseWindow || !pending) {
+      return null;
+    }
+
+    const aliveIds = new Set(gameState.players.filter((p) => p.isAlive).map((p) => p.id));
+    let eligibleIds: string[] = [];
+
+    if (gameState.phase === GamePhase.CHALLENGE_WINDOW) {
+      eligibleIds = gameState.players
+        .filter((p) => aliveIds.has(p.id) && p.id !== pending.actorId)
+        .map((p) => p.id);
+    } else if (gameState.phase === GamePhase.BLOCK_WINDOW) {
+      if (pending.targetId) {
+        eligibleIds = aliveIds.has(pending.targetId) ? [pending.targetId] : [];
+      } else {
+        eligibleIds = gameState.players
+          .filter((p) => aliveIds.has(p.id) && p.id !== pending.actorId)
+          .map((p) => p.id);
+      }
+    } else if (gameState.phase === GamePhase.BLOCK_CHALLENGE_WINDOW) {
+      eligibleIds = gameState.players
+        .filter((p) => aliveIds.has(p.id) && p.id !== pending.blockerId)
+        .map((p) => p.id);
+    }
+
+    const accepted = new Set(pending.acceptedBy);
+    const waitingIds = eligibleIds.filter((id) => !accepted.has(id));
+    const waitingNames = waitingIds
+      .map((id) => gameState.players.find((p) => p.id === id)?.name)
+      .filter((name): name is string => Boolean(name));
+
+    if (eligibleIds.includes(playerId) && !accepted.has(playerId)) {
+      const actionName = ACTION_RULES[pending.actionType as ActionType]?.label ?? pending.actionType;
+      return {
+        tone: 'warn',
+        title: 'Your Response Is Needed',
+        detail: `Decide now: ${pending.actorId === playerId ? myName : actionName}.`,
+      };
+    }
+
+    if (accepted.has(playerId) && waitingNames.length > 0) {
+      return {
+        tone: 'ok',
+        title: 'Allowed - Waiting For Others',
+        detail: waitingNames.join(', '),
+      };
+    }
+
+    if (waitingNames.length > 0) {
+      return {
+        tone: 'info',
+        title: 'Waiting For Responses',
+        detail: waitingNames.join(', '),
+      };
+    }
+
+    return {
+      tone: 'info',
+      title: 'Resolving Turn',
+      detail: 'Applying final response and updating game state.',
+    };
+  }, [state.gameState, playerId]);
+
+  const activeCardEffect = useMemo(() => {
+    if (!activeEvent) {
+      return null;
+    }
+    if (currentPhase === GamePhase.TURN_START) {
+      return null;
+    }
+    return {
+      eventId: activeEvent.id,
+      effect: activeEvent.effect,
+      accent: activeEvent.accent,
+      actorId: activeEvent.actorId,
+      targetId: activeEvent.targetId,
+      blockerId: activeEvent.blockerId,
+    };
+  }, [activeEvent, currentPhase]);
+
   return {
     status,
     send,
@@ -383,5 +600,8 @@ export function useGameBoard(gameId: string, playerId: string) {
     timerRemaining: remaining,
     timerProgress: progress,
     activeEvent,
+    activeCardEffect,
+    responseStatus: timerExpiredMessage || responseStatus,
+    isWinner: state.gameState?.winnerId === playerId,
   };
 }

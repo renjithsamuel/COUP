@@ -7,16 +7,27 @@ import { cardDealVariants } from '@/animations';
 import { tokens } from '@/theme/tokens';
 import { getPlayerHandStyles } from './PlayerHand.styles';
 import { usePlayerHand } from './PlayerHand.hooks';
+import { useGameContext } from '@/context/GameContext';
 
 import { ClientMessage } from '@/models/websocket-message';
 
 export interface PlayerHandProps {
   send: (msg: ClientMessage) => boolean;
   isMobile?: boolean;
+  activeCardEffect?: {
+    eventId: number;
+    effect: string;
+    accent: string;
+    actorId?: string;
+    targetId?: string;
+    blockerId?: string;
+  } | null;
 }
 
-export function PlayerHand({ send, isMobile = false }: PlayerHandProps) {
+export function PlayerHand({ send, isMobile = false, activeCardEffect = null }: PlayerHandProps) {
+  const { state } = useGameContext();
   const { myCards, exchangeCards, needsInfluenceChoice, needsExchangeReturn, onChooseInfluence, onExchangeReturn } = usePlayerHand(send);
+  const s = getPlayerHandStyles(isMobile);
   const [selectedKeep, setSelectedKeep] = useState<Set<number>>(new Set());
 
   const aliveCount = myCards.filter((c) => !c.isRevealed).length;
@@ -41,6 +52,16 @@ export function PlayerHand({ send, isMobile = false }: PlayerHandProps) {
       setSelectedKeep(new Set());
     }
   }, [selectedKeep, aliveCount, onExchangeReturn]);
+
+  const getAliveCardChoiceIndex = useCallback((cardIndex: number) => {
+    let aliveIndex = -1;
+    for (let index = 0; index <= cardIndex; index += 1) {
+      if (!myCards[index].isRevealed) {
+        aliveIndex += 1;
+      }
+    }
+    return aliveIndex;
+  }, [myCards]);
 
   if (needsExchangeReturn && allCards.length > 0) {
     const cardSize = isMobile ? 'sm' : 'md';
@@ -104,8 +125,61 @@ export function PlayerHand({ send, isMobile = false }: PlayerHandProps) {
     );
   }
 
+  const myPlayerId = state.myPlayerId;
+  const myRole = activeCardEffect && myPlayerId
+    ? (activeCardEffect.targetId === myPlayerId
+      ? 'target'
+      : activeCardEffect.blockerId === myPlayerId
+        ? 'blocker'
+        : activeCardEffect.actorId === myPlayerId
+          ? 'actor'
+          : null)
+    : null;
+
   return (
-    <div style={getPlayerHandStyles(isMobile).wrapper}>
+    <div style={s.wrapper}>
+      <AnimatePresence>
+        {activeCardEffect && myRole && (
+          <>
+            <motion.div
+              key={`my-frame-${activeCardEffect.eventId}`}
+              style={s.effectFrame(myRole, activeCardEffect.accent)}
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: [0, 1, 0.7], scale: [0.94, 1.03, 1] }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.55, ease: 'easeOut' }}
+            />
+            <motion.div
+              key={`my-label-${activeCardEffect.eventId}`}
+              style={s.effectLabel(activeCardEffect.accent, myRole)}
+              initial={{ opacity: 0, y: -3 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -3 }}
+              transition={{ duration: 0.22 }}
+            >
+              {myRole === 'target' ? 'You are targeted' : myRole === 'blocker' ? 'Your block' : 'Your move'}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {needsInfluenceChoice && (
+        <div style={{
+          marginBottom: isMobile ? 8 : 10,
+          padding: isMobile ? '7px 12px' : '9px 16px',
+          borderRadius: 12,
+          border: '1px solid rgba(255, 112, 67, 0.45)',
+          background: 'linear-gradient(135deg, rgba(58, 20, 20, 0.94) 0%, rgba(26, 14, 18, 0.92) 100%)',
+          color: '#FFAB91',
+          fontSize: isMobile ? 11 : 13,
+          fontWeight: 800,
+          letterSpacing: 0.6,
+          textTransform: 'uppercase',
+          boxShadow: '0 0 22px rgba(255, 112, 67, 0.12)',
+        }}>
+          Choose an influence to lose
+        </div>
+      )}
       <AnimatePresence>
         {myCards.map((card, i) => (
           <motion.div
@@ -119,7 +193,9 @@ export function PlayerHand({ send, isMobile = false }: PlayerHandProps) {
             <Card
               character={card.character}
               isRevealed={card.isRevealed}
-              onClick={needsInfluenceChoice ? () => onChooseInfluence(i) : undefined}
+              onClick={needsInfluenceChoice && !card.isRevealed
+                ? () => onChooseInfluence(getAliveCardChoiceIndex(i))
+                : undefined}
               disabled={card.isRevealed}
               size={isMobile ? 'sm' : 'lg'}
             />

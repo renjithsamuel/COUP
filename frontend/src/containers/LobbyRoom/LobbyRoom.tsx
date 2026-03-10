@@ -34,6 +34,7 @@ export function LobbyRoom({ lobby, myPlayerId, isHost, onStart, onLeave }: Lobby
       initial="hidden"
       animate="visible"
     >
+      <div style={s.content}>
       <div style={s.title}>{lobby.name || `Lobby ${lobby.id}`}</div>
 
       {/* Room code */}
@@ -128,6 +129,7 @@ export function LobbyRoom({ lobby, myPlayerId, isHost, onStart, onLeave }: Lobby
           Leave Room
         </button>
       )}
+      </div>
     </motion.div>
   );
 }

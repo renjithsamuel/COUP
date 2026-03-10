@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GameConfig } from '@/models/lobby';
 import { preGameConfigStyles as s } from './PreGameConfig.styles';
@@ -19,8 +19,8 @@ interface SettingDef {
   defaultValue: number;
 }
 
-const TIMER_OPTIONS = [15, 30, 45, 60, 90, 120].map((v) => ({ value: v, label: `${v}s` }));
-const WINDOW_OPTIONS = [5, 8, 10, 15, 20, 30].map((v) => ({ value: v, label: `${v}s` }));
+const TIMER_OPTIONS = [0, 15, 30, 45, 60, 90, 120].map((v) => ({ value: v, label: v === 0 ? 'Off' : `${v}s` }));
+const WINDOW_OPTIONS = [0, 5, 8, 10, 15, 20, 30].map((v) => ({ value: v, label: v === 0 ? 'Off' : `${v}s` }));
 const COIN_OPTIONS = [1, 2, 3, 4, 5].map((v) => ({ value: v, label: `${v}` }));
 
 const SETTINGS: SettingDef[] = [
@@ -39,9 +39,39 @@ const DEFAULT_CONFIG: GameConfig = {
 
 export function PreGameConfig({ isOpen, playerCount, onConfirm, onCancel }: PreGameConfigProps) {
   const [config, setConfig] = useState<GameConfig>(DEFAULT_CONFIG);
+  const [isPeacefulMode, setIsPeacefulMode] = useState(false);
+  const previousTimedConfig = useRef(DEFAULT_CONFIG);
 
   const handleChange = (key: keyof GameConfig, value: number) => {
+    if (key !== 'startingCoins' && value > 0) {
+      previousTimedConfig.current = {
+        ...previousTimedConfig.current,
+        [key]: value,
+      };
+    }
     setConfig((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const onTogglePeacefulMode = () => {
+    if (!isPeacefulMode) {
+      previousTimedConfig.current = config;
+      setConfig((prev) => ({
+        ...prev,
+        turnTimerSeconds: 0,
+        challengeWindowSeconds: 0,
+        blockWindowSeconds: 0,
+      }));
+      setIsPeacefulMode(true);
+      return;
+    }
+
+    setConfig((prev) => ({
+      ...prev,
+      turnTimerSeconds: previousTimedConfig.current.turnTimerSeconds || DEFAULT_CONFIG.turnTimerSeconds,
+      challengeWindowSeconds: previousTimedConfig.current.challengeWindowSeconds || DEFAULT_CONFIG.challengeWindowSeconds,
+      blockWindowSeconds: previousTimedConfig.current.blockWindowSeconds || DEFAULT_CONFIG.blockWindowSeconds,
+    }));
+    setIsPeacefulMode(false);
   };
 
   return (
@@ -75,6 +105,7 @@ export function PreGameConfig({ isOpen, playerCount, onConfirm, onCancel }: PreG
                   style={s.select}
                   value={config[key]}
                   onChange={(e) => handleChange(key, Number(e.target.value))}
+                  disabled={isPeacefulMode && key !== 'startingCoins'}
                 >
                   {options.map((opt) => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -83,13 +114,27 @@ export function PreGameConfig({ isOpen, playerCount, onConfirm, onCancel }: PreG
               </div>
             ))}
 
+            <div style={s.peacefulRow}>
+              <div style={s.peacefulTextWrap}>
+                <span style={s.peacefulLabel}>Peaceful Mode</span>
+                <span style={s.peacefulHint}>No turn or response timers. Players decide manually.</span>
+              </div>
+              <button
+                type="button"
+                onClick={onTogglePeacefulMode}
+                style={s.peacefulToggle(isPeacefulMode)}
+              >
+                {isPeacefulMode ? 'On' : 'Off'}
+              </button>
+            </div>
+
             <div style={s.buttons}>
               <button style={s.cancelBtn} onClick={onCancel}>Cancel</button>
               <button style={s.startBtn} onClick={() => onConfirm(config)}>Start Game</button>
             </div>
 
             <div style={s.note}>
-              Each player receives 2 influence cards and {config.startingCoins} coins.
+              Each player receives 2 influence cards and {config.startingCoins} coins. {isPeacefulMode ? 'Peaceful Mode is enabled.' : 'Timers are enabled.'}
             </div>
           </motion.div>
         </motion.div>

@@ -6,11 +6,35 @@ export const lobbyRoomStyles = {
     maxWidth: 480,
     margin: '0 auto',
     padding: tokens.spacing.xl,
-    background: tokens.surface.card,
+    background: 'linear-gradient(165deg, rgba(10, 18, 36, 0.95) 0%, rgba(17, 28, 48, 0.94) 48%, rgba(18, 20, 36, 0.95) 100%)',
     borderRadius: 18,
     border: `1px solid ${tokens.surface.border}`,
     boxShadow: tokens.elevation.dp4,
     backdropFilter: 'blur(12px)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacing.md,
+    position: 'relative',
+    overflow: 'hidden',
+  } satisfies CSSProperties,
+
+  bgLayer: {
+    position: 'absolute',
+    inset: 0,
+    pointerEvents: 'none',
+    opacity: 0.95,
+  } satisfies CSSProperties,
+
+  bgSvg: {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+  } satisfies CSSProperties,
+
+  content: {
+    position: 'relative',
+    zIndex: 1,
     display: 'flex',
     flexDirection: 'column',
     gap: tokens.spacing.md,

@@ -16,3 +16,4 @@ export { GuideModal } from './GuideModal';
 export type { GuideModalProps } from './GuideModal';
 export { PreGameConfig } from './PreGameConfig';
 export type { PreGameConfigProps } from './PreGameConfig';
+export { CoupBackgroundSVG } from './CoupBackgroundSVG';

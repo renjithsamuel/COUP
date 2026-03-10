@@ -75,6 +75,58 @@ export function useChallengeBlockOverlay(send: (msg: ClientMessage) => boolean) 
     return state.gameState.players.find((p) => p.id === pending.blockerId)?.name ?? '';
   }, [pending, state.gameState]);
 
+  // Check if this player already accepted (waiting for others)
+  // Only count accepts for the CURRENT phase (accepted_by is cleared on phase transitions)
+  const iAlreadyAccepted = myId != null && (pending?.acceptedBy ?? []).includes(myId);
+
+  const waitingForText = useMemo(() => {
+    if (!pending || !state.gameState) return '';
+
+    const eligibleIds = (() => {
+      if (currentPhase === GamePhase.CHALLENGE_WINDOW) {
+        return state.gameState.players
+          .filter((p) => p.isAlive && p.id !== pending.actorId)
+          .map((p) => p.id);
+      }
+      if (currentPhase === GamePhase.BLOCK_WINDOW) {
+        if (pending.targetId) return [pending.targetId];
+        return state.gameState.players
+          .filter((p) => p.isAlive && p.id !== pending.actorId)
+          .map((p) => p.id);
+      }
+      if (currentPhase === GamePhase.BLOCK_CHALLENGE_WINDOW) {
+        return state.gameState.players
+          .filter((p) => p.isAlive && p.id !== pending.blockerId)
+          .map((p) => p.id);
+      }
+      return [];
+    })();
+
+    const accepted = new Set(pending.acceptedBy ?? []);
+    const waitingNames = eligibleIds
+      .filter((id) => !accepted.has(id))
+      .map((id) => state.gameState?.players.find((p) => p.id === id)?.name)
+      .filter((name): name is string => Boolean(name));
+
+    if (waitingNames.length === 0) {
+      return 'Final response received. Resolving...';
+    }
+    return `Waiting for: ${waitingNames.join(', ')}`;
+  }, [pending, state.gameState, currentPhase]);
+
+  const responseHint = useMemo(() => {
+    if (iAlreadyAccepted) {
+      return 'You allowed this action. Waiting for all remaining responses.';
+    }
+    if (currentPhase === GamePhase.BLOCK_CHALLENGE_WINDOW) {
+      return 'Challenge the block if you think the claimed card is false, or allow it to stand.';
+    }
+    if (currentPhase === GamePhase.BLOCK_WINDOW) {
+      return 'If this action can be blocked, choose a blocking character or allow the action.';
+    }
+    return 'Challenge if you doubt the claim, or allow to continue.';
+  }, [iAlreadyAccepted, currentPhase]);
+
   const onChallenge = useCallback(() => {
     if (!pending || submitting) return;
     const sent = send({
@@ -106,10 +158,6 @@ export function useChallengeBlockOverlay(send: (msg: ClientMessage) => boolean) 
     !(pending?.actorId === myId && currentPhase !== GamePhase.BLOCK_CHALLENGE_WINDOW) &&
     !(pending?.blockerId === myId && currentPhase === GamePhase.BLOCK_CHALLENGE_WINDOW);
 
-  // Check if this player already accepted (waiting for others)
-  // Only count accepts for the CURRENT phase (accepted_by is cleared on phase transitions)
-  const iAlreadyAccepted = myId != null && (pending?.acceptedBy ?? []).includes(myId);
-
   return {
     isVisible,
     iAlreadyAccepted,
@@ -118,6 +166,8 @@ export function useChallengeBlockOverlay(send: (msg: ClientMessage) => boolean) 
     blockableCharacters,
     actorName,
     blockerName,
+    waitingForText,
+    responseHint,
     pending,
     currentPhase,
     submitting,

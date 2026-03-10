@@ -32,6 +32,8 @@ export function getOpponentAreaStyles(mobile: boolean, count: number) {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
+      position: 'relative',
+      overflow: 'hidden',
       gap: mobile ? 2 : tokens.spacing.sm,
       padding: mobile
         ? `${tokens.spacing.xs}px ${tokens.spacing.sm}px`
@@ -100,5 +102,48 @@ export function getOpponentAreaStyles(mobile: boolean, count: number) {
       fontWeight: 600,
       color: tokens.text.muted,
     } satisfies CSSProperties,
+
+    effectHalo: (role: 'actor' | 'target' | 'blocker', accent: string): CSSProperties => {
+      const roleColors = {
+        actor: '#F59E0B',    // Amber - who is acting
+        target: '#EF4444',   // Red - who is targeted
+        blocker: '#7C3AED',  // Violet - who is blocking
+      };
+      const color = roleColors[role];
+      const roleOpacity = role === 'target' ? '44' : role === 'blocker' ? '32' : '20';
+      return {
+        position: 'absolute',
+        inset: -2,
+        borderRadius: mobile ? 16 : 18,
+        border: `1.5px solid ${color}`,
+        boxShadow: `0 0 24px ${color}${roleOpacity}`,
+        pointerEvents: 'none',
+      };
+    },
+
+    effectTag: (role: 'actor' | 'target' | 'blocker', accent: string): CSSProperties => {
+      const roleColors = {
+        actor: '#F59E0B',    // Amber
+        target: '#EF4444',   // Red
+        blocker: '#7C3AED',  // Violet
+      };
+      const color = roleColors[role];
+      return {
+        position: 'absolute',
+        top: 6,
+        right: 8,
+        padding: '2px 7px',
+        borderRadius: 999,
+        border: `1px solid ${color}`,
+        background: 'rgba(7, 12, 24, 0.92)',
+        color: color,
+        fontSize: 9,
+        fontWeight: 800,
+        letterSpacing: 0.7,
+        textTransform: 'uppercase',
+        pointerEvents: 'none',
+        boxShadow: `0 0 10px ${color}66`,
+      };
+    },
   };
 }

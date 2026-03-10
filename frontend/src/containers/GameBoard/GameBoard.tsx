@@ -2,9 +2,11 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { TurnIndicator } from '@/components/TurnIndicator';
 import { Timer } from '@/components/Timer';
 import { GameOverModal } from '@/components/GameOverModal';
+import { CoupBackgroundSVG } from '@/components/CoupBackgroundSVG';
 import { OpponentArea } from '@/containers/OpponentArea';
 import { ActionPanel } from '@/containers/ActionPanel';
 import { PlayerHand } from '@/containers/PlayerHand';
@@ -53,9 +55,21 @@ export interface GameBoardProps {
   gameId: string;
   playerId: string;
   onPlayAgain: () => void;
+  onExit?: () => void;
 }
 
-export function GameBoard({ gameId, playerId, onPlayAgain }: GameBoardProps) {
+const CONFETTI_COLORS = ['#F6C445', '#7DD3FC', '#34D399', '#FB7185', '#C084FC', '#F97316'];
+const CONFETTI_PIECES = Array.from({ length: 44 }, (_, index) => ({
+  id: index,
+  x: (index * 17) % 100,
+  delay: (index % 11) * 0.08,
+  duration: 2.8 + (index % 5) * 0.45,
+  rotation: -140 + (index * 29) % 280,
+  color: CONFETTI_COLORS[index % CONFETTI_COLORS.length],
+}));
+
+export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardProps) {
+  const router = useRouter();
   const {
     status,
     send,
@@ -67,6 +81,9 @@ export function GameBoard({ gameId, playerId, onPlayAgain }: GameBoardProps) {
     timerRemaining,
     timerProgress,
     activeEvent,
+    activeCardEffect,
+    responseStatus,
+    isWinner,
   } = useGameBoard(gameId, playerId);
   const [showGuide, setShowGuide] = useState(false);
   const [showLog, setShowLog] = useState(false);
@@ -88,6 +105,7 @@ export function GameBoard({ gameId, playerId, onPlayAgain }: GameBoardProps) {
 
   return (
     <div style={s.wrapper}>
+      <CoupBackgroundSVG />
       {/* Top bar — minimal transparent with utility buttons */}
       <div style={s.topBar}>
         <div style={s.topBarLeft}>
@@ -132,13 +150,61 @@ export function GameBoard({ gameId, playerId, onPlayAgain }: GameBoardProps) {
           >
             <HelpIcon />
           </button>
+          <button
+            style={s.exitBtn}
+            onClick={() => {
+              if (onExit) {
+                onExit();
+                return;
+              }
+              router.push('/');
+            }}
+            title="Exit game"
+            aria-label="Exit game"
+          >
+            Exit
+          </button>
         </div>
       </div>
 
       {/* Center area */}
       <div style={s.center}>
+        {/* Status bar — always visible, never shifts layout (dynamic island style) */}
+        <div style={s.statusBar}>
+          <AnimatePresence mode="wait">
+            {responseStatus && (
+              <motion.div
+                key={`${responseStatus.title}-${responseStatus.detail}`}
+                style={s.responseStatus(responseStatus.tone)}
+                initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                animate={
+                  responseStatus.title.includes('Time Expired')
+                    ? {
+                        opacity: [1, 0.7, 1],
+                        scale: [1, 1.02, 1],
+                      }
+                    : { opacity: 1, y: 0, scale: 1 }
+                }
+                exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                transition={
+                  responseStatus.title.includes('Time Expired')
+                    ? {
+                        duration: 0.8,
+                        repeat: 2,
+                        ease: 'easeInOut',
+                      }
+                    : { duration: 0.2, ease: 'easeOut' }
+                }
+              >
+                <span style={s.responseStatusTitle}>{responseStatus.title}</span>
+                <span style={s.responseStatusDetail}>{responseStatus.detail}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         {/* Opponents at the top */}
-        <OpponentArea isMobile={isMobile} />
+        <OpponentArea isMobile={isMobile} activeCardEffect={activeCardEffect} />
 
         {/* Turn indicator — centered between opponents and player */}
         <div style={s.turnArea}>
@@ -160,10 +226,41 @@ export function GameBoard({ gameId, playerId, onPlayAgain }: GameBoardProps) {
                 <CoinIcon size={isMobile ? 16 : 20} /> {myPlayer?.coins ?? 0}
               </span>
             </div>
-            <PlayerHand send={send} isMobile={isMobile} />
+            <PlayerHand send={send} isMobile={isMobile} activeCardEffect={activeCardEffect} />
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {isGameOver && isWinner && (
+          <motion.div
+            style={s.confettiLayer}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {CONFETTI_PIECES.map((piece) => (
+              <motion.span
+                key={piece.id}
+                style={s.confettiPiece(piece.x, piece.color)}
+                initial={{ y: '-8vh', opacity: 0, rotate: 0 }}
+                animate={{
+                  y: '112vh',
+                  opacity: [0, 1, 1, 0],
+                  rotate: piece.rotation,
+                }}
+                transition={{
+                  duration: piece.duration,
+                  delay: piece.delay,
+                  ease: 'easeInOut',
+                  repeat: Infinity,
+                  repeatDelay: 0.7,
+                }}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Action event toast */}
       <AnimatePresence>
@@ -176,6 +273,101 @@ export function GameBoard({ gameId, playerId, onPlayAgain }: GameBoardProps) {
             transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
             style={s.eventOverlay(activeEvent.accent)}
           >
+            <div style={s.eventEffectLayer}>
+              {activeEvent.effect === 'coins' && (
+                <>
+                  {[0, 1, 2].map((index) => (
+                    <motion.div
+                      key={`coin-${index}`}
+                      initial={{ opacity: 0, x: -30 + index * 18, y: 20, scale: 0.7 }}
+                      animate={{ opacity: [0, 1, 0], x: 26 + index * 14, y: -18 - index * 8, scale: [0.7, 1, 0.85] }}
+                      transition={{ duration: 0.8, delay: index * 0.08, repeat: 1, repeatDelay: 0.05 }}
+                      style={s.eventCoin(activeEvent.accent)}
+                    />
+                  ))}
+                </>
+              )}
+              {activeEvent.effect === 'slash' && (
+                <>
+                  <motion.div
+                    initial={{ opacity: 0, x: -120, rotate: -24 }}
+                    animate={{ opacity: [0, 1, 0], x: 150, rotate: -24 }}
+                    transition={{ duration: 0.55, ease: 'easeInOut' }}
+                    style={s.eventSlash(activeEvent.accent)}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, scaleX: 0.2 }}
+                    animate={{ opacity: [0, 0.85, 0], scaleX: [0.2, 1, 1.05] }}
+                    transition={{ duration: 0.45, delay: 0.1 }}
+                    style={s.eventSlashGlow(activeEvent.accent)}
+                  />
+                </>
+              )}
+              {activeEvent.effect === 'shield' && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: [0, 1, 0.15], scale: [0.7, 1.05, 1.15] }}
+                  transition={{ duration: 0.7, ease: 'easeOut' }}
+                  style={s.eventShield(activeEvent.accent)}
+                />
+              )}
+              {activeEvent.effect === 'swap' && (
+                <>
+                  {[0, 1].map((index) => (
+                    <motion.div
+                      key={`swap-${index}`}
+                      initial={{ opacity: 0, x: index === 0 ? -18 : 18, y: index === 0 ? -10 : 10 }}
+                      animate={{
+                        opacity: [0, 1, 0],
+                        x: index === 0 ? [ -18, 18, -18 ] : [ 18, -18, 18 ],
+                        y: index === 0 ? [ -10, 10, -10 ] : [ 10, -10, 10 ],
+                      }}
+                      transition={{ duration: 0.9, ease: 'easeInOut' }}
+                      style={s.eventSwapOrb(activeEvent.accent)}
+                    />
+                  ))}
+                </>
+              )}
+              {activeEvent.effect === 'impact' && (
+                <>
+                  {[0, 1].map((index) => (
+                    <motion.div
+                      key={`impact-${index}`}
+                      initial={{ opacity: 0.7, scale: 0.3 }}
+                      animate={{ opacity: [0.7, 0], scale: [0.3, 1.35 + index * 0.25] }}
+                      transition={{ duration: 0.75, delay: index * 0.12, ease: 'easeOut' }}
+                      style={s.eventImpactRing(activeEvent.accent)}
+                    />
+                  ))}
+                </>
+              )}
+              {activeEvent.effect === 'reveal' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12, rotate: -6 }}
+                  animate={{ opacity: [0, 0.95, 0.25], y: [12, 0, -4], rotate: [-6, 0, 0] }}
+                  transition={{ duration: 0.65, ease: 'easeOut' }}
+                  style={s.eventRevealCard(activeEvent.accent)}
+                />
+              )}
+              {activeEvent.effect === 'challenge' && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.65 }}
+                  animate={{ opacity: [0, 1, 0.2], scale: [0.65, 1.15, 1] }}
+                  transition={{ duration: 0.75, ease: 'easeOut' }}
+                  style={s.eventChallengeMark(activeEvent.accent)}
+                >
+                  ?
+                </motion.div>
+              )}
+              {activeEvent.effect === 'victory' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.8 }}
+                  animate={{ opacity: [0, 1, 0.3], y: [8, -8, -12], scale: [0.8, 1.08, 1.1] }}
+                  transition={{ duration: 0.85, ease: 'easeOut' }}
+                  style={s.eventVictoryGlow(activeEvent.accent)}
+                />
+              )}
+            </div>
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: [0.9, 1.08, 1], opacity: 1 }}

@@ -6,6 +6,7 @@ import { useLobby, useStartGame } from '@/queries/useLobbyQueries';
 import { useLobbyContext } from '@/context/LobbyContext';
 import { LobbyRoom } from '@/containers/LobbyRoom';
 import { PreGameConfig } from '@/components/PreGameConfig';
+import { CoupBackgroundSVG } from '@/components/CoupBackgroundSVG';
 import { GameConfig } from '@/models/lobby';
 import { lobbyService } from '@/services/lobbyService';
 import { tokens } from '@/theme/tokens';
@@ -56,7 +57,10 @@ export default function LobbyDetailPage() {
   }, [leaveLobby]);
 
   const handleLeave = async () => {
-    if (!state.myPlayerId) return;
+    if (!state.myPlayerId) {
+      router.push('/');
+      return;
+    }
     try {
       await lobbyService.leave(lobbyId, state.myPlayerId);
     } catch { /* lobby may already be gone */ }
@@ -100,12 +104,39 @@ export default function LobbyDetailPage() {
       style={{
         minHeight: '100vh',
         background: tokens.board.bg,
+        position: 'relative',
+        overflow: 'hidden',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: tokens.spacing.xl,
       }}
     >
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          justifyContent: 'flex-end',
+          pointerEvents: 'none',
+          opacity: 0.9,
+        }}
+      >
+        <div
+          style={{
+            width: '62vw',
+            minWidth: 360,
+            maxWidth: 900,
+            height: '100%',
+            transform: 'translateX(12%)',
+            maskImage: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.9) 32%, rgba(0,0,0,1) 100%)',
+            WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.9) 32%, rgba(0,0,0,1) 100%)',
+          }}
+        >
+          <CoupBackgroundSVG />
+        </div>
+      </div>
       <LobbyRoom
         lobby={lobby}
         myPlayerId={state.myPlayerId ?? ''}

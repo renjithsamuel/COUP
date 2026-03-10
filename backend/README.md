@@ -121,6 +121,12 @@ python -m pytest -v
 | `POST` | `/api/lobbies/{id}/leave` | Leave lobby (`?player_id=...` query param) |
 | `POST` | `/api/lobbies/{id}/start` | Start game (host only, optional `GameConfig` body) |
 
+`GameConfig` request body fields:
+- `turn_timer_seconds` (`0-120`) — `0` disables turn timer (Peaceful Mode)
+- `challenge_window_seconds` (`0-30`) — `0` disables challenge timeout
+- `block_window_seconds` (`0-30`) — `0` disables block timeout
+- `starting_coins` (`1-5`)
+
 ### WebSocket
 
 Connect to `ws://localhost:8000/ws/game/{game_id}?token={session_token}&player_id={player_id}`
@@ -149,6 +155,8 @@ Connect to `ws://localhost:8000/ws/game/{game_id}?token={session_token}&player_i
 | `TURN_CHANGED` | New turn started (player, turn number) |
 | `GAME_OVER` | Game finished (winner) |
 | `ERROR` | Error message |
+
+Connection presence is reflected in `players[].connected` inside `GAME_STATE`. On connect/disconnect, the server emits `PLAYER_CONNECTED`/`PLAYER_DISCONNECTED` and then sends updated game state so other players can see presence changes immediately.
 
 ## Modifying Game Rules
 

@@ -35,8 +35,14 @@ class GameWSHandler:
         await self._cm.connect(websocket, game_id, player_id)
 
         try:
+            # Persist presence before initial state fan-out.
+            await self._gs.set_player_connected(game_id, player_id, True)
+
             # Send initial game state
             await self._send_game_state(game_id, player_id)
+
+            # Ensure all peers see the updated connected status.
+            await self._broadcast_state(game_id)
 
             # Broadcast connection event
             await self._cm.broadcast_to_game(
@@ -56,10 +62,13 @@ class GameWSHandler:
             logger.error(f"Error in WS handler: {e}")
         finally:
             self._cm.disconnect(game_id, player_id)
+            await self._gs.set_player_connected(game_id, player_id, False)
             await self._cm.broadcast_to_game(
                 game_id,
                 {"type": ServerMessageType.PLAYER_DISCONNECTED.value, "payload": {"playerId": player_id}},
             )
+            # Broadcast state after presence change so remaining players refresh immediately.
+            await self._broadcast_state(game_id)
             # Auto-accept on behalf of disconnected player if in a response window
             await self._handle_disconnect_accept(game_id, player_id)
 

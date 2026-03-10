@@ -26,6 +26,8 @@ export function ChallengeBlockOverlay({ send, isMobile = false }: ChallengeBlock
     blockableCharacters,
     actorName,
     blockerName,
+    waitingForText,
+    responseHint,
     pending,
     currentPhase,
     submitting,
@@ -54,33 +56,42 @@ export function ChallengeBlockOverlay({ send, isMobile = false }: ChallengeBlock
           exit="hidden"
         >
           <div style={s.message}>{message}</div>
+          <div style={{ fontSize: isMobile ? 11 : 12, color: '#9FB0CB', fontWeight: 600, lineHeight: 1.4 }}>
+            {responseHint}
+          </div>
           {iAlreadyAccepted ? (
-            <div style={{ fontSize: isMobile ? 11 : 13, color: '#81C784', fontWeight: 600 }}>
-              Allowed — waiting for other players…
+            <div style={{ fontSize: isMobile ? 11 : 13, color: '#81C784', fontWeight: 600, lineHeight: 1.45 }}>
+              Allowed - waiting for other players...<br />
+              <span style={{ color: '#A5D6A7' }}>{waitingForText}</span>
             </div>
           ) : (
-            <div style={s.buttons}>
-              {canChallenge && (
-                <button type="button" style={s.challengeBtn} onClick={onChallenge} disabled={submitting}>
-                  {submitting ? 'Sending…' : 'Challenge'}
-                </button>
-              )}
-              {canBlock &&
-                blockableCharacters.map((char) => (
-                  <button
-                    key={char}
-                    type="button"
-                    style={s.blockBtn}
-                    onClick={() => onBlock(char)}
-                    disabled={submitting}
-                  >
-                    {submitting ? 'Sending…' : `Block as ${CHARACTER_LABELS[char]}`}
+            <>
+              <div style={s.buttons}>
+                {canChallenge && (
+                  <button type="button" style={s.challengeBtn} onClick={onChallenge} disabled={submitting}>
+                    {submitting ? 'Sending…' : 'Challenge'}
                   </button>
-                ))}
-              <button type="button" style={s.acceptBtn} onClick={onAccept} disabled={submitting}>
-                {submitting ? 'Sending…' : 'Allow'}
-              </button>
-            </div>
+                )}
+                {canBlock &&
+                  blockableCharacters.map((char) => (
+                    <button
+                      key={char}
+                      type="button"
+                      style={s.blockBtn}
+                      onClick={() => onBlock(char)}
+                      disabled={submitting}
+                    >
+                      {submitting ? 'Sending…' : `Block as ${CHARACTER_LABELS[char]}`}
+                    </button>
+                  ))}
+                <button type="button" style={s.acceptBtn} onClick={onAccept} disabled={submitting}>
+                  {submitting ? 'Sending…' : 'Allow'}
+                </button>
+              </div>
+              <div style={{ fontSize: isMobile ? 10 : 11, color: '#8EA3C2', fontWeight: 600 }}>
+                {waitingForText}
+              </div>
+            </>
           )}
         </motion.div>
       )}

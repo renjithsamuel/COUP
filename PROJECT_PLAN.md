@@ -76,6 +76,11 @@ All logic must conform exactly to these rules:
 - Self-coup is not allowed.
 - A dead player cannot act, block, or challenge.
 
+### 3.8 Timer Configuration Mode
+- Hosts can configure timers at game start.
+- A timer value of `0` disables that timeout window (Peaceful Mode behavior).
+- Timer settings affect pacing only and do not change core Coup action/challenge/block rules.
+
 ---
 
 ## 4. Architecture
