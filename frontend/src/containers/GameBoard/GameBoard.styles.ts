@@ -4,8 +4,8 @@ import { tokens } from '@/theme/tokens';
 function s(mobile: boolean) {
   return {
     wrapper: {
-      minHeight: '100vh',
-      maxHeight: '100vh',
+      minHeight: '100dvh',
+      maxHeight: '100dvh',
       background: tokens.board.bg,
       display: 'grid',
       gridTemplateRows: 'auto 1fr',
@@ -19,18 +19,19 @@ function s(mobile: boolean) {
       justifyContent: 'space-between',
       alignItems: 'center',
       padding: mobile
-        ? `${tokens.spacing.xs}px ${tokens.spacing.sm}px`
+        ? `${tokens.spacing.xs}px ${tokens.spacing.xs}px`
         : `${tokens.spacing.sm}px ${tokens.spacing.lg}px`,
       background: 'transparent',
       zIndex: 20,
-      gap: mobile ? tokens.spacing.xs : tokens.spacing.md,
-      minHeight: mobile ? 36 : 44,
+      gap: mobile ? 4 : tokens.spacing.md,
+      minHeight: mobile ? 32 : 44,
+      flexShrink: 0,
     } satisfies CSSProperties,
 
     topBarLeft: {
       display: 'flex',
       alignItems: 'center',
-      gap: mobile ? tokens.spacing.xs : tokens.spacing.md,
+      gap: mobile ? 2 : tokens.spacing.md,
       flex: 1,
       minWidth: 0,
     } satisfies CSSProperties,
@@ -38,7 +39,7 @@ function s(mobile: boolean) {
     topBarRight: {
       display: 'flex',
       alignItems: 'center',
-      gap: mobile ? tokens.spacing.xs : tokens.spacing.sm,
+      gap: mobile ? 2 : tokens.spacing.sm,
       flexShrink: 0,
     } satisfies CSSProperties,
 
@@ -48,18 +49,22 @@ function s(mobile: boolean) {
       flexDirection: 'column',
       justifyContent: 'space-between',
       padding: mobile
-        ? `0px ${tokens.spacing.xs}px`
+        ? `${tokens.spacing.xs}px 2px`
         : `${tokens.spacing.sm}px ${tokens.spacing.lg}px`,
-      overflow: 'auto',
-      gap: mobile ? 2 : 0,
+      overflow: 'hidden',
+      gap: mobile ? 2 : tokens.spacing.sm,
+      minHeight: 0,
     } satisfies CSSProperties,
 
     statusBar: {
-      minHeight: mobile ? 54 : 68,
+      flex: 0,
+      minHeight: mobile ? 42 : 60,
       display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: mobile ? `${tokens.spacing.xs}px 0` : `${tokens.spacing.sm}px 0`,
+      padding: mobile ? '2px 0' : `${tokens.spacing.xs}px 0`,
+      flexShrink: 0,
     } satisfies CSSProperties,
 
     responseStatus: (tone: 'danger' | 'warn' | 'info' | 'ok'): CSSProperties => {
@@ -74,30 +79,33 @@ function s(mobile: boolean) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 2,
-        padding: mobile ? '6px 10px' : '8px 14px',
-        borderRadius: 12,
+        gap: mobile ? 1 : 2,
+        padding: mobile ? '5px 10px' : '8px 14px',
+        borderRadius: mobile ? 10 : 12,
         border: `1px solid ${palette.border}`,
         background: 'linear-gradient(145deg, rgba(12, 18, 34, 0.9) 0%, rgba(8, 12, 24, 0.88) 100%)',
         boxShadow: `0 8px 28px ${palette.glow}`,
         textAlign: 'center',
-        maxWidth: mobile ? '100%' : 560,
+        maxWidth: mobile ? 'calc(100% - 8px)' : 560,
+        minWidth: 0,
       };
     },
 
     responseStatusTitle: {
-      fontSize: mobile ? 11 : 12,
+      fontSize: mobile ? 10 : 12,
       fontWeight: 800,
-      letterSpacing: 0.9,
+      letterSpacing: mobile ? 0.6 : 0.9,
       textTransform: 'uppercase',
       color: tokens.text.primary,
+      wordBreak: 'break-word',
     } satisfies CSSProperties,
 
     responseStatusDetail: {
-      fontSize: mobile ? 10 : 12,
+      fontSize: mobile ? 9 : 12,
       fontWeight: 600,
       color: tokens.text.secondary,
       letterSpacing: 0.2,
+      wordBreak: 'break-word',
     } satisfies CSSProperties,
 
     turnArea: {
@@ -105,6 +113,9 @@ function s(mobile: boolean) {
       justifyContent: 'center',
       alignItems: 'center',
       padding: mobile ? '2px 0' : `${tokens.spacing.xs}px 0`,
+      flex: 0,
+      flexShrink: 0,
+      minHeight: mobile ? 28 : 32,
     } satisfies CSSProperties,
 
     sidePanel: (_open: boolean): CSSProperties => ({
@@ -171,59 +182,71 @@ function s(mobile: boolean) {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      gap: mobile ? 4 : tokens.spacing.sm,
+      gap: mobile ? 2 : tokens.spacing.sm,
       paddingBottom: mobile ? 2 : tokens.spacing.sm,
+      flex: 0,
+      flexShrink: 0,
+      overflow: 'visible',
     } satisfies CSSProperties,
 
     playerCardArea: {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      gap: mobile ? 4 : tokens.spacing.sm,
+      gap: mobile ? 2 : tokens.spacing.sm,
       padding: mobile
-        ? `${tokens.spacing.xs}px ${tokens.spacing.sm}px`
+        ? `${tokens.spacing.xs}px ${tokens.spacing.xs}px`
         : `${tokens.spacing.md}px ${tokens.spacing.xl}px`,
       background: tokens.surface.card,
-      borderRadius: mobile ? 10 : 18,
+      borderRadius: mobile ? 8 : 18,
       border: `1px solid ${tokens.surface.border}`,
       boxShadow: tokens.elevation.dp4,
+      flex: 0,
+      flexShrink: 0,
+      minWidth: 0,
     } satisfies CSSProperties,
 
     playerInfoInline: {
       display: 'flex',
       alignItems: 'center',
       gap: mobile ? tokens.spacing.xs : tokens.spacing.md,
-      paddingBottom: mobile ? 2 : tokens.spacing.sm,
+      paddingBottom: mobile ? 2 : tokens.spacing.xs,
       borderBottom: `1px solid ${tokens.surface.border}`,
       width: '100%',
       justifyContent: 'center',
+      flexShrink: 0,
     } satisfies CSSProperties,
 
     playerNameLarge: {
-      fontSize: mobile ? 14 : 20,
+      fontSize: mobile ? 13 : 20,
       fontWeight: 800,
       color: tokens.text.primary,
       letterSpacing: 0.5,
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      maxWidth: mobile ? '60%' : 'auto',
     } satisfies CSSProperties,
 
     playerCoinsLarge: {
-      fontSize: mobile ? 14 : 20,
+      fontSize: mobile ? 13 : 20,
       fontWeight: 800,
       color: tokens.coin.color,
       display: 'flex',
       alignItems: 'center',
       gap: 4,
+      flexShrink: 0,
     } satisfies CSSProperties,
 
     utilBtn: {
-      width: mobile ? 30 : 34,
-      height: mobile ? 30 : 34,
+      width: mobile ? 28 : 34,
+      height: mobile ? 28 : 34,
       borderRadius: '50%',
       border: `1px solid ${tokens.surface.borderLight}`,
       background: 'rgba(11, 17, 32, 0.5)',
       backdropFilter: 'blur(8px)',
       color: tokens.text.secondary,
-      fontSize: mobile ? 14 : 16,
+      fontSize: mobile ? 12 : 16,
       fontWeight: 700,
       cursor: 'pointer',
       display: 'flex',
@@ -235,44 +258,56 @@ function s(mobile: boolean) {
     } satisfies CSSProperties,
 
     exitBtn: {
-      height: mobile ? 30 : 34,
+      height: mobile ? 28 : 34,
       borderRadius: 999,
       border: '1px solid rgba(239,83,80,0.38)',
       background: 'rgba(239,83,80,0.12)',
       color: '#EF5350',
-      fontSize: mobile ? 11 : 12,
+      fontSize: mobile ? 10 : 12,
       fontWeight: 800,
-      letterSpacing: 0.4,
+      letterSpacing: mobile ? 0.2 : 0.4,
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       transition: 'all 0.15s ease',
       flexShrink: 0,
-      padding: mobile ? '0 10px' : '0 12px',
+      padding: mobile ? '0 8px' : '0 12px',
+      whiteSpace: 'nowrap',
+    } satisfies CSSProperties,
+
+    eventOverlayContainer: {
+      position: 'fixed',
+      top: mobile ? '16%' : '11%',
+      left: 0,
+      right: 0,
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'flex-start',
+      zIndex: 200,
+      pointerEvents: 'none',
+      padding: mobile ? '0 10px' : 0,
     } satisfies CSSProperties,
 
     eventOverlay: (accent: string): CSSProperties => {
       return {
-        position: 'fixed',
-        top: mobile ? '14%' : '12%',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 200,
         background: 'linear-gradient(155deg, rgba(9, 14, 28, 0.97) 0%, rgba(18, 27, 48, 0.94) 100%)',
         backdropFilter: 'blur(12px)',
         border: `1px solid ${accent}`,
-        borderRadius: 18,
-        padding: mobile ? '14px 16px' : '18px 22px',
-        minWidth: mobile ? 220 : 320,
+        borderRadius: mobile ? 14 : 18,
+        padding: mobile ? '12px 12px' : '18px 22px',
+        width: mobile ? 'min(420px, calc(100vw - 20px))' : 'auto',
+        minWidth: mobile ? 'auto' : 320,
+        maxWidth: 520,
         display: 'grid',
-        gridTemplateColumns: mobile ? '52px 1fr' : '64px 1fr',
-        gap: mobile ? 12 : 16,
+        gridTemplateColumns: mobile ? '44px 1fr' : '64px 1fr',
+        gap: mobile ? 10 : 16,
         alignItems: 'center',
         pointerEvents: 'none',
         boxShadow: `0 18px 60px rgba(0,0,0,0.45), 0 0 32px ${accent}22`,
         overflow: 'hidden',
         isolation: 'isolate',
+        position: 'relative',
       };
     },
 
@@ -285,8 +320,8 @@ function s(mobile: boolean) {
     } satisfies CSSProperties,
 
     eventSymbol: (accent: string): CSSProperties => ({
-      width: mobile ? 52 : 64,
-      height: mobile ? 52 : 64,
+      width: mobile ? 44 : 64,
+      height: mobile ? 44 : 64,
       borderRadius: '50%',
       border: `1px solid ${accent}`,
       background: `radial-gradient(circle at 30% 30%, ${accent}44, rgba(255,255,255,0.05) 72%)`,
@@ -294,13 +329,49 @@ function s(mobile: boolean) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: mobile ? 11 : 13,
+      fontSize: mobile ? 10 : 13,
       fontWeight: 900,
-      letterSpacing: 0.8,
+      letterSpacing: mobile ? 0.4 : 0.8,
       textTransform: 'uppercase',
       boxShadow: `0 0 18px ${accent}22 inset`,
       position: 'relative',
       zIndex: 2,
+      flexShrink: 0,
+    }),
+
+    eventTextGroup: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: mobile ? 2 : 4,
+      minWidth: 0,
+      zIndex: 2,
+      position: 'relative',
+    } satisfies CSSProperties,
+
+    eventTitle: (accent: string): CSSProperties => ({
+      fontSize: mobile ? 12 : 15,
+      fontWeight: 800,
+      color: accent,
+      letterSpacing: 0.5,
+      textTransform: 'uppercase',
+      wordBreak: 'break-word',
+    }),
+
+    eventMessage: {
+      fontSize: mobile ? 10 : 11,
+      color: tokens.text.secondary,
+      fontWeight: 500,
+      wordBreak: 'break-word',
+    } satisfies CSSProperties,
+
+    eventPulse: (accent: string): CSSProperties => ({
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 1.5,
+      background: `linear-gradient(90deg, transparent 0%, ${accent} 50%, transparent 100%)`,
+      boxShadow: `0 0 12px ${accent}88`,
     }),
 
     eventCoin: (accent: string): CSSProperties => ({
@@ -402,43 +473,6 @@ function s(mobile: boolean) {
       borderRadius: '50%',
       background: `radial-gradient(circle, ${accent}33 0%, ${accent}11 42%, transparent 74%)`,
       boxShadow: `0 0 32px ${accent}22`,
-    }),
-
-    eventTextGroup: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 4,
-      minWidth: 0,
-      position: 'relative',
-      zIndex: 2,
-    } satisfies CSSProperties,
-
-    eventTitle: (accent: string): CSSProperties => ({
-      color: accent,
-      fontSize: mobile ? 15 : 18,
-      fontWeight: 900,
-      letterSpacing: 0.8,
-      textTransform: 'uppercase',
-      lineHeight: 1.05,
-    }),
-
-    eventMessage: {
-      color: tokens.text.primary,
-      fontSize: mobile ? 12 : 14,
-      fontWeight: 600,
-      lineHeight: 1.25,
-      letterSpacing: 0.2,
-      textWrap: 'balance',
-    } satisfies CSSProperties,
-
-    eventPulse: (accent: string): CSSProperties => ({
-      position: 'absolute',
-      inset: 'auto 0 0 0',
-      height: 3,
-      background: `linear-gradient(90deg, transparent 0%, ${accent} 18%, ${accent} 82%, transparent 100%)`,
-      boxShadow: `0 0 12px ${accent}66`,
-      transformOrigin: 'center',
-      zIndex: 1,
     }),
 
     confettiLayer: {

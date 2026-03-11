@@ -16,4 +16,5 @@ export interface PlayerPublic {
   influenceCount: number;
   revealedCards: Card[];
   isAlive: boolean;
+  connected?: boolean;
 }

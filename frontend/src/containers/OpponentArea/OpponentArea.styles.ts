@@ -103,6 +103,30 @@ export function getOpponentAreaStyles(mobile: boolean, count: number) {
       color: tokens.text.muted,
     } satisfies CSSProperties,
 
+    offlineOverlay: {
+      position: 'absolute',
+      inset: 0,
+      borderRadius: mobile ? 14 : 16,
+      background: 'rgba(8, 12, 22, 0.55)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 4,
+      pointerEvents: 'none',
+    } satisfies CSSProperties,
+
+    offlineBadge: {
+      fontSize: mobile ? 9 : 10,
+      fontWeight: 700,
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+      color: '#8B95A8',
+      background: 'rgba(11, 17, 32, 0.88)',
+      border: '1px solid rgba(139,149,168,0.25)',
+      borderRadius: 6,
+      padding: mobile ? '2px 6px' : '3px 8px',
+    } satisfies CSSProperties,
+
     effectHalo: (role: 'actor' | 'target' | 'blocker', accent: string): CSSProperties => {
       const roleColors = {
         actor: '#F59E0B',    // Amber - who is acting

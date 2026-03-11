@@ -118,6 +118,11 @@ export function OpponentArea({ isMobile = false, activeCardEffect = null }: Oppo
               {opp.influenceCount} card{opp.influenceCount !== 1 ? 's' : ''}
             </span>
           </div>
+          {opp.isAlive && opp.connected === false && (
+            <div style={s.offlineOverlay}>
+              <span style={s.offlineBadge}>offline</span>
+            </div>
+          )}
         </div>
       ))}
     </div>

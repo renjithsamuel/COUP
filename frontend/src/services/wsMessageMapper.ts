@@ -52,6 +52,7 @@ function toPlayerPublic(raw: any): PlayerPublic {
       typeof c === 'string' ? { character: c as Character, isRevealed: true } : toCard(c),
     ),
     isAlive: raw.is_alive ?? raw.isAlive ?? true,
+    connected: raw.connected ?? true,
   };
 }
 

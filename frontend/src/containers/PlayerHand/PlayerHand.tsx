@@ -164,21 +164,35 @@ export function PlayerHand({ send, isMobile = false, activeCardEffect = null }: 
       </AnimatePresence>
 
       {needsInfluenceChoice && (
-        <div style={{
-          marginBottom: isMobile ? 8 : 10,
-          padding: isMobile ? '7px 12px' : '9px 16px',
-          borderRadius: 12,
-          border: '1px solid rgba(255, 112, 67, 0.45)',
-          background: 'linear-gradient(135deg, rgba(58, 20, 20, 0.94) 0%, rgba(26, 14, 18, 0.92) 100%)',
-          color: '#FFAB91',
-          fontSize: isMobile ? 11 : 13,
-          fontWeight: 800,
-          letterSpacing: 0.6,
-          textTransform: 'uppercase',
-          boxShadow: '0 0 22px rgba(255, 112, 67, 0.12)',
-        }}>
-          Choose an influence to lose
-        </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            boxShadow: [
+              '0 0 12px rgba(255, 112, 67, 0.2), 0 0 0 2px rgba(255,112,67,0.3)',
+              '0 0 28px rgba(255, 112, 67, 0.55), 0 0 0 2px rgba(255,112,67,0.7)',
+              '0 0 12px rgba(255, 112, 67, 0.2), 0 0 0 2px rgba(255,112,67,0.3)',
+            ],
+          }}
+          transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+          style={{
+            marginBottom: isMobile ? 8 : 10,
+            padding: isMobile ? '10px 16px' : '12px 20px',
+            borderRadius: 14,
+            border: '1.5px solid rgba(255, 112, 67, 0.6)',
+            background: 'linear-gradient(135deg, rgba(80, 22, 14, 0.97) 0%, rgba(40, 10, 8, 0.95) 100%)',
+            color: '#FFAB91',
+            fontSize: isMobile ? 13 : 15,
+            fontWeight: 800,
+            letterSpacing: 0.8,
+            textTransform: 'uppercase',
+            textAlign: 'center',
+            width: '100%',
+          }}
+        >
+          ⚠ Choose an influence to lose
+        </motion.div>
       )}
       <AnimatePresence>
         {myCards.map((card, i) => (
@@ -187,8 +201,23 @@ export function PlayerHand({ send, isMobile = false, activeCardEffect = null }: 
             custom={i}
             variants={cardDealVariants}
             initial="hidden"
-            animate="visible"
+            animate={needsInfluenceChoice && !card.isRevealed
+              ? {
+                  opacity: 1,
+                  y: 0,
+                  scale: 1,
+                  boxShadow: [
+                    '0 0 0px rgba(255,112,67,0)',
+                    '0 0 20px rgba(255,112,67,0.5)',
+                    '0 0 0px rgba(255,112,67,0)',
+                  ],
+                }
+              : 'visible'}
+            transition={needsInfluenceChoice && !card.isRevealed
+              ? { duration: 1.3, repeat: Infinity, ease: 'easeInOut' }
+              : undefined}
             exit="hidden"
+            style={{ borderRadius: 14, cursor: needsInfluenceChoice && !card.isRevealed ? 'pointer' : undefined }}
           >
             <Card
               character={card.character}

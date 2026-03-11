@@ -152,8 +152,12 @@ export function useChallengeBlockOverlay(send: (msg: ClientMessage) => boolean) 
   }, [send, submitting, startSubmitting]);
 
   // Extra safety: overlay should NEVER show for the actor during their own action
-  // or for the blocker during block challenge window
+  // or for the blocker during block challenge window, or for eliminated players
+  const amIAlive = myId != null
+    ? (state.gameState?.players.find((p) => p.id === myId)?.isAlive ?? true)
+    : true;
   const isVisible =
+    amIAlive &&
     (canChallenge || canBlock) &&
     !(pending?.actorId === myId && currentPhase !== GamePhase.BLOCK_CHALLENGE_WINDOW) &&
     !(pending?.blockerId === myId && currentPhase === GamePhase.BLOCK_CHALLENGE_WINDOW);

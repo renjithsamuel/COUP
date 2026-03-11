@@ -45,6 +45,19 @@ def handle_foreign_aid_resolve(state: GameState, action: PlayerAction) -> GameSt
 
 def handle_coup_resolve(state: GameState, action: PlayerAction) -> GameState:
     """Coup resolves: target must lose influence. Cost already deducted."""
+    target = state.get_player(action.target_id) if action.target_id else None
+    alive_cards = [c for c in target.influences if not c.revealed] if target else []
+    if not alive_cards:
+        # Target already has no influences (e.g. died during a block challenge)
+        state.pending_action = None
+        state.phase = GamePhase.TURN_END
+        state.event_log.append({
+            "type": "action_resolved",
+            "action": ActionType.COUP.value,
+            "player_id": action.player_id,
+            "target_id": action.target_id,
+        })
+        return state
     state.awaiting_influence_loss_from = action.target_id
     state.phase = GamePhase.AWAITING_INFLUENCE_LOSS
     state.event_log.append({
@@ -74,6 +87,19 @@ def handle_tax_resolve(state: GameState, action: PlayerAction) -> GameState:
 
 def handle_assassinate_resolve(state: GameState, action: PlayerAction) -> GameState:
     """Assassinate resolves: target must lose influence. Cost already deducted."""
+    target = state.get_player(action.target_id) if action.target_id else None
+    alive_cards = [c for c in target.influences if not c.revealed] if target else []
+    if not alive_cards:
+        # Target already has no influences (e.g. died during a block challenge)
+        state.pending_action = None
+        state.phase = GamePhase.TURN_END
+        state.event_log.append({
+            "type": "action_resolved",
+            "action": ActionType.ASSASSINATE.value,
+            "player_id": action.player_id,
+            "target_id": action.target_id,
+        })
+        return state
     state.awaiting_influence_loss_from = action.target_id
     state.phase = GamePhase.AWAITING_INFLUENCE_LOSS
     state.event_log.append({

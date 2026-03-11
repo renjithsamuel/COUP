@@ -102,14 +102,16 @@ export default function LobbyDetailPage() {
   return (
     <div
       style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         background: tokens.board.bg,
         position: 'relative',
         overflow: 'hidden',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: tokens.spacing.xl,
+        padding: typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
+          ? `${tokens.spacing.md}px ${tokens.spacing.sm}px`
+          : tokens.spacing.xl,
       }}
     >
       <div

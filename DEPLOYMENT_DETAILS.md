@@ -28,7 +28,7 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT
 Required environment variables:
 - APP_ENV=production
 - DATABASE_URL=sqlite+aiosqlite:///./coup.db
-- CORS_ORIGINS=https://<your-vercel-domain>
+- CORS_ORIGINS=["https://<your-vercel-domain>"]
 
 Optional (recommended):
 - LOG_LEVEL=info

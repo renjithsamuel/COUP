@@ -6,10 +6,9 @@ export const turnIndicatorStyles = {
     padding: `${tokens.spacing.sm}px ${tokens.spacing.lg}px`,
     borderRadius: 24,
     background: isMyTurn
-      ? `linear-gradient(135deg, rgba(255,193,7,0.12), rgba(255,143,0,0.08))`
+      ? `linear-gradient(135deg, rgba(255,193,7,0.15), rgba(255,143,0,0.1))`
       : tokens.surface.card,
-    border: isMyTurn ? `1px solid rgba(255,193,7,0.3)` : `1px solid ${tokens.surface.border}`,
-    boxShadow: isMyTurn ? '0 0 12px rgba(255,193,7,0.1)' : tokens.elevation.dp1,
+    border: isMyTurn ? `2px solid rgba(255,193,7,0.6)` : `1px solid ${tokens.surface.border}`,
     display: 'inline-flex',
     alignItems: 'center',
     gap: tokens.spacing.sm,

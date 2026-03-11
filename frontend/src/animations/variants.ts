@@ -89,12 +89,12 @@ export const shakeVariants: Variants = {
 
 /** Glow pulse — for active turn indicator */
 export const glowPulseVariants: Variants = {
-  idle: { boxShadow: '0 0 0px rgba(255,215,0,0)' },
+  idle: { boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)' },
   glow: {
     boxShadow: [
-      '0 0 8px rgba(255,215,0,0.4)',
-      '0 0 20px rgba(255,215,0,0.7)',
-      '0 0 8px rgba(255,215,0,0.4)',
+      '0 0 16px rgba(255,193,7,0.35), 0 0 32px rgba(255,193,7,0.2), 0 2px 8px rgba(0,0,0,0.3)',
+      '0 0 36px rgba(255,193,7,0.65), 0 0 72px rgba(255,193,7,0.4), 0 2px 8px rgba(0,0,0,0.3)',
+      '0 0 16px rgba(255,193,7,0.35), 0 0 32px rgba(255,193,7,0.2), 0 2px 8px rgba(0,0,0,0.3)',
     ],
     transition: { duration: ANIM.GLOW_PULSE, repeat: Infinity },
   },

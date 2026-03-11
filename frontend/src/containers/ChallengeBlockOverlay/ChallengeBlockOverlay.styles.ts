@@ -3,14 +3,15 @@ import { tokens } from '@/theme/tokens';
 
 const btnBase = (mobile: boolean): CSSProperties => ({
   padding: mobile
-    ? `${tokens.spacing.xs + 2}px ${tokens.spacing.sm + 2}px`
-    : `${tokens.spacing.sm + 2}px ${tokens.spacing.xl}px`,
-  borderRadius: mobile ? 8 : 10,
+    ? `${tokens.spacing.sm + 2}px ${tokens.spacing.md}px`
+    : `${tokens.spacing.sm + 4}px ${tokens.spacing.xl + 4}px`,
+  borderRadius: mobile ? 10 : 12,
   fontWeight: 700,
-  fontSize: mobile ? 11 : 13,
+  fontSize: mobile ? 13 : 15,
   cursor: 'pointer',
-  letterSpacing: 0.5,
+  letterSpacing: 0.6,
   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+  minWidth: mobile ? 90 : 110,
 });
 
 export function getChallengeBlockOverlayStyles(mobile: boolean) {

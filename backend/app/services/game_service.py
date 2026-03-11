@@ -189,6 +189,19 @@ class GameService:
             state = await self._get_or_raise(game_id)
             state = self._engine.handle_influence_loss(state, player_id, card_index)
             state = self._advance_if_turn_end(state)
+            # Defensive: if only 1 player survives but game hasn't ended yet, force it.
+            # This handles edge cases such as a challenger dying mid-action-flow when the
+            # remaining action phase logic set BLOCK_WINDOW or ACTION_RESOLVING instead
+            # of triggering the GAME_OVER path.
+            alive = state.alive_players
+            if (
+                len(alive) <= 1
+                and state.phase not in (GamePhase.GAME_OVER, GamePhase.AWAITING_INFLUENCE_LOSS)
+            ):
+                state.pending_action = None
+                state.awaiting_influence_loss_from = None
+                state.phase = GamePhase.TURN_END
+                state = self._advance_if_turn_end(state)  # → GAME_OVER
             await self._save(state)
             return state
 

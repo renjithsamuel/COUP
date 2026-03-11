@@ -262,9 +262,10 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
         )}
       </AnimatePresence>
 
-      {/* Action event toast */}
+      {/* Action event toast — outer div handles centering; inner motion.div owns its own transforms */}
       <AnimatePresence>
         {activeEvent && (
+          <div style={s.eventOverlayContainer}>
           <motion.div
             key={activeEvent.id}
             initial={{ opacity: 0, y: 28, scale: 0.86, filter: 'blur(10px)' }}
@@ -389,6 +390,7 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
               style={s.eventPulse(activeEvent.accent)}
             />
           </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

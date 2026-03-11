@@ -11,7 +11,8 @@ export function usePlayerHand(send: (msg: ClientMessage) => boolean) {
     state.gameState?.awaitingInfluenceLossFrom === state.myPlayerId;
 
   const needsExchangeReturn =
-    currentPhase === GamePhase.AWAITING_EXCHANGE;
+    currentPhase === GamePhase.AWAITING_EXCHANGE &&
+    state.gameState?.pendingAction?.actorId === state.myPlayerId;
 
   const exchangeCards = state.exchangeCards;
 

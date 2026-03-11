@@ -28,7 +28,7 @@ export interface ResponseStatus {
 }
 
 let eventIdCounter = 0;
-const ACTION_EVENT_DURATION_MS = 1650;
+const ACTION_EVENT_DURATION_MS = 2500;
 const ACTION_EVENT_GAP_MS = 120;
 
 function wait(ms: number) {
@@ -295,9 +295,9 @@ export function useGameBoard(gameId: string, playerId: string) {
                 },
               });
             }
-            // Clear action emphasis when the turn advances.
+            // Clear queued-but-not-yet-shown events when the turn advances.
+            // Do NOT nullify the currently-displaying event — let it finish naturally.
             clear();
-            setActiveEvent(null);
             dispatch({
               type: 'ADD_LOG',
               payload: { message: `Turn ${turn}: ${name}'s turn`, type: 'turn' },
@@ -341,6 +341,22 @@ export function useGameBoard(gameId: string, playerId: string) {
               });
             }
           }
+          break;
+        case ServerMessageType.PLAYER_LEFT:
+          {
+            const disconnectedPlayerId = String(msg.payload.playerId ?? '');
+            const disconnectedPlayer = state.gameState?.players.find((p) => p.id === disconnectedPlayerId);
+            if (disconnectedPlayer) {
+              dispatch({
+                type: 'ADD_LOG',
+                payload: {
+                  message: `${disconnectedPlayer.name} disconnected`,
+                  type: 'system',
+                },
+              });
+            }
+          }
+          if (msg.gameState) dispatch({ type: 'SET_GAME_STATE', payload: msg.gameState });
           break;
         default:
           if (msg.gameState) dispatch({ type: 'SET_GAME_STATE', payload: msg.gameState });
