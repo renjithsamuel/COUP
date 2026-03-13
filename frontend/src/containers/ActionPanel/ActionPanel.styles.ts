@@ -3,79 +3,105 @@ import { tokens } from '@/theme/tokens';
 
 export function getActionPanelStyles(mobile: boolean) {
   return {
-    wrapper: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: mobile ? 4 : tokens.spacing.sm,
-      justifyContent: 'center',
-      padding: mobile ? `${tokens.spacing.xs}px ${tokens.spacing.xs}px` : tokens.spacing.md,
-      background: tokens.surface.card,
-      borderRadius: mobile ? 8 : 14,
-      border: `1px solid ${tokens.surface.border}`,
-      backdropFilter: 'blur(12px)',
-      boxShadow: tokens.elevation.dp2,
-    } satisfies CSSProperties,
-
-    targetSelect: {
+    dock: {
+      width: '100%',
+      maxWidth: mobile ? '100%' : 1080,
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center',
-      gap: 2,
-      padding: mobile
-        ? `${tokens.spacing.xs}px ${tokens.spacing.xs}px`
-        : `${tokens.spacing.sm}px ${tokens.spacing.md}px`,
-      background: tokens.surface.card,
-      borderRadius: mobile ? 6 : 12,
-      border: `1px solid ${tokens.surface.border}`,
-      marginBottom: 2,
+      gap: mobile ? 6 : 8,
     } satisfies CSSProperties,
 
-    targetRow: {
+    bar: (tone: 'info' | 'warn' | 'danger' | 'ok'): CSSProperties => ({
       display: 'flex',
+      alignItems: mobile ? 'flex-start' : 'center',
+      justifyContent: 'space-between',
       gap: mobile ? tokens.spacing.xs : tokens.spacing.sm,
-      flexWrap: 'wrap',
-      justifyContent: 'center',
+      flexDirection: mobile ? 'column' : 'row',
+      padding: mobile ? `${tokens.spacing.xs + 2}px ${tokens.spacing.sm}px` : `${tokens.spacing.xs + 4}px ${tokens.spacing.sm + 2}px`,
+      background: 'linear-gradient(180deg, rgba(15, 23, 39, 0.96) 0%, rgba(9, 14, 25, 0.98) 100%)',
+      borderRadius: mobile ? 14 : 16,
+      border: tone === 'danger'
+        ? '1px solid rgba(251,113,133,0.24)'
+        : tone === 'warn'
+          ? '1px solid rgba(246,196,69,0.24)'
+          : tone === 'ok'
+            ? '1px solid rgba(52,211,153,0.2)'
+            : '1px solid rgba(96,165,250,0.2)',
+      boxShadow: '0 12px 24px rgba(0,0,0,0.18)',
+      minHeight: mobile ? 48 : 52,
+    }),
+
+    barCopy: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 4,
+      minWidth: 0,
     } satisfies CSSProperties,
 
-    targetButton: (isSelected: boolean): CSSProperties => ({
-      padding: mobile
-        ? `${tokens.spacing.xs}px ${tokens.spacing.sm}px`
-        : `${tokens.spacing.xs + 2}px ${tokens.spacing.md}px`,
-      borderRadius: mobile ? 8 : 10,
-      border: isSelected ? `2px solid ${tokens.text.accent}` : `1px solid ${tokens.surface.borderLight}`,
-      background: isSelected ? 'rgba(255,193,7,0.12)' : tokens.surface.elevated,
-      color: isSelected ? tokens.text.accent : tokens.text.primary,
-      fontWeight: 600,
-      fontSize: mobile ? 11 : 12,
-      cursor: 'pointer',
-      transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: mobile ? 4 : 6,
-    }),
-
-    targetAvatar: (isSelected: boolean): CSSProperties => ({
-      width: mobile ? 18 : 22,
-      height: mobile ? 18 : 22,
-      borderRadius: '50%',
-      background: isSelected ? 'rgba(255,193,7,0.25)' : tokens.surface.card,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: mobile ? 9 : 11,
-      fontWeight: 700,
-      color: isSelected ? tokens.text.accent : tokens.text.secondary,
-    }),
-
-    label: {
+    barEyebrow: {
       fontSize: mobile ? 10 : 11,
-      color: tokens.text.muted,
-      fontWeight: 700,
+      color: tokens.text.accent,
+      fontWeight: 800,
       textTransform: 'uppercase',
-      letterSpacing: mobile ? 1 : 2,
-      marginBottom: tokens.spacing.xs,
-      textAlign: 'center',
-      width: '100%',
+      letterSpacing: mobile ? 1 : 1.6,
+    } satisfies CSSProperties,
+
+    barTitle: {
+      fontSize: mobile ? 12 : 13,
+      color: tokens.text.primary,
+      fontWeight: 800,
+      lineHeight: 1.2,
+    } satisfies CSSProperties,
+
+    barMeta: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      flexWrap: 'wrap',
+    } satisfies CSSProperties,
+
+    metaChip: (tone: 'info' | 'warn' | 'danger' | 'ok' = 'info'): CSSProperties => ({
+      padding: mobile ? '4px 7px' : '5px 8px',
+      borderRadius: 999,
+      border: tone === 'danger'
+        ? '1px solid rgba(251,113,133,0.2)'
+        : tone === 'warn'
+          ? '1px solid rgba(246,196,69,0.2)'
+          : tone === 'ok'
+            ? '1px solid rgba(52,211,153,0.18)'
+            : '1px solid rgba(96,165,250,0.18)',
+      background: 'rgba(255,255,255,0.04)',
+      color: tone === 'warn' ? tokens.text.accent : tokens.text.secondary,
+      fontSize: mobile ? 9 : 10,
+      fontWeight: 800,
+      letterSpacing: 0.5,
+      textTransform: 'uppercase',
+    }),
+
+    cancelTargeting: {
+      padding: mobile ? '5px 8px' : '6px 10px',
+      borderRadius: 999,
+      border: '1px solid rgba(255,255,255,0.12)',
+      background: 'rgba(255,255,255,0.04)',
+      color: tokens.text.secondary,
+      fontSize: mobile ? 10 : 11,
+      fontWeight: 700,
+      letterSpacing: 0.6,
+      textTransform: 'uppercase',
+      cursor: 'pointer',
+      whiteSpace: 'nowrap',
+    } satisfies CSSProperties,
+
+    wrapper: {
+      display: 'grid',
+      gridTemplateColumns: mobile ? '1fr 1fr' : 'repeat(7, minmax(0, 1fr))',
+      gap: mobile ? 6 : 8,
+      justifyContent: 'stretch',
+      padding: mobile ? '6px' : '8px',
+      background: 'linear-gradient(180deg, rgba(14, 21, 38, 0.98) 0%, rgba(8, 13, 24, 0.98) 100%)',
+      borderRadius: mobile ? 14 : 16,
+      border: '1px solid rgba(255,255,255,0.08)',
+      boxShadow: '0 12px 24px rgba(0,0,0,0.18)',
     } satisfies CSSProperties,
   };
 }

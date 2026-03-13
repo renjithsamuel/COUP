@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { TurnIndicator } from '@/components/TurnIndicator';
 import { Timer } from '@/components/Timer';
 import { GameOverModal } from '@/components/GameOverModal';
 import { CoupBackgroundSVG } from '@/components/CoupBackgroundSVG';
@@ -15,6 +14,8 @@ import { GameLog } from '@/containers/GameLog';
 import { GameDashboard } from '@/containers/GameDashboard';
 import { GuideModal } from '@/components/GuideModal';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { ACTION_RULES } from '@/models/action';
+import { useActionPanel } from '@/containers/ActionPanel/ActionPanel.hooks';
 import { gameBoardStyles } from './GameBoard.styles';
 import { useGameBoard } from './GameBoard.hooks';
 
@@ -86,10 +87,11 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
     isWinner,
   } = useGameBoard(gameId, playerId);
   const [showGuide, setShowGuide] = useState(false);
-  const [showLog, setShowLog] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
   const isMobile = useIsMobile();
   const s = gameBoardStyles(isMobile);
+  const actionPanel = useActionPanel(send);
 
   if (!gameState) {
     return (
@@ -102,54 +104,97 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
   }
 
   const myPlayer = gameState.players.find((p) => p.id === playerId);
+  const selectedTargetAction = actionPanel.selectedAction ? ACTION_RULES[actionPanel.selectedAction] : null;
+  const commandTone = selectedTargetAction ? 'info' : (responseStatus?.tone ?? (isMyTurn ? 'warn' : 'info'));
+  const commandEyebrow = selectedTargetAction
+    ? 'Target mode'
+    : isGameOver
+      ? 'Table closed'
+      : `Turn ${gameState.turnNumber}`;
+  const commandTitle = selectedTargetAction
+    ? `Choose a target for ${selectedTargetAction.label}`
+    : responseStatus?.title ?? (isMyTurn ? 'Your Move' : `${currentPlayerName}'s Turn`);
+  const commandMetaLabel = isGameOver
+    ? `${winnerName || 'Winner'} won`
+    : isMyTurn
+      ? 'You are active'
+      : `${currentPlayerName} active`;
+  const compactCommandTitle = selectedTargetAction
+    ? `${selectedTargetAction.label} target selection`
+    : isGameOver
+      ? `${winnerName || 'Winner'} won the table`
+      : responseStatus?.title ?? (isMyTurn ? 'Your turn' : `${currentPlayerName} acting`);
+
+  const renderUtilityButtons = () => (
+    <>
+      <button
+        style={s.utilBtn}
+        onClick={() => setShowDashboard(true)}
+        title="Leaderboard"
+        aria-label="Show leaderboard"
+      >
+        <LeaderboardIcon />
+      </button>
+      <button
+        style={s.utilBtn}
+        onClick={() => setShowTimeline((open) => !open)}
+        title={showTimeline ? 'Hide timeline' : 'Show timeline'}
+        aria-label={showTimeline ? 'Hide timeline' : 'Show timeline'}
+      >
+        <LogIcon />
+      </button>
+      <button
+        style={s.utilBtn}
+        onClick={() => setShowGuide(true)}
+        title="Game rules"
+        aria-label="Show game rules"
+      >
+        <HelpIcon />
+      </button>
+    </>
+  );
+
+  const renderTimelinePanel = (mobilePanel: boolean) => (
+    <motion.aside
+      style={s.sidePanel(true)}
+      initial={mobilePanel ? { x: 32, opacity: 0 } : { x: 18, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={mobilePanel ? { x: 40, opacity: 0 } : { x: 18, opacity: 0 }}
+      transition={{ duration: 0.22, ease: 'easeOut' }}
+      aria-label="Game timeline"
+    >
+      <div style={s.sidePanelHeader}>
+        <div style={s.sidePanelHeadingGroup}>
+          <span style={s.sidePanelEyebrow}>Live recap</span>
+          <span style={s.sidePanelTitle}>Game Timeline</span>
+          <span style={s.sidePanelSubtitle}>Turn flow, challenges, blocks, and eliminations.</span>
+        </div>
+        <button
+          style={s.sidePanelCloseBtn}
+          onClick={() => setShowTimeline(false)}
+          aria-label="Close timeline"
+        >
+          X
+        </button>
+      </div>
+      <div style={s.sidePanelBody}>
+        <GameLog variant="panel" />
+      </div>
+    </motion.aside>
+  );
 
   return (
     <div style={s.wrapper}>
       <CoupBackgroundSVG />
-      {/* Top bar — minimal transparent with utility buttons */}
       <div style={s.topBar}>
         <div style={s.topBarLeft}>
-          {/* Connection status dot */}
-          <div
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: status === 'connected' ? '#4CAF50' : status === 'connecting' ? '#FFC107' : '#EF5350',
-              boxShadow: status === 'connected' ? '0 0 6px #4CAF5080' : status === 'connecting' ? '0 0 6px #FFC10780' : '0 0 6px #EF535080',
-              flexShrink: 0,
-            }}
-            title={`WebSocket: ${status}`}
-          />
-          {timerRemaining > 0 && (
-            <Timer remaining={timerRemaining} progress={timerProgress} />
-          )}
+          <div style={s.connectionBadge(status)} title={`WebSocket: ${status}`}>
+            <span style={s.connectionDot(status)} />
+            <span style={s.connectionText}>{status === 'connected' ? 'Live table' : status === 'connecting' ? 'Reconnecting' : 'Disconnected'}</span>
+          </div>
         </div>
         <div style={s.topBarRight}>
-          <button
-            style={s.utilBtn}
-            onClick={() => setShowDashboard(true)}
-            title="Leaderboard"
-            aria-label="Show leaderboard"
-          >
-            <LeaderboardIcon />
-          </button>
-          <button
-            style={s.utilBtn}
-            onClick={() => setShowLog(true)}
-            title="Game log"
-            aria-label="Show game log"
-          >
-            <LogIcon />
-          </button>
-          <button
-            style={s.utilBtn}
-            onClick={() => setShowGuide(true)}
-            title="Game rules"
-            aria-label="Show game rules"
-          >
-            <HelpIcon />
-          </button>
+          {!isMobile && renderUtilityButtons()}
           <button
             style={s.exitBtn}
             onClick={() => {
@@ -167,69 +212,68 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
         </div>
       </div>
 
-      {/* Center area */}
       <div style={s.center}>
-        {/* Status bar — always visible, never shifts layout (dynamic island style) */}
-        <div style={s.statusBar}>
-          <AnimatePresence mode="wait">
-            {responseStatus && (
-              <motion.div
-                key={`${responseStatus.title}-${responseStatus.detail}`}
-                style={s.responseStatus(responseStatus.tone)}
-                initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                animate={
-                  responseStatus.title.includes('Time Expired')
-                    ? {
-                        opacity: [1, 0.7, 1],
-                        scale: [1, 1.02, 1],
-                      }
-                    : { opacity: 1, y: 0, scale: 1 }
-                }
-                exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                transition={
-                  responseStatus.title.includes('Time Expired')
-                    ? {
-                        duration: 0.8,
-                        repeat: 2,
-                        ease: 'easeInOut',
-                      }
-                    : { duration: 0.2, ease: 'easeOut' }
-                }
-              >
-                <span style={s.responseStatusTitle}>{responseStatus.title}</span>
-                <span style={s.responseStatusDetail}>{responseStatus.detail}</span>
-              </motion.div>
+        <motion.div
+          key={compactCommandTitle}
+          style={s.commandRail(commandTone)}
+          initial={{ opacity: 0, y: -8, scale: 0.99 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+        >
+          <div style={s.commandMain}>
+            <span style={s.commandEyebrow}>{commandEyebrow}</span>
+            <span style={s.commandTitle}>{compactCommandTitle}</span>
+          </div>
+          <div style={s.commandAside}>
+            <div style={s.commandMetaRow}>
+              <span style={s.commandMeta(commandTone)}>{commandMetaLabel}</span>
+              {selectedTargetAction && (
+                <span style={s.commandMeta('warn')}>{selectedTargetAction.label}</span>
+              )}
+            </div>
+            {timerRemaining > 0 && (
+              <Timer remaining={timerRemaining} progress={timerProgress} />
             )}
+          </div>
+        </motion.div>
+
+        <div style={s.contentGrid(showTimeline && !isMobile)}>
+          <div style={s.mainColumn}>
+            <div style={s.boardArea}>
+              <OpponentArea
+                isMobile={isMobile}
+                activeCardEffect={activeCardEffect}
+                targetModeAction={actionPanel.selectedAction}
+                selectableTargetIds={actionPanel.selectableTargetIds}
+                onSelectTarget={actionPanel.selectTarget}
+              />
+            </div>
+
+            <div style={s.bottomArea}>
+              <div style={s.playerCardArea}>
+                <div style={s.playerInfoInline}>
+                  <span style={s.playerNameLarge}>{myPlayer?.name ?? 'You'}</span>
+                  <span style={s.playerCoinsLarge}>
+                    <CoinIcon size={isMobile ? 16 : 20} /> {myPlayer?.coins ?? 0}
+                  </span>
+                </div>
+                <PlayerHand send={send} isMobile={isMobile} activeCardEffect={activeCardEffect} />
+              </div>
+              <ActionPanel {...actionPanel} isMobile={isMobile} />
+            </div>
+          </div>
+
+          <AnimatePresence>
+            {!isMobile && showTimeline && renderTimelinePanel(false)}
           </AnimatePresence>
         </div>
-
-        {/* Opponents at the top */}
-        <OpponentArea isMobile={isMobile} activeCardEffect={activeCardEffect} />
-
-        {/* Turn indicator — centered between opponents and player */}
-        <div style={s.turnArea}>
-          <TurnIndicator
-            currentPlayerName={currentPlayerName}
-            isMyTurn={isMyTurn}
-            turnNumber={gameState.turnNumber}
-          />
-        </div>
-
-        {/* Current player's actions & hand at the bottom */}
-        <div style={s.bottomArea}>
-          <ActionPanel send={send} isMobile={isMobile} />
-          {/* Player hand with integrated player info */}
-          <div style={s.playerCardArea}>
-            <div style={s.playerInfoInline}>
-              <span style={s.playerNameLarge}>{myPlayer?.name ?? 'You'}</span>
-              <span style={s.playerCoinsLarge}>
-                <CoinIcon size={isMobile ? 16 : 20} /> {myPlayer?.coins ?? 0}
-              </span>
-            </div>
-            <PlayerHand send={send} isMobile={isMobile} activeCardEffect={activeCardEffect} />
-          </div>
-        </div>
       </div>
+
+      {isMobile && (
+        <div style={s.mobileUtilityDock}>
+          {renderUtilityButtons()}
+        </div>
+      )}
 
       <AnimatePresence>
         {isGameOver && isWinner && (
@@ -434,29 +478,21 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
         )}
       </AnimatePresence>
 
-      {/* Game log modal */}
       <AnimatePresence>
-        {showLog && (
+        {isMobile && showTimeline && (
           <motion.div
-            style={s.modalOverlay}
+            style={s.mobileSidePanelOverlay}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setShowLog(false)}
+            onClick={() => setShowTimeline(false)}
           >
-            <motion.div
-              style={s.modalContent}
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+            <div
+              style={s.mobileSidePanelShell}
               onClick={(e) => e.stopPropagation()}
             >
-              <div style={s.modalHeader}>
-                <span style={s.modalTitle}>Game Log</span>
-                <button style={s.modalCloseBtn} onClick={() => setShowLog(false)} aria-label="Close">✕</button>
-              </div>
-              <GameLog />
-            </motion.div>
+              {renderTimelinePanel(true)}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

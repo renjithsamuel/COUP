@@ -6,7 +6,11 @@ import { Character, CHARACTER_LABELS } from '@/models/card';
 import { cardHoverVariants } from '@/animations';
 import { cardStyles } from './Card.styles';
 import { useCardHover } from './Card.hooks';
-import { CharacterIcon } from './CharacterIcons';
+import dukeArt from '@/assets/card_faces/duke.jpg';
+import assassinArt from '@/assets/card_faces/assassin.jpg';
+import captainArt from '@/assets/card_faces/captain.jpg';
+import ambassadorArt from '@/assets/card_faces/ambassador.jpg';
+import contessaArt from '@/assets/card_faces/contessa.jpg';
 
 export interface CardProps {
   character: Character;
@@ -18,6 +22,13 @@ export interface CardProps {
 }
 
 const SCALE: Record<string, number> = { xs: 0.5, sm: 0.7, md: 1, lg: 1.25 };
+const CARD_ART = {
+  [Character.DUKE]: dukeArt,
+  [Character.ASSASSIN]: assassinArt,
+  [Character.CAPTAIN]: captainArt,
+  [Character.AMBASSADOR]: ambassadorArt,
+  [Character.CONTESSA]: contessaArt,
+};
 
 export function Card({
   character,
@@ -59,21 +70,12 @@ export function Card({
             boxShadow: isHovered && !disabled ? cardStyles.hoverShadowFor(character) : cardStyles.face(character).boxShadow,
           }}
         >
-          {/* Decorative layers */}
-          <div style={cardStyles.patternOverlay} />
-          <div style={cardStyles.vignette} />
-          <div style={cardStyles.topShine} />
+          <img src={CARD_ART[character].src} alt="" style={cardStyles.faceImage} draggable={false} />
+          <div style={cardStyles.faceOverlay(character)} />
           <div style={cardStyles.cardBorder(character)} />
-          <div style={cardStyles.cornerDecor(character)} />
-
-          {/* Character icon */}
-          <div style={cardStyles.iconArea}>
-            <CharacterIcon character={character} size={Math.round(64 * scale)} />
+          <div style={cardStyles.faceFooter}>
+            <span style={cardStyles.characterName}>{CHARACTER_LABELS[character]}</span>
           </div>
-
-          {/* Name divider + label */}
-          <div style={cardStyles.nameDivider(character)} />
-          <span style={cardStyles.characterName}>{CHARACTER_LABELS[character]}</span>
 
           {isRevealed && (
             <span style={cardStyles.revealedBadge}>REVEALED</span>

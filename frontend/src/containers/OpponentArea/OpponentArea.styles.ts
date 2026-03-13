@@ -4,8 +4,8 @@ import { tokens } from '@/theme/tokens';
 export function getOpponentAreaStyles(mobile: boolean, count: number) {
   const isMany = count > 3;
   const gap = mobile
-    ? tokens.spacing.sm
-    : (isMany ? tokens.spacing.sm : tokens.spacing.md);
+    ? tokens.spacing.xs + 6
+    : (isMany ? tokens.spacing.xs + 2 : tokens.spacing.xs + 6);
 
   return {
     wrapper: mobile
@@ -25,70 +25,78 @@ export function getOpponentAreaStyles(mobile: boolean, count: number) {
           justifyContent: 'center',
           gap,
           flexWrap: 'wrap' as const,
-          padding: `${tokens.spacing.sm}px ${tokens.spacing.md}px`,
+          padding: `${tokens.spacing.xs + 4}px 0 ${tokens.spacing.sm + 4}px`,
         } satisfies CSSProperties,
 
-    opponentSlot: (isActive: boolean, isAlive: boolean): CSSProperties => ({
+    opponentSlot: (isActive: boolean, isAlive: boolean, isSelectable: boolean, isTargetMode: boolean): CSSProperties => ({
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center',
+      alignItems: 'stretch',
       position: 'relative',
       overflow: 'hidden',
-      gap: mobile ? 2 : tokens.spacing.sm,
+      gap: mobile ? tokens.spacing.xs : tokens.spacing.sm,
       padding: mobile
-        ? `${tokens.spacing.xs}px ${tokens.spacing.sm}px`
-        : `${tokens.spacing.sm + 2}px ${tokens.spacing.md}px`,
+        ? `${tokens.spacing.xs + 6}px ${tokens.spacing.xs + 6}px`
+        : `${tokens.spacing.sm}px ${tokens.spacing.sm}px`,
       background: isActive
-        ? 'rgba(255,193,7,0.06)'
-        : tokens.surface.card,
-      borderRadius: mobile ? 14 : 16,
+        ? 'linear-gradient(180deg, rgba(38, 31, 10, 0.95) 0%, rgba(20, 18, 10, 0.96) 100%)'
+        : isSelectable
+          ? 'linear-gradient(180deg, rgba(19, 35, 60, 0.98) 0%, rgba(10, 17, 31, 0.98) 100%)'
+          : 'linear-gradient(180deg, rgba(16, 24, 40, 0.98) 0%, rgba(9, 14, 26, 0.98) 100%)',
+      borderRadius: mobile ? 18 : 20,
       border: isActive
-        ? '1.5px solid rgba(255,193,7,0.35)'
-        : `1px solid ${tokens.surface.border}`,
+        ? '1.5px solid rgba(255,193,7,0.45)'
+        : isSelectable
+          ? '1.5px solid rgba(96,165,250,0.42)'
+          : `1px solid ${tokens.surface.border}`,
       boxShadow: isActive
-        ? '0 0 16px rgba(255,193,7,0.12), 0 2px 8px rgba(0,0,0,0.2)'
-        : tokens.elevation.dp1,
+        ? '0 22px 42px rgba(0,0,0,0.32), 0 0 36px rgba(255,193,7,0.12)'
+        : isSelectable
+          ? '0 18px 36px rgba(0,0,0,0.28), 0 0 30px rgba(96,165,250,0.12)'
+          : '0 16px 30px rgba(0,0,0,0.22)',
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       ...(mobile
         ? {
             flex: '0 0 auto',
-            minWidth: 120,
+            minWidth: 144,
             scrollSnapAlign: 'center' as const,
           }
         : {
-            minWidth: isMany ? 110 : 140,
-            maxWidth: 180,
+            minWidth: isMany ? 150 : 176,
+            maxWidth: 208,
             flex: isMany ? '1 1 auto' : '0 0 auto',
           }),
       opacity: isAlive ? 1 : 0.4,
       filter: isAlive ? 'none' : 'grayscale(80%)',
+      cursor: isSelectable ? 'pointer' : 'default',
+      transform: isTargetMode && !isSelectable ? 'scale(0.98)' : 'none',
     }),
 
-    infoRow: {
+    topRow: {
       display: 'flex',
-      flexDirection: 'column',
       alignItems: 'center',
-      gap: mobile ? 2 : tokens.spacing.xs,
+      justifyContent: 'flex-start',
     } satisfies CSSProperties,
 
     cardsRow: {
       display: 'flex',
-      gap: mobile ? tokens.spacing.xs : tokens.spacing.sm,
+      gap: mobile ? 6 : tokens.spacing.xs + 2,
       justifyContent: 'center',
+      padding: '0',
     } satisfies CSSProperties,
 
     statsRow: {
       display: 'flex',
       alignItems: 'center',
-      gap: mobile ? tokens.spacing.sm : tokens.spacing.md,
-      paddingTop: mobile ? 2 : tokens.spacing.xs,
-      borderTop: `1px solid ${tokens.surface.border}`,
+      gap: mobile ? tokens.spacing.xs + 2 : tokens.spacing.sm,
+      paddingTop: mobile ? 3 : 5,
+      borderTop: `1px solid rgba(255,255,255,0.08)`,
       width: '100%',
-      justifyContent: 'center',
+      justifyContent: 'space-between',
     } satisfies CSSProperties,
 
     coinLabel: {
-      fontSize: mobile ? 12 : 14,
+      fontSize: mobile ? 12 : 13,
       fontWeight: 700,
       color: tokens.coin.color,
       display: 'flex',
@@ -98,9 +106,38 @@ export function getOpponentAreaStyles(mobile: boolean, count: number) {
     } satisfies CSSProperties,
 
     influenceLabel: {
-      fontSize: mobile ? 10 : 12,
+      fontSize: mobile ? 10 : 11,
       fontWeight: 600,
       color: tokens.text.muted,
+    } satisfies CSSProperties,
+
+    outBadge: {
+      fontSize: mobile ? 8 : 9,
+      fontWeight: 800,
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+      color: '#FB7185',
+      padding: '3px 7px',
+      borderRadius: 999,
+      background: 'rgba(251,113,133,0.12)',
+      border: '1px solid rgba(251,113,133,0.2)',
+    } satisfies CSSProperties,
+
+    selectTag: {
+      position: 'absolute',
+      top: 8,
+      left: 8,
+      zIndex: 4,
+      padding: '3px 8px',
+      borderRadius: 999,
+      background: 'rgba(8, 14, 28, 0.92)',
+      border: '1px solid rgba(96,165,250,0.32)',
+      color: '#9CC8FF',
+      fontSize: 9,
+      fontWeight: 800,
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+      pointerEvents: 'none',
     } satisfies CSSProperties,
 
     offlineOverlay: {
@@ -155,7 +192,7 @@ export function getOpponentAreaStyles(mobile: boolean, count: number) {
       return {
         position: 'absolute',
         top: 6,
-        right: 8,
+        right: 6,
         padding: '2px 7px',
         borderRadius: 999,
         border: `1px solid ${color}`,

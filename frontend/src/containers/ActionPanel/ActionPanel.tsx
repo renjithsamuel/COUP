@@ -3,128 +3,100 @@
 import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { ActionButton } from '@/components/ActionButton';
-import { tokens } from '@/theme/tokens';
 import { getActionPanelStyles } from './ActionPanel.styles';
-import { useActionPanel } from './ActionPanel.hooks';
+import { ACTION_RULES } from '@/models/action';
+import { ActionPanelController } from './ActionPanel.hooks';
 
-import { ClientMessage } from '@/models/websocket-message';
-
-export interface ActionPanelProps {
-  send: (msg: ClientMessage) => boolean;
+export interface ActionPanelProps extends ActionPanelController {
   isMobile?: boolean;
 }
 
-export function ActionPanel({ send, isMobile = false }: ActionPanelProps) {
-  const {
-    canAct,
-    isWaitingForResponse,
-    isExchangePhase,
-    isWaitingForInfluenceLoss,
-    availableActions,
-    targetablePlayers,
-    selectedTarget,
-    setSelectedTarget,
-    performAction,
-    myCoins,
-    mustCoup,
-  } = useActionPanel(send);
-
+export function ActionPanel({
+  canAct,
+  isWaitingForResponse,
+  isExchangePhase,
+  isWaitingForInfluenceLoss,
+  availableActions,
+  selectedAction,
+  beginAction,
+  cancelTargeting,
+  myCoins,
+  mustCoup,
+  isMobile = false,
+}: ActionPanelProps) {
   const s = getActionPanelStyles(isMobile);
+  const selectedRule = selectedAction ? ACTION_RULES[selectedAction] : null;
 
-  if (isWaitingForResponse) {
-    return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: isMobile ? '6px 10px' : '10px 16px',
-        borderRadius: 10,
-        background: tokens.surface.overlay,
-        border: `1px solid ${tokens.surface.borderLight}`,
-      }}>
-        <span style={{
-          fontSize: isMobile ? 11 : 14,
-          fontWeight: 600,
-          color: tokens.text.secondary,
-          letterSpacing: 0.5,
-        }}>
-          Waiting for other players to respond…
-        </span>
-      </div>
-    );
-  }
-
-  if (isWaitingForInfluenceLoss) {
-    return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: isMobile ? '6px 10px' : '10px 16px',
-        borderRadius: 10,
-        background: tokens.surface.overlay,
-        border: `1px solid ${tokens.surface.borderLight}`,
-      }}>
-        <span style={{
-          fontSize: isMobile ? 11 : 14,
-          fontWeight: 600,
-          color: '#FF7043',
-          letterSpacing: 0.5,
-        }}>
-          Waiting for player to choose an influence to lose…
-        </span>
-      </div>
-    );
-  }
-
-  if (isExchangePhase) {
-    return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: isMobile ? '6px 10px' : '10px 16px',
-      }}>
-        <span style={{
-          fontSize: isMobile ? 11 : 14,
-          fontWeight: 600,
-          color: tokens.text.accent,
-          letterSpacing: 0.5,
-        }}>
-          Choose your cards below
-        </span>
-      </div>
-    );
-  }
-
-  if (!canAct) return null;
+  const panelState = (() => {
+    if (selectedRule) {
+      return {
+        tone: 'warn' as const,
+        eyebrow: 'Target mode',
+        title: `Choose a player for ${selectedRule.label}`,
+        chip: selectedRule.label,
+      };
+    }
+    if (isWaitingForResponse) {
+      return {
+        tone: 'info' as const,
+        eyebrow: 'Stand by',
+        title: 'Response window open',
+        chip: 'Waiting',
+      };
+    }
+    if (isWaitingForInfluenceLoss) {
+      return {
+        tone: 'danger' as const,
+        eyebrow: 'Stand by',
+        title: 'Waiting for reveal',
+        chip: 'Reveal',
+      };
+    }
+    if (isExchangePhase) {
+      return {
+        tone: 'warn' as const,
+        eyebrow: 'Exchange',
+        title: 'Choose the cards you want to keep',
+        chip: 'Exchange',
+      };
+    }
+    if (!canAct) {
+      return {
+        tone: 'info' as const,
+        eyebrow: 'Stand by',
+        title: 'Not your turn',
+        chip: 'Disabled',
+      };
+    }
+    return null;
+  })();
+  const showPanelBar =
+    mustCoup ||
+    selectedRule != null ||
+    isExchangePhase ||
+    isWaitingForInfluenceLoss ||
+    (isMobile && panelState != null);
 
   return (
-    <div>
-      {mustCoup && (
-        <div style={s.label}>You have 10+ coins — you must Coup!</div>
-      )}
-
-      {/* Target selection for targeted actions */}
-      {targetablePlayers.length > 0 && (
-        <div style={s.targetSelect}>
-          <span style={{ ...s.label, marginBottom: 2 }}>
-            {selectedTarget ? '✓ Target selected' : '⬇ Select target for Steal / Assassinate / Coup'}
-          </span>
-          <div style={s.targetRow}>
-            {targetablePlayers.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                style={s.targetButton(selectedTarget === p.id)}
-                onClick={() => setSelectedTarget(selectedTarget === p.id ? null : p.id)}
-              >
-                <span style={s.targetAvatar(selectedTarget === p.id)}>
-                  {p.name.charAt(0).toUpperCase()}
-                </span>
-                {p.name}
+    <div style={s.dock}>
+      {showPanelBar && (
+        <div style={s.bar(panelState?.tone ?? 'ok')}>
+          <div style={s.barCopy}>
+            <span style={s.barEyebrow}>{panelState?.eyebrow ?? (mustCoup ? 'Forced move' : 'Command deck')}</span>
+            <span style={s.barTitle}>
+              {mustCoup
+                ? 'Coup is mandatory at 10+ coins'
+                : panelState?.title ?? 'Choose an action'}
+            </span>
+          </div>
+          <div style={s.barMeta}>
+            <span style={s.metaChip('ok')}>{myCoins}c</span>
+            {panelState?.chip && <span style={s.metaChip(panelState.tone)}>{panelState.chip}</span>}
+            {selectedRule && (
+              <button type="button" style={s.cancelTargeting} onClick={cancelTargeting}>
+                Cancel
               </button>
-            ))}
+            )}
           </div>
         </div>
       )}
@@ -135,8 +107,9 @@ export function ActionPanel({ send, isMobile = false }: ActionPanelProps) {
             <ActionButton
               key={rule.type}
               actionType={rule.type}
-              onClick={() => performAction(rule.type)}
-              disabled={rule.requiresTarget && !selectedTarget}
+              onClick={() => beginAction(rule.type)}
+              selected={selectedAction === rule.type}
+              disabled={!canAct}
               playerCoins={myCoins}
               isBluff={rule.isBluff}
               canAfford={rule.canAfford}

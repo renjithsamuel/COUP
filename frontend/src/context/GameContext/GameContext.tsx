@@ -20,7 +20,7 @@ export interface GameLogEntry {
   id: string;
   message: string;
   timestamp: number;
-  type: 'action' | 'challenge' | 'block' | 'elimination' | 'system' | 'turn';
+  type: 'action' | 'challenge' | 'block' | 'reveal' | 'elimination' | 'system' | 'turn';
 }
 
 const initialState: GameContextState = {

@@ -31,10 +31,10 @@ src/
 │   ├── variants.ts         # Reusable Framer Motion variants
 │   └── gsapTimelines.ts    # GSAP timeline factories
 ├── components/             # Presentational components
-│   ├── Card/               # Character card with flip, glow, shadows
+│   ├── Card/               # Character card with flip, art-backed face, glow, shadows
 │   ├── CoinStack/          # Coin display with bounce animation
-│   ├── PlayerAvatar/       # Player avatar with glow pulse
-│   ├── ActionButton/       # Action button with scale pop + bluff badge
+│   ├── PlayerAvatar/       # Compact player avatar with glow pulse
+│   ├── ActionButton/       # Compact action button with bluff and target badges
 │   ├── Timer/              # Countdown progress bar
 │   ├── GameOverModal/      # Victory modal with GSAP celebration
 │   ├── GuideModal/         # Game rules/help modal
@@ -42,13 +42,13 @@ src/
 │   ├── PreGameConfig/      # Pre-game configuration with timer controls + Peaceful Mode toggle
 │   └── TurnIndicator/      # Active turn display
 ├── containers/             # Stateful composite containers
-│   ├── GameBoard/          # Main game board (queued event overlays, card-target highlights, response status strip, winner confetti)
-│   ├── PlayerHand/         # Current player's card hand
-│   ├── ActionPanel/        # Action selection with target picker
-│   ├── OpponentArea/       # Opponents display with stats
-│   ├── ChallengeBlockOverlay/ # Challenge/block decision overlay
+│   ├── GameBoard/          # Main game board (compact status rail, quieter event overlays, mobile utility dock, winner confetti, closable timeline)
+│   ├── PlayerHand/         # Current player's compact card hand
+│   ├── ActionPanel/        # Compact action ribbon with minimal off-turn chrome
+│   ├── OpponentArea/       # Compact opponent seats with target highlighting
+│   ├── ChallengeBlockOverlay/ # Direct-response dock for challenge/block/allow decisions
 │   ├── GameDashboard/      # Game statistics dashboard (standings, revealed cards)
-│   ├── GameLog/            # Real-time game event log
+│   ├── GameLog/            # Real-time editorial timeline feed (newest first)
 │   └── LobbyRoom/         # Lobby waiting room
 ├── context/                # React Context + Reducer
 │   ├── GameContext/        # Game state management
@@ -75,6 +75,7 @@ src/
 │   └── tokens.ts           # Design tokens (colours, spacing, shadows)
 └── utils/
     ├── constants.ts        # Game constants (mirrors backend)
+    ├── responseWindows.ts  # Shared response eligibility helper for challenge/block windows
     └── testUtils.tsx       # Test render wrapper
 ```
 
@@ -131,7 +132,7 @@ Edit `src/utils/constants.ts` — this mirrors the backend's `config.py`.
 - **Colours/gradients**: `src/theme/tokens.ts` → `tokens.character.*`
 - **Shadows/elevation**: `src/theme/tokens.ts` → `tokens.card.shadow.*`, `tokens.elevation.*`
 - **Surface colours**: `src/theme/tokens.ts` → `tokens.surface.*`, `tokens.text.*`
-- **Character SVG icons**: `src/components/Card/CharacterIcons.tsx` (inline SVG art per character)
+- **Card art assets**: `src/assets/card_faces/*`
 - **Card component**: `src/components/Card/Card.tsx` + `Card.styles.ts`
 
 ### Add a New Component
@@ -148,11 +149,16 @@ Add the export to `src/components/index.ts`.
 - **Durations & easings**: `src/animations/constants.ts`
 - **Framer Motion variants**: `src/animations/variants.ts`
 - **Complex GSAP timelines**: `src/animations/gsapTimelines.ts`
-- **Gameplay event sequencing**: `src/containers/GameBoard/GameBoard.hooks.ts` uses `useAnimationQueue` to play action/challenge/block/elimination overlays in order
+- **Gameplay event sequencing**: `src/containers/GameBoard/GameBoard.hooks.ts` uses `useAnimationQueue` for higher-signal action, block, challenge-result, and victory overlays while prioritizing terminal game state over stale response prompts
 - **Action-specific event effects**: `src/containers/GameBoard/GameBoard.tsx` and `GameBoard.styles.ts` render coins, shield, slash, impact, reveal, and victory effects over the event overlay
+- **Live timeline panel**: `src/containers/GameBoard/GameBoard.tsx` and `src/containers/GameLog/GameLog.tsx` render a closable timeline panel on demand, with a right-side desktop layout, reverse-chronological feed, and auto-pin-to-top behavior until the user scrolls away
 - **Card-local highlights**: `src/containers/OpponentArea/OpponentArea.tsx` and `src/containers/PlayerHand/PlayerHand.tsx` show actor/target/blocker emphasis directly on card zones
-- **Response clarity**: `src/containers/GameBoard/GameBoard.tsx` and `src/containers/ChallengeBlockOverlay/ChallengeBlockOverlay.tsx` show persistent waiting/approval guidance during challenge and block windows
-- **Persistent status capsule**: `src/containers/GameBoard/GameBoard.tsx` keeps a fixed-height status slot (dynamic-island style) so card layout does not shift when status changes
+- **Unified command rail**: `src/containers/GameBoard/GameBoard.tsx` keeps the board status condensed to a small turn/timer strip so opponent seats remain visible on desktop
+- **Target mode flow**: `src/containers/ActionPanel/ActionPanel.hooks.ts`, `ActionPanel.tsx`, and `src/containers/OpponentArea/OpponentArea.tsx` keep Coup, Assassinate, and Steal available, then highlight valid opponents on the board
+- **Response rules**: `src/utils/responseWindows.ts`, `src/containers/GameBoard/GameBoard.hooks.ts`, and `src/containers/ChallengeBlockOverlay/ChallengeBlockOverlay.tsx` mirror backend one-on-one response windows for targeted actions and first-response resolution for untargeted windows
+- **Response clarity**: `src/containers/ChallengeBlockOverlay/ChallengeBlockOverlay.tsx` renders the bottom decision dock only for the player who can currently respond
+- **Timeline narration**: `src/containers/GameBoard/GameBoard.hooks.ts` records richer action, challenge, block, reveal, elimination, and turn messages for the timeline feed
+- **Mobile utility dock**: `src/containers/GameBoard/GameBoard.tsx` moves leaderboard, timeline, and rules controls to a bottom dock on mobile while keeping Exit in the top bar
 - **Ambient background motif**: `src/components/CoupBackgroundSVG/CoupBackgroundSVG.tsx` provides subtle abstract Coup symbolism, used as full-page ambient art in lobby and as low-opacity atmosphere in-game
 - **Exit controls**: `src/containers/LobbyRoom/LobbyRoom.tsx` exposes room leave action and `src/containers/GameBoard/GameBoard.tsx` includes an explicit top-bar Exit button
 

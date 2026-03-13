@@ -9,10 +9,9 @@ export interface PlayerAvatarProps {
   name: string;
   isActive: boolean;
   isAlive: boolean;
-  coins?: number;
 }
 
-export function PlayerAvatar({ name, isActive, isAlive, coins }: PlayerAvatarProps) {
+export function PlayerAvatar({ name, isActive, isAlive }: PlayerAvatarProps) {
   const initial = name.charAt(0).toUpperCase();
 
   return (
@@ -25,10 +24,12 @@ export function PlayerAvatar({ name, isActive, isAlive, coins }: PlayerAvatarPro
       >
         {initial}
       </motion.div>
-      <span style={playerAvatarStyles.name}>{name}</span>
-      {coins != null && (
-        <span style={{ fontSize: 11, color: '#FFC107', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{coins}c</span>
-      )}
+      <div style={playerAvatarStyles.meta}>
+        <span style={playerAvatarStyles.name}>{name}</span>
+        <span style={playerAvatarStyles.status(isActive, isAlive)}>
+          {isActive ? 'Acting' : isAlive ? 'In play' : 'Eliminated'}
+        </span>
+      </div>
     </div>
   );
 }

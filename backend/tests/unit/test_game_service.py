@@ -169,3 +169,78 @@ def test_multiple_service_instances_share_live_game_state(two_player_game: GameS
         assert responder.coins == 3
 
     asyncio.run(scenario())
+
+
+def test_assassination_finishes_game_after_last_influence_loss(two_player_game: GameState) -> None:
+    async def scenario() -> None:
+        service = await _create_service_with_state(two_player_game)
+        actor = two_player_game.players[0]
+        target = two_player_game.players[1]
+
+        actor.coins = 3
+        target.influences[0].revealed = True
+
+        state = await service.process_action(two_player_game.id, actor.id, "assassinate", target.id)
+        assert state.phase == GamePhase.CHALLENGE_WINDOW
+
+        state, processed = await service.process_accept(two_player_game.id, target.id)
+        assert processed is True
+        assert state.phase == GamePhase.BLOCK_WINDOW
+
+        state, processed = await service.process_accept(two_player_game.id, target.id)
+        assert processed is True
+        assert state.phase == GamePhase.AWAITING_INFLUENCE_LOSS
+
+        state = await service.process_influence_loss(two_player_game.id, target.id, 0)
+
+        assert state.phase == GamePhase.GAME_OVER
+        assert state.winner_id == actor.id
+        assert target.is_alive is False
+
+    asyncio.run(scenario())
+
+
+def test_untargeted_allow_resolves_on_first_valid_response(engine: GameEngine) -> None:
+    async def scenario() -> None:
+        state = engine.create_game("three-player-game")
+        state, actor = engine.add_player(state, "Alice")
+        state, responder = engine.add_player(state, "Bob")
+        state, third_player = engine.add_player(state, "Charlie")
+        state = engine.start_game(state)
+
+        service = await _create_service_with_state(state)
+
+        state = await service.process_action(state.id, actor.id, "foreign_aid")
+        assert state.phase == GamePhase.BLOCK_WINDOW
+
+        state, processed = await service.process_accept(state.id, third_player.id)
+
+        assert processed is True
+        assert state.phase == GamePhase.TURN_START
+        assert state.current_turn_player_id == responder.id
+        assert state.turn_number == 2
+        assert actor.coins == 4
+
+    asyncio.run(scenario())
+
+
+def test_targeted_challenge_rejects_uninvolved_player(engine: GameEngine) -> None:
+    async def scenario() -> None:
+        state = engine.create_game("targeted-challenge-game")
+        state, actor = engine.add_player(state, "Alice")
+        state, target = engine.add_player(state, "Bob")
+        state, outsider = engine.add_player(state, "Charlie")
+        state = engine.start_game(state)
+
+        service = await _create_service_with_state(state)
+
+        state = await service.process_action(state.id, actor.id, "steal", target.id)
+        assert state.phase == GamePhase.CHALLENGE_WINDOW
+
+        try:
+            await service.process_challenge(state.id, outsider.id)
+            assert False, "Expected uninvolved challenger to be rejected"
+        except ValueError as exc:
+            assert "cannot challenge" in str(exc).lower()
+
+    asyncio.run(scenario())

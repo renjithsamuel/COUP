@@ -77,6 +77,7 @@ class GameService:
             )
             state = self._engine.declare_action(state, action)
             state = self._advance_if_turn_end(state)
+            state = self._ensure_terminal_state(state)
             await self._save(state)
             return state
 
@@ -86,7 +87,10 @@ class GameService:
         """Process a challenge."""
         async with self._get_game_lock(game_id):
             state = await self._get_or_raise(game_id)
+            if challenger_id not in self._get_eligible_responders(state):
+                raise ValueError("Player cannot challenge this action")
             state, challenger_won = self._engine.handle_challenge(state, challenger_id)
+            state = self._ensure_terminal_state(state)
             await self._save(state)
             return state, challenger_won
 
@@ -97,6 +101,7 @@ class GameService:
         async with self._get_game_lock(game_id):
             state = await self._get_or_raise(game_id)
             state = self._engine.handle_block(state, blocker_id, blocking_character)
+            state = self._ensure_terminal_state(state)
             await self._save(state)
             return state
 
@@ -109,9 +114,9 @@ class GameService:
         already advanced — a harmless race condition in multiplayer that should
         be silently ignored.
 
-        For multiplayer: tracks individual accepts and only resolves the window
-        when ALL eligible responders have accepted (or a single accept for targeted
-        block windows where only the target can respond).
+        Targeted challenge/block decisions are resolved one-on-one between the
+        directly involved players. Untargeted windows resolve on the first valid
+        allow/pass response instead of waiting for every non-actor to pass.
         """
         async with self._get_game_lock(game_id):
             state = await self._get_or_raise(game_id)
@@ -123,30 +128,14 @@ class GameService:
                         return state, False
                     if player_id not in state.pending_action.accepted_by:
                         state.pending_action.accepted_by.append(player_id)
-                    # Only resolve when all eligible players have accepted
-                    if not eligible.issubset(set(state.pending_action.accepted_by)):
-                        await self._save(state)
-                        return state, False
                 state = self._engine.handle_no_challenge(state)
             elif state.phase == GamePhase.BLOCK_WINDOW:
-                if state.pending_action is not None and state.pending_action.target_id is not None:
-                    # For targeted actions, only the target's accept resolves the block window
-                    if (
-                        player_id is not None
-                        and player_id != state.pending_action.target_id
-                    ):
+                if player_id and state.pending_action:
+                    eligible = self._get_eligible_responders(state)
+                    if player_id not in eligible:
                         return state, False
-                else:
-                    # For untargeted actions (e.g., Foreign Aid), wait for ALL non-actors
-                    if player_id and state.pending_action:
-                        eligible = self._get_eligible_responders(state)
-                        if player_id not in eligible:
-                            return state, False
-                        if player_id not in state.pending_action.accepted_by:
-                            state.pending_action.accepted_by.append(player_id)
-                        if not eligible.issubset(set(state.pending_action.accepted_by)):
-                            await self._save(state)
-                            return state, False
+                    if player_id not in state.pending_action.accepted_by:
+                        state.pending_action.accepted_by.append(player_id)
                 state = self._engine.handle_no_block(state)
             else:
                 self._logger.debug(
@@ -154,32 +143,50 @@ class GameService:
                 )
                 return state, False
             state = self._advance_if_turn_end(state)
+            state = self._ensure_terminal_state(state)
             await self._save(state)
             return state, True
 
     def _get_eligible_responders(self, state: GameState) -> set[str]:
-        """Determine which players need to accept for the current window to close."""
+        """Determine who may respond during the current challenge/block window."""
         if state.pending_action is None:
             return set()
 
         alive_ids = {p.id for p in state.alive_players}
         actor_id = state.pending_action.player_id
+        target_id = state.pending_action.target_id
 
         if state.phase == GamePhase.CHALLENGE_WINDOW:
-            # All alive players except the actor can challenge
+            if target_id is not None:
+                return {target_id} & alive_ids
             return alive_ids - {actor_id}
         elif state.phase == GamePhase.BLOCK_WINDOW:
-            if state.pending_action.target_id is not None:
-                # Only target can block targeted actions
-                return {state.pending_action.target_id} & alive_ids
-            else:
-                # Anyone except the actor can block untargeted actions
-                return alive_ids - {actor_id}
+            if target_id is not None:
+                return {target_id} & alive_ids
+            return alive_ids - {actor_id}
         elif state.phase == GamePhase.BLOCK_CHALLENGE_WINDOW:
-            # Everyone except the blocker can challenge the block
-            blocker_id = state.pending_action.blocked_by
-            return alive_ids - ({blocker_id} if blocker_id else set())
+            return {actor_id} & alive_ids
         return set()
+
+    def _ensure_terminal_state(self, state: GameState) -> GameState:
+        """Promote the game into GAME_OVER as soon as only one player survives."""
+        alive_players = state.alive_players
+        if len(alive_players) > 1:
+            return state
+
+        if (
+            state.phase == GamePhase.AWAITING_INFLUENCE_LOSS
+            and state.awaiting_influence_loss_from is not None
+        ):
+            return state
+
+        if state.phase == GamePhase.GAME_OVER:
+            return state
+
+        state.pending_action = None
+        state.awaiting_influence_loss_from = None
+        state.phase = GamePhase.TURN_END
+        return self._advance_if_turn_end(state)
 
     async def process_influence_loss(
         self, game_id: str, player_id: str, card_index: int
@@ -189,19 +196,7 @@ class GameService:
             state = await self._get_or_raise(game_id)
             state = self._engine.handle_influence_loss(state, player_id, card_index)
             state = self._advance_if_turn_end(state)
-            # Defensive: if only 1 player survives but game hasn't ended yet, force it.
-            # This handles edge cases such as a challenger dying mid-action-flow when the
-            # remaining action phase logic set BLOCK_WINDOW or ACTION_RESOLVING instead
-            # of triggering the GAME_OVER path.
-            alive = state.alive_players
-            if (
-                len(alive) <= 1
-                and state.phase not in (GamePhase.GAME_OVER, GamePhase.AWAITING_INFLUENCE_LOSS)
-            ):
-                state.pending_action = None
-                state.awaiting_influence_loss_from = None
-                state.phase = GamePhase.TURN_END
-                state = self._advance_if_turn_end(state)  # → GAME_OVER
+            state = self._ensure_terminal_state(state)
             await self._save(state)
             return state
 
@@ -213,6 +208,7 @@ class GameService:
             state = await self._get_or_raise(game_id)
             state = self._engine.handle_exchange_return(state, player_id, keep_indices)
             state = self._advance_if_turn_end(state)
+            state = self._ensure_terminal_state(state)
             await self._save(state)
             return state
 
@@ -241,6 +237,7 @@ class GameService:
         async with self._get_game_lock(game_id):
             state = await self._get_or_raise(game_id)
             state = self._engine.advance_turn(state)
+            state = self._ensure_terminal_state(state)
             await self._save(state)
             return state
 

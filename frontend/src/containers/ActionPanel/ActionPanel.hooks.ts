@@ -10,9 +10,29 @@ export interface ActionWithBluff extends ActionRule {
   canAfford: boolean;
 }
 
+export interface ActionPanelController {
+  canAct: boolean;
+  isWaitingForResponse: boolean;
+  isExchangePhase: boolean;
+  isWaitingForInfluenceLoss: boolean;
+  availableActions: ActionWithBluff[];
+  targetablePlayers: Array<{ id: string; name: string }>;
+  selectableTargetIds: string[];
+  selectedTarget: string | null;
+  setSelectedTarget: (targetId: string | null) => void;
+  selectedAction: ActionType | null;
+  beginAction: (actionType: ActionType) => void;
+  cancelTargeting: () => void;
+  performAction: (actionType: ActionType, explicitTargetId?: string | null) => void;
+  selectTarget: (targetId: string) => void;
+  myCoins: number;
+  mustCoup: boolean;
+}
+
 export function useActionPanel(send: (msg: ClientMessage) => boolean) {
   const { state, isMyTurn, currentPhase } = useGameContext();
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
+  const [selectedAction, setSelectedAction] = useState<ActionType | null>(null);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
   const submitResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingAction = state.gameState?.pendingAction;
@@ -108,6 +128,7 @@ export function useActionPanel(send: (msg: ClientMessage) => boolean) {
   useEffect(() => {
     if (!canAct) {
       setSelectedTarget(null);
+      setSelectedAction(null);
       return;
     }
 
@@ -121,24 +142,40 @@ export function useActionPanel(send: (msg: ClientMessage) => boolean) {
     }
   }, [canAct, selectedTarget, targetablePlayers]);
 
+  useEffect(() => {
+    if (!selectedAction) {
+      return;
+    }
+
+    if (!availableActions.some((action) => action.type === selectedAction)) {
+      setSelectedAction(null);
+      setSelectedTarget(null);
+    }
+  }, [availableActions, selectedAction]);
+
   const performAction = useCallback(
-    (actionType: ActionType) => {
+    (actionType: ActionType, explicitTargetId?: string | null) => {
       if (!canAct) {
         return;
       }
 
       const rule = ACTION_RULES[actionType];
-      if (rule.requiresTarget && !selectedTarget) return;
+      const resolvedTarget = explicitTargetId ?? selectedTarget;
+      if (rule.requiresTarget && !resolvedTarget) {
+        setSelectedAction(actionType);
+        return;
+      }
 
       const sent = send({
         type: ClientMessageType.ACTION,
         payload: {
           actionType,
-          ...(rule.requiresTarget && selectedTarget ? { targetId: selectedTarget } : {}),
+          ...(rule.requiresTarget && resolvedTarget ? { targetId: resolvedTarget } : {}),
         },
       });
       if (sent) {
         setIsSubmittingAction(true);
+        setSelectedAction(null);
         setSelectedTarget(null);
       } else {
         setIsSubmittingAction(false);
@@ -147,17 +184,67 @@ export function useActionPanel(send: (msg: ClientMessage) => boolean) {
     [canAct, send, selectedTarget],
   );
 
-  return {
+  const beginAction = useCallback(
+    (actionType: ActionType) => {
+      if (!canAct) {
+        return;
+      }
+
+      const rule = ACTION_RULES[actionType];
+      if (!rule.requiresTarget) {
+        performAction(actionType);
+        return;
+      }
+
+      setSelectedAction((current) => {
+        if (current === actionType) {
+          setSelectedTarget(null);
+          return null;
+        }
+        return actionType;
+      });
+    },
+    [canAct, performAction],
+  );
+
+  const cancelTargeting = useCallback(() => {
+    setSelectedAction(null);
+    setSelectedTarget(null);
+  }, []);
+
+  const selectTarget = useCallback(
+    (targetId: string) => {
+      setSelectedTarget(targetId);
+      if (selectedAction) {
+        performAction(selectedAction, targetId);
+      }
+    },
+    [performAction, selectedAction],
+  );
+
+  const selectableTargetIds = useMemo(
+    () => (selectedAction ? targetablePlayers.map((player) => player.id) : []),
+    [selectedAction, targetablePlayers],
+  );
+
+  const controller: ActionPanelController = {
     canAct,
     isWaitingForResponse,
     isExchangePhase,
     isWaitingForInfluenceLoss,
     availableActions,
     targetablePlayers,
+    selectableTargetIds,
     selectedTarget,
     setSelectedTarget,
+    selectedAction,
+    beginAction,
+    cancelTargeting,
     performAction,
+    selectTarget,
     myCoins,
     mustCoup,
   };
+
+  return controller;
 }

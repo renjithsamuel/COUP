@@ -6,6 +6,7 @@ import { useGameContext } from '@/context/GameContext';
 import { PlayerAvatar } from '@/components/PlayerAvatar';
 import { Card } from '@/components/Card';
 import { Character } from '@/models/card';
+import { ActionType, ACTION_RULES } from '@/models/action';
 import { getOpponentAreaStyles } from './OpponentArea.styles';
 
 export interface OpponentAreaProps {
@@ -18,9 +19,18 @@ export interface OpponentAreaProps {
     targetId?: string;
     blockerId?: string;
   } | null;
+  targetModeAction?: ActionType | null;
+  selectableTargetIds?: string[];
+  onSelectTarget?: (playerId: string) => void;
 }
 
-export function OpponentArea({ isMobile = false, activeCardEffect = null }: OpponentAreaProps) {
+export function OpponentArea({
+  isMobile = false,
+  activeCardEffect = null,
+  targetModeAction = null,
+  selectableTargetIds = [],
+  onSelectTarget,
+}: OpponentAreaProps) {
   const { state } = useGameContext();
   const gs = state.gameState;
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -40,6 +50,7 @@ export function OpponentArea({ isMobile = false, activeCardEffect = null }: Oppo
   const opponents = gs.players.filter((p) => p.id !== state.myPlayerId);
   const s = getOpponentAreaStyles(isMobile, opponents.length);
   const cardSize = isMobile ? 'xs' : 'sm';
+  const targetActionLabel = targetModeAction ? ACTION_RULES[targetModeAction].label : null;
 
   return (
     <div ref={scrollRef} style={s.wrapper} className={isMobile ? 'hide-scrollbar' : undefined}>
@@ -49,9 +60,37 @@ export function OpponentArea({ isMobile = false, activeCardEffect = null }: Oppo
           ref={(el) => {
             if (el) slotRefs.current.set(opp.id, el);
           }}
-          style={s.opponentSlot(gs.currentPlayerId === opp.id, opp.isAlive)}
+          style={s.opponentSlot(
+            gs.currentPlayerId === opp.id,
+            opp.isAlive,
+            selectableTargetIds.includes(opp.id),
+            targetModeAction != null,
+          )}
+          onClick={
+            opp.isAlive && selectableTargetIds.includes(opp.id) && onSelectTarget
+              ? () => onSelectTarget(opp.id)
+              : undefined
+          }
+          role={selectableTargetIds.includes(opp.id) ? 'button' : undefined}
+          aria-label={
+            selectableTargetIds.includes(opp.id) && targetActionLabel
+              ? `Target ${opp.name} with ${targetActionLabel}`
+              : undefined
+          }
         >
           <AnimatePresence>
+            {targetModeAction && selectableTargetIds.includes(opp.id) && (
+              <motion.span
+                key={`targetable-${targetModeAction}-${opp.id}`}
+                style={s.selectTag}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -3 }}
+                transition={{ duration: 0.18 }}
+              >
+                Select for {ACTION_RULES[targetModeAction].label}
+              </motion.span>
+            )}
             {activeCardEffect && (activeCardEffect.actorId === opp.id || activeCardEffect.targetId === opp.id || activeCardEffect.blockerId === opp.id) && (
               <>
                 <motion.div
@@ -82,12 +121,11 @@ export function OpponentArea({ isMobile = false, activeCardEffect = null }: Oppo
             )}
           </AnimatePresence>
 
-          <div style={s.infoRow}>
+          <div style={s.topRow}>
             <PlayerAvatar
               name={opp.name}
               isActive={gs.currentPlayerId === opp.id}
               isAlive={opp.isAlive}
-              coins={opp.coins}
             />
           </div>
           <div style={s.cardsRow}>
@@ -117,6 +155,7 @@ export function OpponentArea({ isMobile = false, activeCardEffect = null }: Oppo
             <span style={s.influenceLabel}>
               {opp.influenceCount} card{opp.influenceCount !== 1 ? 's' : ''}
             </span>
+            {!opp.isAlive && <span style={s.outBadge}>out</span>}
           </div>
           {opp.isAlive && opp.connected === false && (
             <div style={s.offlineOverlay}>

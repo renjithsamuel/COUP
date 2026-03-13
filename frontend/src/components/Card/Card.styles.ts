@@ -33,15 +33,11 @@ export const cardStyles = {
     position: 'absolute',
     inset: 0,
     borderRadius: tokens.card.borderRadius,
-    background: tokens.character[charKey(character)].bg,
+    background: '#08101d',
     color: tokens.character[charKey(character)].text,
     boxShadow: `${tokens.card.shadow.rest}, 0 0 20px ${charGlow(character)}`,
     backfaceVisibility: 'hidden',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    padding: `0 ${tokens.spacing.sm}px ${tokens.spacing.md}px`,
+    display: 'block',
     fontWeight: 700,
     fontSize: 13,
     textTransform: 'uppercase',
@@ -51,98 +47,53 @@ export const cardStyles = {
     border: `1.5px solid rgba(255,255,255,0.12)`,
   }),
 
-  /** Accent glow border inset */
+  faceImage: {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  } satisfies CSSProperties,
+
+  faceOverlay: (character: Character): CSSProperties => ({
+    position: 'absolute',
+    inset: 0,
+    background: `linear-gradient(180deg, rgba(5, 10, 18, 0.06) 0%, transparent 38%, rgba(6, 10, 18, 0.08) 58%, rgba(6, 10, 18, 0.84) 100%), linear-gradient(135deg, ${tokens.character[charKey(character)].accent}22 0%, transparent 32%)`,
+    pointerEvents: 'none',
+  }),
+
   cardBorder: (character: Character): CSSProperties => ({
     position: 'absolute',
     inset: 4,
     borderRadius: tokens.card.borderRadius - 3,
     border: `1.5px solid ${tokens.character[charKey(character)].accent}`,
-    opacity: 0.35,
+    opacity: 0.22,
     pointerEvents: 'none',
-    boxShadow: `inset 0 0 12px ${tokens.character[charKey(character)].accent}22`,
+    boxShadow: `inset 0 0 12px ${tokens.character[charKey(character)].accent}1c`,
   }),
 
-  /** Decorative corner flourishes */
-  cornerDecor: (character: Character): CSSProperties => ({
+  faceFooter: {
     position: 'absolute',
-    inset: 0,
-    pointerEvents: 'none',
-    borderRadius: tokens.card.borderRadius,
-    background: `
-      radial-gradient(circle at 8% 8%, ${tokens.character[charKey(character)].accent}18 0%, transparent 20%),
-      radial-gradient(circle at 92% 8%, ${tokens.character[charKey(character)].accent}18 0%, transparent 20%),
-      radial-gradient(circle at 8% 92%, ${tokens.character[charKey(character)].accent}10 0%, transparent 20%),
-      radial-gradient(circle at 92% 92%, ${tokens.character[charKey(character)].accent}10 0%, transparent 20%)
-    `,
-  }),
-
-  /** Subtle pattern/texture overlay */
-  patternOverlay: {
-    position: 'absolute',
-    inset: 0,
-    borderRadius: tokens.card.borderRadius,
-    pointerEvents: 'none',
-    opacity: 0.04,
-    backgroundImage: `repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 4px,
-      rgba(255,255,255,0.5) 4px,
-      rgba(255,255,255,0.5) 5px
-    )`,
-  } satisfies CSSProperties,
-
-  /** Vignette darkening at edges */
-  vignette: {
-    position: 'absolute',
-    inset: 0,
-    borderRadius: tokens.card.borderRadius,
-    pointerEvents: 'none',
-    background: 'radial-gradient(ellipse at 50% 35%, transparent 40%, rgba(0,0,0,0.35) 100%)',
-  } satisfies CSSProperties,
-
-  /** Top shine highlight */
-  topShine: {
-    position: 'absolute',
-    top: 0,
     left: 0,
     right: 0,
-    height: '40%',
-    borderRadius: `${tokens.card.borderRadius}px ${tokens.card.borderRadius}px 0 0`,
-    background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)',
-    pointerEvents: 'none',
-  } satisfies CSSProperties,
-
-  iconArea: {
-    flex: 1,
+    bottom: 0,
     display: 'flex',
-    alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
+    padding: `${tokens.spacing.lg}px ${tokens.spacing.xs}px ${tokens.spacing.sm}px`,
+    background: 'linear-gradient(180deg, transparent 0%, rgba(7, 12, 20, 0.86) 56%, rgba(7, 12, 20, 0.96) 100%)',
     zIndex: 1,
-    filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
   } satisfies CSSProperties,
 
   characterName: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: 800,
-    letterSpacing: 3,
+    letterSpacing: 2.4,
     textAlign: 'center',
     opacity: 0.95,
     position: 'relative',
     zIndex: 1,
     textShadow: '0 1px 3px rgba(0,0,0,0.5)',
   } satisfies CSSProperties,
-
-  /** Decorative line above character name */
-  nameDivider: (character: Character): CSSProperties => ({
-    width: '50%',
-    height: 1,
-    background: `linear-gradient(90deg, transparent, ${tokens.character[charKey(character)].accent}88, transparent)`,
-    marginBottom: 6,
-    position: 'relative',
-    zIndex: 1,
-  }),
 
   back: {
     position: 'absolute',
@@ -252,9 +203,10 @@ export const cardStyles = {
     padding: '2px 10px',
     borderRadius: 4,
     background: 'rgba(0,0,0,0.4)',
-    position: 'relative',
+    position: 'absolute',
+    top: 8,
+    right: 8,
     zIndex: 1,
-    marginTop: 4,
   } satisfies CSSProperties,
 
   hoverShadow: tokens.card.shadow.hover,

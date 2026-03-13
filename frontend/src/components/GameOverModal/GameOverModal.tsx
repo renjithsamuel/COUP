@@ -32,7 +32,7 @@ export function GameOverModal({ isOpen, winnerName, onPlayAgain }: GameOverModal
         >
           <div ref={modalRef} style={gameOverModalStyles.modal}>
             <div style={gameOverModalStyles.title}>Game Over</div>
-            <div style={gameOverModalStyles.winnerName}>{winnerName} wins!</div>
+            <div style={gameOverModalStyles.winnerName}>{winnerName} wins the match.</div>
             <button style={gameOverModalStyles.button} onClick={onPlayAgain}>
               Play Again
             </button>

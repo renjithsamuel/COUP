@@ -4,6 +4,7 @@ import { GamePhase } from '@/models/game';
 import { ClientMessage, ClientMessageType } from '@/models/websocket-message';
 import { ACTION_RULES, ActionType } from '@/models/action';
 import { Character } from '@/models/card';
+import { getEligibleResponderIds } from '@/utils/responseWindows';
 
 export function useChallengeBlockOverlay(send: (msg: ClientMessage) => boolean) {
   const { state, currentPhase } = useGameContext();
@@ -35,27 +36,27 @@ export function useChallengeBlockOverlay(send: (msg: ClientMessage) => boolean) 
     }, 5000);
   }, []);
 
+  const eligibleResponderIds = getEligibleResponderIds(state.gameState);
+  const canRespondNow = myId != null && eligibleResponderIds.includes(myId);
+
   const showChallengeWindow =
     currentPhase === GamePhase.CHALLENGE_WINDOW &&
     pending != null &&
-    pending.actorId !== myId;
+    canRespondNow;
 
   const showBlockWindow =
     currentPhase === GamePhase.BLOCK_WINDOW &&
     pending != null &&
-    pending.actorId !== myId;
+    canRespondNow;
 
   const showBlockChallengeWindow =
     currentPhase === GamePhase.BLOCK_CHALLENGE_WINDOW &&
     pending != null &&
-    pending.blockerId !== myId;
+    canRespondNow;
 
   const canChallenge = showChallengeWindow || showBlockChallengeWindow;
 
-  // For targeted actions (steal, assassinate), only the target can block
-  const isTargetedAction = pending?.targetId != null;
-  const amITarget = isTargetedAction && pending?.targetId === myId;
-  const canSeeBlock = showBlockWindow && (!isTargetedAction || amITarget);
+  const canSeeBlock = showBlockWindow;
 
   const blockableCharacters = useMemo(() => {
     if (!canSeeBlock || !pending) return [];
@@ -75,32 +76,12 @@ export function useChallengeBlockOverlay(send: (msg: ClientMessage) => boolean) 
     return state.gameState.players.find((p) => p.id === pending.blockerId)?.name ?? '';
   }, [pending, state.gameState]);
 
-  // Check if this player already accepted (waiting for others)
-  // Only count accepts for the CURRENT phase (accepted_by is cleared on phase transitions)
   const iAlreadyAccepted = myId != null && (pending?.acceptedBy ?? []).includes(myId);
 
   const waitingForText = useMemo(() => {
     if (!pending || !state.gameState) return '';
 
-    const eligibleIds = (() => {
-      if (currentPhase === GamePhase.CHALLENGE_WINDOW) {
-        return state.gameState.players
-          .filter((p) => p.isAlive && p.id !== pending.actorId)
-          .map((p) => p.id);
-      }
-      if (currentPhase === GamePhase.BLOCK_WINDOW) {
-        if (pending.targetId) return [pending.targetId];
-        return state.gameState.players
-          .filter((p) => p.isAlive && p.id !== pending.actorId)
-          .map((p) => p.id);
-      }
-      if (currentPhase === GamePhase.BLOCK_CHALLENGE_WINDOW) {
-        return state.gameState.players
-          .filter((p) => p.isAlive && p.id !== pending.blockerId)
-          .map((p) => p.id);
-      }
-      return [];
-    })();
+    const eligibleIds = getEligibleResponderIds(state.gameState);
 
     const accepted = new Set(pending.acceptedBy ?? []);
     const waitingNames = eligibleIds
@@ -109,23 +90,29 @@ export function useChallengeBlockOverlay(send: (msg: ClientMessage) => boolean) 
       .filter((name): name is string => Boolean(name));
 
     if (waitingNames.length === 0) {
-      return 'Final response received. Resolving...';
+      return 'Resolving...';
     }
-    return `Waiting for: ${waitingNames.join(', ')}`;
+    return waitingNames.length === 1
+      ? `Waiting for ${waitingNames[0]}.`
+      : 'First response resolves this window.';
   }, [pending, state.gameState, currentPhase]);
 
   const responseHint = useMemo(() => {
     if (iAlreadyAccepted) {
-      return 'You allowed this action. Waiting for all remaining responses.';
+      return 'You already allowed this action. The game is resolving now.';
     }
     if (currentPhase === GamePhase.BLOCK_CHALLENGE_WINDOW) {
-      return 'Challenge the block if you think the claimed card is false, or allow it to stand.';
+      return 'Only the acting player can challenge this block.';
     }
     if (currentPhase === GamePhase.BLOCK_WINDOW) {
-      return 'If this action can be blocked, choose a blocking character or allow the action.';
+      return pending?.targetId
+        ? 'Only the targeted player can block here.'
+        : 'Any opponent may block. The first response closes the window.';
     }
-    return 'Challenge if you doubt the claim, or allow to continue.';
-  }, [iAlreadyAccepted, currentPhase]);
+    return pending?.targetId
+      ? 'Only the targeted player can challenge this action.'
+      : 'Any opponent may challenge. The first response closes the window.';
+  }, [iAlreadyAccepted, currentPhase, pending?.targetId]);
 
   const onChallenge = useCallback(() => {
     if (!pending || submitting) return;
@@ -151,16 +138,18 @@ export function useChallengeBlockOverlay(send: (msg: ClientMessage) => boolean) 
     if (sent) startSubmitting();
   }, [send, submitting, startSubmitting]);
 
-  // Extra safety: overlay should NEVER show for the actor during their own action
-  // or for the blocker during block challenge window, or for eliminated players
   const amIAlive = myId != null
     ? (state.gameState?.players.find((p) => p.id === myId)?.isAlive ?? true)
     : true;
+  const isGameOver =
+    state.gameState?.phase === GamePhase.GAME_OVER ||
+    Boolean(state.gameState?.winnerId) ||
+    ((state.gameState?.players.filter((p) => p.isAlive).length ?? 0) <= 1 && (state.gameState?.players.length ?? 0) > 0);
   const isVisible =
+    !isGameOver &&
     amIAlive &&
     (canChallenge || canBlock) &&
-    !(pending?.actorId === myId && currentPhase !== GamePhase.BLOCK_CHALLENGE_WINDOW) &&
-    !(pending?.blockerId === myId && currentPhase === GamePhase.BLOCK_CHALLENGE_WINDOW);
+    canRespondNow;
 
   return {
     isVisible,

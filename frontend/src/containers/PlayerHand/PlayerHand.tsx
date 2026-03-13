@@ -226,7 +226,7 @@ export function PlayerHand({ send, isMobile = false, activeCardEffect = null }: 
                 ? () => onChooseInfluence(getAliveCardChoiceIndex(i))
                 : undefined}
               disabled={card.isRevealed}
-              size={isMobile ? 'sm' : 'lg'}
+              size="sm"
             />
           </motion.div>
         ))}

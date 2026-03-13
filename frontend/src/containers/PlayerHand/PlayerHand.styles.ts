@@ -5,14 +5,14 @@ export function getPlayerHandStyles(mobile: boolean) {
   return {
     wrapper: {
       display: 'flex',
-      gap: mobile ? tokens.spacing.xs : tokens.spacing.md,
+      gap: mobile ? 6 : tokens.spacing.sm,
       alignItems: 'center',
       justifyContent: 'center',
       padding: mobile
-        ? `${tokens.spacing.xs}px ${tokens.spacing.sm}px`
-        : `${tokens.spacing.md}px ${tokens.spacing.lg}px`,
+        ? `4px ${tokens.spacing.xs + 4}px`
+        : `${tokens.spacing.xs + 4}px ${tokens.spacing.md}px`,
       background: `linear-gradient(180deg, transparent 0%, ${tokens.surface.overlay} 100%)`,
-      borderRadius: mobile ? 8 : 16,
+      borderRadius: mobile ? 8 : 14,
       position: 'relative',
       overflow: 'visible',
     } satisfies CSSProperties,
@@ -31,8 +31,8 @@ export function getPlayerHandStyles(mobile: boolean) {
       };
       return {
         position: 'absolute',
-        inset: mobile ? -4 : -6,
-        borderRadius: mobile ? 10 : 18,
+        inset: mobile ? -3 : -5,
+        borderRadius: mobile ? 10 : 16,
         border: `1.5px solid ${color}`,
         boxShadow: `0 0 24px ${color}${roleOpacity[role]}`,
         pointerEvents: 'none',
@@ -48,7 +48,7 @@ export function getPlayerHandStyles(mobile: boolean) {
       const color = role ? roleColors[role] : accent;
       return {
         position: 'absolute',
-        top: mobile ? -18 : -22,
+        top: mobile ? -16 : -18,
         left: '50%',
         transform: 'translateX(-50%)',
         padding: '2px 8px',
@@ -56,7 +56,7 @@ export function getPlayerHandStyles(mobile: boolean) {
         border: `1px solid ${color}`,
         background: 'rgba(7, 12, 24, 0.92)',
         color: color,
-        fontSize: mobile ? 9 : 10,
+        fontSize: mobile ? 8 : 9,
         fontWeight: 800,
         letterSpacing: 0.8,
         textTransform: 'uppercase',

@@ -140,15 +140,44 @@ class GameWSHandler:
     async def _handle_challenge(
         self, game_id: str, player_id: str, payload: dict[str, Any]
     ) -> None:
+        pre_state = await self._gs.get_game(game_id)
+        pending = pre_state.pending_action if pre_state else None
+        challenged_player_id = (
+            pending.blocked_by
+            if pre_state and pre_state.phase == GamePhase.BLOCK_CHALLENGE_WINDOW
+            else pending.player_id if pending else ""
+        )
+        challenged_player = (
+            pre_state.get_player(challenged_player_id)
+            if pre_state and challenged_player_id
+            else None
+        )
         state, challenger_won = await self._gs.process_challenge(game_id, player_id)
 
         challenger = state.get_player(player_id)
+        await self._cm.broadcast_to_game(game_id, {
+            "type": ServerMessageType.CHALLENGE_ISSUED.value,
+            "payload": {
+                "challengerId": player_id,
+                "challengerName": challenger.name if challenger else "",
+                "challengedPlayerId": challenged_player_id,
+                "challengedPlayerName": challenged_player.name if challenged_player else "",
+                "actionType": pending.action_type if pending else "",
+                "blockingCharacter": pending.blocking_character if pending else "",
+                "window": pre_state.phase.value if pre_state else "",
+            },
+        })
         # Broadcast challenge result
         await self._cm.broadcast_to_game(game_id, {
             "type": ServerMessageType.CHALLENGE_RESULT.value,
             "payload": {
                 "challengerId": player_id,
                 "challengerName": challenger.name if challenger else "",
+                "challengedPlayerId": challenged_player_id,
+                "challengedPlayerName": challenged_player.name if challenged_player else "",
+                "actionType": pending.action_type if pending else "",
+                "blockingCharacter": pending.blocking_character if pending else "",
+                "window": pre_state.phase.value if pre_state else "",
                 "challengerWon": challenger_won,
                 "success": challenger_won,
             },
@@ -170,6 +199,8 @@ class GameWSHandler:
             "payload": {
                 "blockerId": player_id,
                 "blockerName": blocker.name if blocker else "",
+                "actionType": state.pending_action.action_type if state.pending_action else "",
+                "actorId": state.pending_action.player_id if state.pending_action else "",
                 "blockingCharacter": blocking_character,
                 "character": blocking_character,
             },

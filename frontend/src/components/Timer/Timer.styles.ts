@@ -6,12 +6,16 @@ export const timerStyles = {
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacing.sm,
+    padding: '8px 12px',
+    borderRadius: 999,
+    background: 'rgba(7, 12, 24, 0.72)',
+    border: '1px solid rgba(255,255,255,0.08)',
   } satisfies CSSProperties,
 
   bar: {
-    width: 120,
-    height: 5,
-    borderRadius: 3,
+    width: 148,
+    height: 7,
+    borderRadius: 999,
     background: tokens.surface.card,
     overflow: 'hidden',
     border: `1px solid ${tokens.surface.border}`,
@@ -32,9 +36,9 @@ export const timerStyles = {
 
   text: {
     fontSize: 12,
-    fontWeight: 700,
-    color: tokens.text.secondary,
-    minWidth: 28,
+    fontWeight: 800,
+    color: tokens.text.primary,
+    minWidth: 32,
     fontVariantNumeric: 'tabular-nums',
   } satisfies CSSProperties,
 };

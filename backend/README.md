@@ -142,14 +142,20 @@ Connect to `ws://localhost:8000/ws/game/{game_id}?token={session_token}&player_i
 { "type": "EXCHANGE_RETURN", "payload": { "keepIndices": [0, 1] } }
 ```
 
+Response windows resolve as follows:
+- Targeted action challenges are one-on-one: only the target may challenge `steal` and `assassinate`.
+- Targeted blocks remain one-on-one: only the target may block, and only the acting player may challenge that block.
+- Untargeted challenge/block windows close on the first valid challenge, block, or allow instead of waiting for every non-actor to pass.
+
 #### Server Messages
 
 | Type | Description |
 |---|---|
 | `GAME_STATE` | Full game state (personalized per player) |
+| `CHALLENGE_ISSUED` | Challenge declared with challenger and challenged player context |
 | `ACTION_DECLARED` | Action announced (actor, action, target) |
 | `CHALLENGE_RESULT` | Challenge outcome (challenger won/lost) |
-| `BLOCK_DECLARED` | Block announced (blocker, character) |
+| `BLOCK_DECLARED` | Block announced (blocker, character, action context) |
 | `INFLUENCE_LOST` | Player lost influence (player, character) |
 | `PLAYER_ELIMINATED` | Player eliminated from game |
 | `TURN_CHANGED` | New turn started (player, turn number) |
