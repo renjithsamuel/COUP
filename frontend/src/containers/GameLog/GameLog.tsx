@@ -1,29 +1,37 @@
 'use client';
 
 import React, { useRef, useEffect, useMemo, useState } from 'react';
+import { ActionGlyph } from '@/components/ActionGlyph';
 import { useGameContext } from '@/context/GameContext';
+import { ACTION_PRESENTATIONS, ACTION_RULES } from '@/models/action';
 import { gameLogStyles } from './GameLog.styles';
 
 export interface GameLogProps {
   variant?: 'panel' | 'modal';
 }
 
-function getEntryLabel(type: string) {
+function getEntryVisual(type: string, actionType?: keyof typeof ACTION_PRESENTATIONS) {
+  if (actionType && ACTION_PRESENTATIONS[actionType]) {
+    return {
+      accent: ACTION_PRESENTATIONS[actionType].accent,
+      tint: ACTION_PRESENTATIONS[actionType].tint,
+      icon: ACTION_PRESENTATIONS[actionType].icon,
+    };
+  }
+
   switch (type) {
-    case 'action':
-      return 'Action';
     case 'challenge':
-      return 'Challenge';
+      return { accent: '#F3C969', tint: 'rgba(243, 201, 105, 0.14)', icon: 'challenge' as const };
     case 'block':
-      return 'Block';
+      return { accent: '#B693FF', tint: 'rgba(182, 147, 255, 0.14)', icon: 'block' as const };
     case 'reveal':
-      return 'Reveal';
+      return { accent: '#F08A94', tint: 'rgba(240, 138, 148, 0.14)', icon: 'reveal' as const };
     case 'elimination':
-      return 'Eliminated';
+      return { accent: '#F06B7D', tint: 'rgba(240, 107, 125, 0.14)', icon: 'elimination' as const };
     case 'turn':
-      return 'Turn';
+      return { accent: '#75D6A9', tint: 'rgba(117, 214, 169, 0.14)', icon: 'turn' as const };
     default:
-      return 'Update';
+      return { accent: '#F6C445', tint: 'rgba(246, 196, 69, 0.12)', icon: 'system' as const };
   }
 }
 
@@ -53,27 +61,31 @@ export function GameLog({ variant = 'modal' }: GameLogProps) {
         {entries.length === 0 && (
           <div style={gameLogStyles.emptyState(variant)}>No events yet...</div>
         )}
-        {entries.map((entry) => (
-          entry.type === 'turn' ? (
-            <div key={entry.id} style={gameLogStyles.turnMarker}>
-              <span style={gameLogStyles.turnLine} />
-              <span style={gameLogStyles.turnBadge}>{entry.message}</span>
-              <span style={gameLogStyles.turnLine} />
-            </div>
-          ) : (
+        {entries.map((entry, index) => {
+          const visual = getEntryVisual(entry.type, entry.actionType);
+          const sequence = String(entries.length - index).padStart(2, '0');
+          const actionLabel = entry.actionType ? ACTION_RULES[entry.actionType].label : null;
+
+          return (
             <article key={entry.id} style={gameLogStyles.entryRow}>
               <div style={gameLogStyles.metaColumn}>
-                <span style={gameLogStyles.typeLabel(entry.type)}>{getEntryLabel(entry.type)}</span>
+                <span style={gameLogStyles.sequence}>{sequence}</span>
                 <span style={gameLogStyles.timestamp}>
                   {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
-              <div style={gameLogStyles.messageColumn(entry.type, variant)}>
-                <div style={gameLogStyles.message}>{entry.message}</div>
+              <div style={gameLogStyles.messageColumn(visual, variant)}>
+                <span style={gameLogStyles.iconShell(visual)}>
+                  <ActionGlyph name={visual.icon} size={15} />
+                </span>
+                <div style={gameLogStyles.messageStack}>
+                  {actionLabel && <span style={gameLogStyles.actionPill(visual)}>{actionLabel}</span>}
+                  <div style={gameLogStyles.message}>{entry.message}</div>
+                </div>
               </div>
             </article>
-          )
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -94,7 +94,7 @@ export function getActionPanelStyles(mobile: boolean) {
 
     wrapper: {
       display: 'grid',
-      gridTemplateColumns: mobile ? '1fr 1fr' : 'repeat(7, minmax(0, 1fr))',
+      gridTemplateColumns: mobile ? '1fr 1fr' : 'repeat(7, minmax(122px, 1fr))',
       gap: mobile ? 6 : 8,
       justifyContent: 'stretch',
       padding: mobile ? '6px' : '8px',
@@ -102,6 +102,8 @@ export function getActionPanelStyles(mobile: boolean) {
       borderRadius: mobile ? 14 : 16,
       border: '1px solid rgba(255,255,255,0.08)',
       boxShadow: '0 12px 24px rgba(0,0,0,0.18)',
+      maxWidth: mobile ? '100%' : 980,
+      margin: '0 auto',
     } satisfies CSSProperties,
   };
 }

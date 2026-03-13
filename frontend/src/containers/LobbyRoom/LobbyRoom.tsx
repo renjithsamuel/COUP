@@ -35,47 +35,40 @@ export function LobbyRoom({ lobby, myPlayerId, isHost, onStart, onLeave }: Lobby
       animate="visible"
     >
       <div style={s.content}>
-      <div style={s.title}>{lobby.name || `Lobby ${lobby.id}`}</div>
+      <div style={s.hero}>
+        <div style={s.heroCard}>
+          <div style={s.eyebrow}>Lobby room</div>
+          <div style={s.title}>{lobby.name || `Lobby ${lobby.id}`}</div>
+          <div style={s.subtitle}>Gather the table, share the code, and start when the room is ready.</div>
+          <div style={s.roomCodeRow}>
+            <div style={s.roomCodeLabel}>Room Code</div>
+            <div style={s.roomCodeValue}>{lobby.id}</div>
+            <button
+              onClick={handleCopyCode}
+              style={{
+                ...s.copyButton,
+                color: copied ? '#81C784' : tokens.text.secondary,
+              }}
+            >
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+          </div>
+        </div>
 
-      {/* Room code */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: tokens.spacing.sm,
-      }}>
-        <div style={{
-          fontSize: 11,
-          color: tokens.text.muted,
-          textTransform: 'uppercase',
-          letterSpacing: 1.5,
-        }}>Room Code</div>
-        <div style={{
-          fontSize: 20,
-          fontWeight: 900,
-          color: tokens.text.accent,
-          letterSpacing: 3,
-          fontFamily: 'monospace',
-        }}>{lobby.id}</div>
-        <button
-          onClick={handleCopyCode}
-          style={{
-            background: 'transparent',
-            border: `1px solid ${tokens.surface.border}`,
-            borderRadius: 6,
-            color: copied ? '#81C784' : tokens.text.secondary,
-            fontSize: 11,
-            padding: '3px 10px',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          {copied ? 'Copied!' : 'Copy'}
-        </button>
-      </div>
-
-      <div style={{ textAlign: 'center', color: '#8B95A8', fontSize: 12, letterSpacing: 0.5 }}>
-        {lobby.players.length} / {lobby.maxPlayers} players
+        <div style={s.statsRow}>
+          <div style={s.statCard}>
+            <div style={s.statLabel}>Players</div>
+            <div style={s.statValue}>{lobby.players.length} / {lobby.maxPlayers}</div>
+          </div>
+          <div style={s.statCard}>
+            <div style={s.statLabel}>Status</div>
+            <div style={s.statValue}>{lobby.status === 'waiting' ? 'Waiting' : 'Starting'}</div>
+          </div>
+          <div style={s.statCard}>
+            <div style={s.statLabel}>Host Control</div>
+            <div style={s.statValue}>{isHost ? 'Ready' : 'Stand by'}</div>
+          </div>
+        </div>
       </div>
 
       <div style={s.playerList}>
@@ -88,47 +81,50 @@ export function LobbyRoom({ lobby, myPlayerId, isHost, onStart, onLeave }: Lobby
             animate="visible"
             custom={i}
           >
-            <span>
-              {player.name}
-              {player.id === myPlayerId && ' (you)'}
-            </span>
+            <div style={s.playerMeta}>
+              <span style={s.playerName}>{player.name}</span>
+              <span style={s.playerCaption}>{player.id === myPlayerId ? 'You' : 'Player seat'}</span>
+            </div>
             {player.isHost && <span style={s.hostBadge}>Host</span>}
           </motion.div>
         ))}
       </div>
 
-      {canStart ? (
-        <button style={s.startButton} onClick={onStart}>
-          Start Game
-        </button>
-      ) : (
-        <div style={s.waitingText}>
-          {lobby.status !== 'waiting'
-            ? 'Game starting...'
-            : isHost
-              ? `Need at least ${GAME_CONSTANTS.MIN_PLAYERS} players to start`
-              : 'Waiting for host to start...'}
-        </div>
-      )}
+      <div style={s.footer}>
+        {canStart ? (
+          <button style={s.startButton} onClick={onStart}>
+            Start Game
+          </button>
+        ) : (
+          <div style={s.waitingText}>
+            {lobby.status !== 'waiting'
+              ? 'Game starting...'
+              : isHost
+                ? `Need at least ${GAME_CONSTANTS.MIN_PLAYERS} players to start`
+                : 'Waiting for host to start...'}
+          </div>
+        )}
 
-      {onLeave && (
-        <button
-          onClick={onLeave}
-          style={{
-            padding: `${tokens.spacing.sm}px`,
-            borderRadius: 10,
-            border: '1px solid rgba(239,83,80,0.3)',
-            background: 'rgba(239,83,80,0.08)',
-            color: '#ef5350',
-            fontWeight: 600,
-            fontSize: 12,
-            cursor: 'pointer',
-            letterSpacing: 0.5,
-          }}
-        >
-          Leave Room
-        </button>
-      )}
+        {onLeave && (
+          <button
+            onClick={onLeave}
+            style={{
+              padding: `${tokens.spacing.sm}px ${tokens.spacing.md}px`,
+              borderRadius: 12,
+              border: '1px solid rgba(239,83,80,0.3)',
+              background: 'rgba(239,83,80,0.08)',
+              color: '#ef5350',
+              fontWeight: 700,
+              fontSize: 12,
+              cursor: 'pointer',
+              letterSpacing: 0.6,
+              textTransform: 'uppercase',
+            }}
+          >
+            Leave Room
+          </button>
+        )}
+      </div>
       </div>
     </motion.div>
   );

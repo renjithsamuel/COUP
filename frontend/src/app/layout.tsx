@@ -1,12 +1,18 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { ColorSchemeScript } from '@mantine/core';
 import '@mantine/core/styles.css';
 import './globals.css';
 import { AppProviders } from './providers';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Coup – Online Multiplayer',
   description: 'Bluff, deceive, and outmanoeuvre in this classic card game.',
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

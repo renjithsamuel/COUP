@@ -72,7 +72,7 @@ export function GuideModal({ isOpen, onClose }: GuideModalProps) {
             <div style={s.section}>
               <div style={s.sectionTitle}>Character Actions</div>
               <p style={{ ...s.text, marginBottom: 8 }}>
-                You can claim any character action — even if you don&apos;t have that card (bluffing).
+                You can bluff any character action — even if you don&apos;t have that card.
                 Other players may challenge you.
               </p>
               {CHARACTERS.map((char) => (
@@ -92,7 +92,7 @@ export function GuideModal({ isOpen, onClose }: GuideModalProps) {
                 <span style={{ color: '#FFD54F', fontWeight: 700 }}>Challenge</span> — If you think someone is bluffing, challenge them.
                 If the challenger is right, the bluffer loses influence.
                 If wrong, the challenger loses influence and the action proceeds.<br /><br />
-                <span style={{ color: '#CE93D8', fontWeight: 700 }}>Block</span> — Claim a blocking character to prevent an action.
+                <span style={{ color: '#CE93D8', fontWeight: 700 }}>Block</span> — Bluff a blocking character to prevent an action.
                 Blocks can be challenged too!
               </p>
             </div>

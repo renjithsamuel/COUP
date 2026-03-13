@@ -57,6 +57,9 @@ export const lobbyService = {
   leave: (lobbyId: string, playerId: string) =>
     api.post<void>(`/api/lobbies/${lobbyId}/leave?player_id=${encodeURIComponent(playerId)}`),
 
+  reset: (lobbyId: string) =>
+    api.post<any>(`/api/lobbies/${lobbyId}/reset`).then(toLobby),
+
   start: (lobbyId: string, config?: GameConfig) =>
     api.post<{ game_id: string }>(`/api/lobbies/${lobbyId}/start`, config ? {
       turn_timer_seconds: config.turnTimerSeconds,

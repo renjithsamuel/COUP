@@ -38,7 +38,7 @@ export default function LobbyDetailPage() {
   // Redirect to game when lobby starts (for non-host players)
   useEffect(() => {
     if (lobby && lobby.gameId && state.myPlayerId) {
-      router.push(`/game/${lobby.gameId}?playerId=${state.myPlayerId}`);
+      router.push(`/game/${lobby.gameId}?playerId=${state.myPlayerId}&lobbyId=${lobbyId}`);
     }
   }, [lobby, state.myPlayerId, router]);
 
@@ -76,7 +76,7 @@ export default function LobbyDetailPage() {
     setShowConfig(false);
     if (!state.myPlayerId) return;
     const res = await startGame.mutateAsync({ lobbyId, config });
-    router.push(`/game/${res.game_id}?playerId=${state.myPlayerId}`);
+    router.push(`/game/${res.game_id}?playerId=${state.myPlayerId}&lobbyId=${lobbyId}`);
   };
 
   if (isLoading || !lobby) {

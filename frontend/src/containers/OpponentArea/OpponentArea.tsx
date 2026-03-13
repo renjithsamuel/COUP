@@ -149,8 +149,9 @@ export function OpponentArea({
             ))}
           </div>
           <div style={s.statsRow}>
-            <span style={s.coinLabel}>
-              <span style={{ color: '#FFC107' }}>●</span> {opp.coins}
+            <span style={s.coinBadge}>
+              <span style={s.coinDot} />
+              <span style={s.coinLabel}>{opp.coins}</span>
             </span>
             <span style={s.influenceLabel}>
               {opp.influenceCount} card{opp.influenceCount !== 1 ? 's' : ''}

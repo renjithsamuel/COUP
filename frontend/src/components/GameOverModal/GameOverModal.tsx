@@ -9,9 +9,26 @@ export interface GameOverModalProps {
   isOpen: boolean;
   winnerName: string;
   onPlayAgain: () => void;
+  onExit: () => void;
 }
 
-export function GameOverModal({ isOpen, winnerName, onPlayAgain }: GameOverModalProps) {
+function CrownMark() {
+  return (
+    <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
+      <defs>
+        <linearGradient id="crownGlow" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#FFE082" />
+          <stop offset="100%" stopColor="#F6C445" />
+        </linearGradient>
+      </defs>
+      <circle cx="32" cy="32" r="30" fill="rgba(246,196,69,0.08)" stroke="rgba(246,196,69,0.2)" />
+      <path d="M16 42h32l-3-18-8 8-5-12-5 12-8-8Z" fill="url(#crownGlow)" stroke="#FFF1B8" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M20 46h24" stroke="#F6C445" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function GameOverModal({ isOpen, winnerName, onPlayAgain, onExit }: GameOverModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,11 +48,22 @@ export function GameOverModal({ isOpen, winnerName, onPlayAgain }: GameOverModal
           exit={{ opacity: 0 }}
         >
           <div ref={modalRef} style={gameOverModalStyles.modal}>
-            <div style={gameOverModalStyles.title}>Game Over</div>
-            <div style={gameOverModalStyles.winnerName}>{winnerName} wins the match.</div>
-            <button style={gameOverModalStyles.button} onClick={onPlayAgain}>
-              Play Again
-            </button>
+            <div style={gameOverModalStyles.aura} />
+            <div style={gameOverModalStyles.badge}>Final table</div>
+            <div style={gameOverModalStyles.markWrap}>
+              <CrownMark />
+            </div>
+            <div style={gameOverModalStyles.title}>Victory</div>
+            <div style={gameOverModalStyles.winnerName}>{winnerName}</div>
+            <div style={gameOverModalStyles.subtitle}>owns the table. Return to the room for another round or leave now.</div>
+            <div style={gameOverModalStyles.buttonRow}>
+              <button style={gameOverModalStyles.secondaryButton} onClick={onExit}>
+                Exit
+              </button>
+              <button style={gameOverModalStyles.primaryButton} onClick={onPlayAgain}>
+                Play Again
+              </button>
+            </div>
           </div>
         </motion.div>
       )}

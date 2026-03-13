@@ -3,7 +3,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { scalePopVariants } from '@/animations';
-import { ActionType, ACTION_RULES } from '@/models/action';
+import { ActionGlyph } from '@/components/ActionGlyph';
+import { ActionType, ACTION_RULES, ACTION_PRESENTATIONS } from '@/models/action';
 import { actionButtonStyles } from './ActionButton.styles';
 
 export interface ActionButtonProps {
@@ -30,6 +31,7 @@ export function ActionButton({
   helperText,
 }: ActionButtonProps) {
   const rule = ACTION_RULES[actionType];
+  const presentation = ACTION_PRESENTATIONS[actionType];
   const cantAfford = !canAfford || (playerCoins != null && rule.cost > 0 && playerCoins < rule.cost);
   const isDisabled = disabled || cantAfford;
   const hint = helperText ?? rule.description;
@@ -50,23 +52,22 @@ export function ActionButton({
       aria-label={`${rule.label}${rule.cost > 0 ? ` (${rule.cost} coins)` : ''}${isBluff ? ' (bluff)' : ''}`}
     >
       <div style={actionButtonStyles.header}>
-        <span style={actionButtonStyles.title}>{rule.label}</span>
+        <div style={actionButtonStyles.identityRow}>
+          <span style={actionButtonStyles.iconShell(isDisabled, selected, presentation)}>
+            <ActionGlyph name={presentation.icon} size={compact ? 14 : 16} />
+          </span>
+          <span style={actionButtonStyles.title(isDisabled, presentation)}>{rule.label}</span>
+        </div>
         <div style={actionButtonStyles.metaRow}>
           {rule.cost > 0 && (
-            <span style={actionButtonStyles.costBadge(compact)}>
+            <span style={actionButtonStyles.costBadge(compact, presentation)}>
               {rule.cost}c
             </span>
           )}
-          {rule.requiresTarget && (
-            <span style={actionButtonStyles.targetBadge(compact, selected)}>
-              target
-            </span>
-          )}
-          {isBluff && (
-            <span style={actionButtonStyles.bluffBadge(compact)}>BLUFF</span>
-          )}
         </div>
       </div>
+      {isBluff && <span style={actionButtonStyles.bluffHint}>bluff</span>}
+      {rule.requiresTarget && <span style={actionButtonStyles.targetHint}>target</span>}
     </motion.button>
   );
 }

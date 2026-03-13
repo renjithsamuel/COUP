@@ -65,7 +65,7 @@ export function ActionPanel({
         tone: 'info' as const,
         eyebrow: 'Stand by',
         title: 'Not your turn',
-        chip: 'Disabled',
+        chip: null,
       };
     }
     return null;

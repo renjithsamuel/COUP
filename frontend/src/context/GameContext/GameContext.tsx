@@ -6,6 +6,7 @@ import {
   GameStatus,
 } from '@/models/game';
 import { Card } from '@/models/card';
+import { ActionType } from '@/models/action';
 
 // ─── State ───────────────────────────────────────────────────────────
 export interface GameContextState {
@@ -21,6 +22,7 @@ export interface GameLogEntry {
   message: string;
   timestamp: number;
   type: 'action' | 'challenge' | 'block' | 'reveal' | 'elimination' | 'system' | 'turn';
+  actionType?: ActionType;
 }
 
 const initialState: GameContextState = {

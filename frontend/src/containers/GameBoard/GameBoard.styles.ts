@@ -19,7 +19,7 @@ function s(mobile: boolean) {
       justifyContent: 'space-between',
       alignItems: 'center',
       padding: mobile
-        ? `${tokens.spacing.sm}px ${tokens.spacing.sm}px 0`
+        ? `calc(env(safe-area-inset-top, 0px) + ${tokens.spacing.sm}px) ${tokens.spacing.sm}px 0`
         : `${tokens.spacing.md}px ${tokens.spacing.xl}px ${tokens.spacing.sm}px`,
       background: 'transparent',
       zIndex: 20,
@@ -50,7 +50,7 @@ function s(mobile: boolean) {
       display: 'inline-flex',
       alignItems: 'center',
       gap: mobile ? 8 : 10,
-      padding: mobile ? '8px 12px' : '10px 16px',
+      padding: mobile ? '7px 11px' : '8px 12px',
       borderRadius: 999,
       border: status === 'connected'
         ? '1px solid rgba(74, 222, 128, 0.24)'
@@ -76,11 +76,69 @@ function s(mobile: boolean) {
     }),
 
     connectionText: {
-      fontSize: mobile ? 11 : 13,
+      fontSize: mobile ? 11 : 12,
       fontWeight: 700,
       color: tokens.text.primary,
       letterSpacing: 0.4,
       whiteSpace: 'nowrap',
+    } satisfies CSSProperties,
+
+    topStatusGroup: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      minWidth: 0,
+      flex: 1,
+    } satisfies CSSProperties,
+
+    navStatusPill: (tone: 'danger' | 'warn' | 'info' | 'ok'): CSSProperties => ({
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      minWidth: 0,
+      padding: '7px 12px',
+      borderRadius: 999,
+      border: tone === 'warn'
+        ? '1px solid rgba(246,196,69,0.26)'
+        : tone === 'danger'
+          ? '1px solid rgba(251,113,133,0.22)'
+          : tone === 'ok'
+            ? '1px solid rgba(52,211,153,0.2)'
+            : '1px solid rgba(96,165,250,0.22)',
+      background: 'rgba(8, 14, 28, 0.72)',
+      boxShadow: '0 14px 28px rgba(0,0,0,0.18)',
+      maxWidth: 430,
+    }),
+
+    navStatusCopy: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 1,
+      minWidth: 0,
+    } satisfies CSSProperties,
+
+    navStatusEyebrow: {
+      fontSize: 8,
+      fontWeight: 800,
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+      color: tokens.text.accent,
+    } satisfies CSSProperties,
+
+    navStatusTitle: {
+      fontSize: 12,
+      fontWeight: 800,
+      color: tokens.text.primary,
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+    } satisfies CSSProperties,
+
+    topTimerWrap: {
+      transform: 'scale(0.88)',
+      transformOrigin: 'left center',
+      marginLeft: -8,
+      flexShrink: 0,
     } satisfies CSSProperties,
 
     center: {
@@ -129,13 +187,13 @@ function s(mobile: boolean) {
         gridTemplateColumns: mobile ? '1fr' : 'minmax(0, 1fr) auto',
         alignItems: 'center',
         gap: mobile ? 8 : tokens.spacing.md,
-        padding: mobile ? `8px 10px` : `6px 12px`,
+        padding: mobile ? `7px 10px` : `6px 12px`,
         borderRadius: mobile ? 18 : 20,
         border: `1px solid ${palette.border}`,
         background: 'linear-gradient(180deg, rgba(14, 22, 40, 0.96) 0%, rgba(9, 14, 28, 0.98) 100%)',
         boxShadow: `0 14px 28px rgba(0,0,0,0.22), 0 0 20px ${palette.glow}`,
         backdropFilter: 'blur(14px)',
-        minHeight: mobile ? 50 : 42,
+        minHeight: mobile ? 46 : 42,
       };
     },
 
@@ -155,7 +213,7 @@ function s(mobile: boolean) {
     } satisfies CSSProperties,
 
     commandTitle: {
-      fontSize: mobile ? 13 : 14,
+      fontSize: mobile ? 12 : 14,
       fontWeight: 800,
       color: tokens.text.primary,
       lineHeight: 1.2,
@@ -176,7 +234,7 @@ function s(mobile: boolean) {
       flexDirection: 'column',
       alignItems: mobile ? 'flex-start' : 'flex-end',
       justifyContent: 'center',
-      gap: 4,
+      gap: 2,
       minWidth: mobile ? 0 : 132,
     } satisfies CSSProperties,
 
@@ -188,7 +246,7 @@ function s(mobile: boolean) {
     } satisfies CSSProperties,
 
     commandMeta: (tone: 'danger' | 'warn' | 'info' | 'ok'): CSSProperties => ({
-      padding: mobile ? '3px 7px' : '4px 8px',
+      padding: mobile ? '2px 7px' : '4px 8px',
       borderRadius: 999,
       border: tone === 'warn'
         ? '1px solid rgba(246,196,69,0.28)'
@@ -205,7 +263,7 @@ function s(mobile: boolean) {
           : tone === 'ok'
             ? '#6EE7B7'
             : '#9CC8FF',
-      fontSize: mobile ? 8 : 9,
+      fontSize: mobile ? 7 : 9,
       fontWeight: 800,
       letterSpacing: 0.6,
       textTransform: 'uppercase',
@@ -419,12 +477,17 @@ function s(mobile: boolean) {
 
     playerCoinsLarge: {
       fontSize: mobile ? 13 : 15,
-      fontWeight: 800,
+      fontWeight: 900,
       color: tokens.coin.color,
       display: 'flex',
       alignItems: 'center',
-      gap: 4,
+      gap: 6,
       flexShrink: 0,
+      padding: mobile ? '4px 10px' : '5px 12px',
+      borderRadius: 999,
+      background: 'rgba(255, 193, 7, 0.12)',
+      border: '1px solid rgba(255, 193, 7, 0.22)',
+      boxShadow: '0 0 18px rgba(255, 193, 7, 0.08)',
     } satisfies CSSProperties,
 
     utilBtn: {

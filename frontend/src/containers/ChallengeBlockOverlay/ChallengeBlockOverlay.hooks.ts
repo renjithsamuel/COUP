@@ -94,7 +94,7 @@ export function useChallengeBlockOverlay(send: (msg: ClientMessage) => boolean) 
     }
     return waitingNames.length === 1
       ? `Waiting for ${waitingNames[0]}.`
-      : 'First response resolves this window.';
+      : `Waiting for ${waitingNames.join(', ')}.`;
   }, [pending, state.gameState, currentPhase]);
 
   const responseHint = useMemo(() => {
@@ -107,11 +107,11 @@ export function useChallengeBlockOverlay(send: (msg: ClientMessage) => boolean) 
     if (currentPhase === GamePhase.BLOCK_WINDOW) {
       return pending?.targetId
         ? 'Only the targeted player can block here.'
-        : 'Any opponent may block. The first response closes the window.';
+        : 'Any opponent may block. The table window closes after everyone else allows it.';
     }
     return pending?.targetId
       ? 'Only the targeted player can challenge this action.'
-      : 'Any opponent may challenge. The first response closes the window.';
+      : 'Any opponent may challenge. The table window closes after everyone else allows it.';
   }, [iAlreadyAccepted, currentPhase, pending?.targetId]);
 
   const onChallenge = useCallback(() => {

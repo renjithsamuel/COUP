@@ -95,13 +95,32 @@ export function getOpponentAreaStyles(mobile: boolean, count: number) {
       justifyContent: 'space-between',
     } satisfies CSSProperties,
 
+    coinBadge: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 5,
+      padding: mobile ? '3px 8px' : '4px 10px',
+      borderRadius: 999,
+      background: 'rgba(255, 193, 7, 0.12)',
+      border: '1px solid rgba(255, 193, 7, 0.2)',
+      boxShadow: '0 0 18px rgba(255, 193, 7, 0.08)',
+    } satisfies CSSProperties,
+
+    coinDot: {
+      width: 7,
+      height: 7,
+      borderRadius: '50%',
+      background: '#FFC107',
+      boxShadow: '0 0 10px rgba(255, 193, 7, 0.6)',
+      flexShrink: 0,
+    } satisfies CSSProperties,
+
     coinLabel: {
       fontSize: mobile ? 12 : 13,
-      fontWeight: 700,
+      fontWeight: 800,
       color: tokens.coin.color,
       display: 'flex',
       alignItems: 'center',
-      gap: 3,
       fontVariantNumeric: 'tabular-nums',
     } satisfies CSSProperties,
 

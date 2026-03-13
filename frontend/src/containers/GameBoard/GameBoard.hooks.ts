@@ -5,7 +5,7 @@ import { useAnimationQueue } from '@/hooks/useAnimationQueue';
 import { useCountdown } from '@/hooks/useCountdown';
 import { ServerMessage, ServerMessageType, ClientMessageType } from '@/models/websocket-message';
 import { GamePhase } from '@/models/game';
-import { ACTION_RULES, ActionType } from '@/models/action';
+import { ACTION_PRESENTATIONS, ACTION_RULES, ActionType } from '@/models/action';
 import { GAME_CONSTANTS } from '@/utils/constants';
 import { getEligibleResponderIds, isPlayerEligibleForCurrentResponse } from '@/utils/responseWindows';
 
@@ -39,29 +39,43 @@ function wait(ms: number) {
 }
 
 function getActionPresentation(actionType: string) {
-  switch (actionType) {
-    case ActionType.INCOME:
-      return { accent: '#F6C445', effect: 'coins' as const, symbol: '+1', title: ACTION_RULES[ActionType.INCOME].label };
-    case ActionType.FOREIGN_AID:
-      return { accent: '#7DD3FC', effect: 'coins' as const, symbol: '+2', title: ACTION_RULES[ActionType.FOREIGN_AID].label };
-    case ActionType.TAX:
-      return { accent: '#F59E0B', effect: 'coins' as const, symbol: '+3', title: ACTION_RULES[ActionType.TAX].label };
-    case ActionType.STEAL:
-      return { accent: '#38BDF8', effect: 'coins' as const, symbol: '2C', title: ACTION_RULES[ActionType.STEAL].label };
-    case ActionType.EXCHANGE:
-      return { accent: '#34D399', effect: 'swap' as const, symbol: 'SWAP', title: ACTION_RULES[ActionType.EXCHANGE].label };
-    case ActionType.ASSASSINATE:
-      return { accent: '#F97316', effect: 'slash' as const, symbol: 'HIT', title: ACTION_RULES[ActionType.ASSASSINATE].label };
-    case ActionType.COUP:
-      return { accent: '#EF4444', effect: 'impact' as const, symbol: 'KO', title: ACTION_RULES[ActionType.COUP].label };
-    default:
-      return {
-        accent: '#90A4AE',
-        effect: 'challenge' as const,
-        symbol: actionType.replace(/_/g, ' ').slice(0, 6).toUpperCase(),
-        title: actionType.replace(/_/g, ' '),
-      };
+  const rule = ACTION_RULES[actionType as ActionType];
+  const presentation = ACTION_PRESENTATIONS[actionType as ActionType];
+  if (!rule || !presentation) {
+    return {
+      accent: '#90A4AE',
+      effect: 'challenge' as const,
+      symbol: actionType.replace(/_/g, ' ').slice(0, 6).toUpperCase(),
+      title: actionType.replace(/_/g, ' '),
+    };
   }
+
+  return {
+    accent: presentation.accent,
+    effect: actionType === ActionType.EXCHANGE
+      ? 'swap' as const
+      : actionType === ActionType.ASSASSINATE
+        ? 'slash' as const
+        : actionType === ActionType.COUP
+          ? 'impact' as const
+          : 'coins' as const,
+    symbol: actionType === ActionType.INCOME
+      ? '+1'
+      : actionType === ActionType.FOREIGN_AID
+        ? '+2'
+        : actionType === ActionType.TAX
+          ? '+3'
+          : actionType === ActionType.STEAL
+            ? '2C'
+            : actionType === ActionType.EXCHANGE
+              ? 'SWAP'
+              : actionType === ActionType.ASSASSINATE
+                ? 'HIT'
+                : actionType === ActionType.COUP
+                  ? 'KO'
+                  : rule.label.slice(0, 4).toUpperCase(),
+    title: rule.label,
+  };
 }
 
 function formatActionLog(actionType: string, actorName: string, targetName: string) {
@@ -70,11 +84,24 @@ function formatActionLog(actionType: string, actorName: string, targetName: stri
     return targetName ? `${actorName} acted on ${targetName}.` : `${actorName} took an action.`;
   }
 
-  const claim = rule.characterRequired ? `, claiming ${rule.characterRequired}` : '';
-  if (targetName) {
-    return `${actorName} declared ${rule.label}${claim} targeting ${targetName}.`;
+  switch (actionType) {
+    case ActionType.INCOME:
+      return `${actorName} took Income.`;
+    case ActionType.FOREIGN_AID:
+      return `${actorName} went for Foreign Aid.`;
+    case ActionType.COUP:
+      return `${actorName} launched Coup on ${targetName}.`;
+    case ActionType.TAX:
+      return `${actorName} bluffed Duke for Tax.`;
+    case ActionType.ASSASSINATE:
+      return `${actorName} lined up Assassinate on ${targetName}.`;
+    case ActionType.STEAL:
+      return `${actorName} tried to Steal from ${targetName}.`;
+    case ActionType.EXCHANGE:
+      return `${actorName} bluffed Ambassador for Exchange.`;
+    default:
+      return targetName ? `${actorName} used ${rule.label} on ${targetName}.` : `${actorName} used ${rule.label}.`;
   }
-  return `${actorName} declared ${rule.label}${claim}.`;
 }
 
 function getTimerExpiredConsequence(phase: GamePhase): ResponseStatus | null {
@@ -196,6 +223,7 @@ export function useGameBoard(gameId: string, playerId: string) {
               payload: {
                 message: formatActionLog(actionType, actorName, targetName),
                 type: 'action',
+                actionType: actionType as ActionType,
               },
             });
           }
@@ -216,6 +244,7 @@ export function useGameBoard(gameId: string, playerId: string) {
                   ? `${name} challenged ${challenged}'s ${blockingCharacter} block.`
                   : `${name} challenged ${challenged}'s ${actionLabel}.`,
                 type: 'challenge',
+                actionType: actionType as ActionType,
               },
             });
           }
@@ -237,14 +266,14 @@ export function useGameBoard(gameId: string, playerId: string) {
             queueEvent({
               accent: won ? '#EF4444' : '#10B981',
               effect: 'challenge',
-              message: won ? 'The claim collapses' : 'The claim stands',
+              message: won ? 'The bluff collapses' : 'The bluff stands',
               symbol: won ? 'WIN' : 'SAFE',
               title: text,
               type: 'challenge',
             });
             dispatch({
               type: 'ADD_LOG',
-              payload: { message: text, type: 'challenge' },
+              payload: { message: text, type: 'challenge', actionType: actionType as ActionType },
             });
           }
           if (msg.gameState) dispatch({ type: 'SET_GAME_STATE', payload: msg.gameState });
@@ -269,7 +298,7 @@ export function useGameBoard(gameId: string, playerId: string) {
             });
             dispatch({
               type: 'ADD_LOG',
-              payload: { message: text, type: 'block' },
+              payload: { message: text, type: 'block', actionType: actionType as ActionType },
             });
           }
           if (msg.gameState) dispatch({ type: 'SET_GAME_STATE', payload: msg.gameState });
@@ -572,7 +601,7 @@ export function useGameBoard(gameId: string, playerId: string) {
         return {
           tone: 'warn',
           title: 'Challenge Or Allow The Block',
-          detail: `${blocker?.name ?? 'A player'} claims ${pending.blockerCharacter ?? 'a blocking card'} to stop ${actor?.name ?? 'the action'}.`,
+          detail: `${blocker?.name ?? 'A player'} says they have ${pending.blockerCharacter ?? 'a blocking card'} to stop ${actor?.name ?? 'the action'}.`,
         };
       }
       if (gameState.phase === GamePhase.BLOCK_WINDOW) {
@@ -603,7 +632,7 @@ export function useGameBoard(gameId: string, playerId: string) {
         title: 'Waiting For Responses',
         detail: waitingNames.length === 1
           ? `Waiting on ${waitingNames[0]}.`
-          : `${actor?.name ?? 'A player'} declared ${actionLabel}. First response resolves this window.`,
+          : `${actor?.name ?? 'A player'} declared ${actionLabel}. Waiting on ${waitingNames.join(', ')}.`,
       };
     }
 
