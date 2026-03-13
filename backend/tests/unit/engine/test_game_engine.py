@@ -61,13 +61,27 @@ class TestStartGame:
         assert state.status == GameStatus.IN_PROGRESS
         assert state.phase == GamePhase.TURN_START
         assert state.turn_number == 1
-        assert state.current_turn_player_id == state.players[0].id
+        assert state.current_turn_player_id in {player.id for player in state.players}
 
         # Each player should have 2 cards
         for p in state.players:
             assert len(p.influences) == 2
             assert all(not c.revealed for c in p.influences)
             assert p.coins == 2
+
+    def test_start_game_randomizes_first_player(self, engine: GameEngine, monkeypatch: pytest.MonkeyPatch):
+        state = engine.create_game("test")
+        state, first_player = engine.add_player(state, "Alice")
+        state, second_player = engine.add_player(state, "Bob")
+        monkeypatch.setattr(
+            "app.engine.game_engine.random.choice",
+            lambda players: players[1],
+        )
+
+        state = engine.start_game(state)
+
+        assert state.current_turn_player_id == second_player.id
+        assert state.current_turn_player_id != first_player.id
 
     def test_cannot_start_with_one_player(self, engine: GameEngine):
         state = engine.create_game("test")
@@ -255,7 +269,8 @@ class TestTurnAdvancement:
         assert state.turn_number == 2
         assert state.phase == GamePhase.TURN_START
 
-    def test_skip_dead_players(self, engine: GameEngine):
+    def test_skip_dead_players(self, engine: GameEngine, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr("app.engine.game_engine.random.choice", lambda players: players[0])
         state = engine.create_game("test")
         state, p1 = engine.add_player(state, "Alice")
         state, p2 = engine.add_player(state, "Bob")

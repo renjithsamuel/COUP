@@ -73,10 +73,14 @@ class GameRepository(Repository[GameState]):
         )
         self._session.add(entity)
 
-        for player in state.players:
-            await self._player_repo.create(player, state.id)
+        try:
+            for player in state.players:
+                await self._player_repo.create(player, state.id)
 
-        await self._session.commit()
+            await self._session.commit()
+        except Exception:
+            await self._session.rollback()
+            raise
         return state
 
     async def update(self, state: GameState) -> GameState:
@@ -102,10 +106,14 @@ class GameRepository(Repository[GameState]):
         entity.event_log = json.dumps(state.event_log)
         entity.updated_at = datetime.now(timezone.utc).isoformat()
 
-        for player in state.players:
-            await self._player_repo.update_player(player, state.id)
+        try:
+            for player in state.players:
+                await self._player_repo.update_player(player, state.id)
 
-        await self._session.commit()
+            await self._session.commit()
+        except Exception:
+            await self._session.rollback()
+            raise
         return state
 
     async def delete(self, id: str) -> bool:
@@ -115,8 +123,14 @@ class GameRepository(Repository[GameState]):
         entity = result.scalar_one_or_none()
         if entity is None:
             return False
-        await self._session.delete(entity)
-        await self._session.commit()
+
+        try:
+            await self._player_repo.delete_by_game_id(id)
+            await self._session.delete(entity)
+            await self._session.commit()
+        except Exception:
+            await self._session.rollback()
+            raise
         return True
 
     def _to_model(self, entity: GameEntity, players: list[Player]) -> GameState:

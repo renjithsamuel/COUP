@@ -1,6 +1,8 @@
-netstat -ano | grep :8000
-taskkill //PID 12345 //F
+backend start:
+powershell -ExecutionPolicy Bypass -File .\backend\start-dev.ps1
 
-start project:
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+backend stop:
+powershell -ExecutionPolicy Bypass -File .\backend\stop-dev.ps1
+
+frontend start:
 yarn dev

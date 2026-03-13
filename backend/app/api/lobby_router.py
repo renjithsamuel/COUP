@@ -69,3 +69,18 @@ async def start_game(lobby_id: str, body: GameConfig | None = None) -> dict:
         return {"ok": True, "game_id": game_state.id}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/{lobby_id}/reset", response_model=LobbyResponse)
+async def reset_lobby(lobby_id: str) -> LobbyResponse:
+    try:
+        lobby = _lobby_service.get_lobby_model(lobby_id.upper())
+        if lobby is None:
+            raise ValueError("Lobby not found")
+
+        if lobby.game_id:
+            await _game_service.delete_game(lobby.game_id)
+
+        return _lobby_service.reset_lobby(lobby_id.upper())
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))

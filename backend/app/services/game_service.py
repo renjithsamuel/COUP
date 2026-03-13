@@ -115,8 +115,8 @@ class GameService:
         be silently ignored.
 
         Targeted challenge/block decisions are resolved one-on-one between the
-        directly involved players. Untargeted windows resolve on the first valid
-        allow/pass response instead of waiting for every non-actor to pass.
+        directly involved players. Untargeted windows remain table-wide and only
+        close once every eligible responder has allowed the action/window.
         """
         async with self._get_game_lock(game_id):
             state = await self._get_or_raise(game_id)
@@ -128,6 +128,13 @@ class GameService:
                         return state, False
                     if player_id not in state.pending_action.accepted_by:
                         state.pending_action.accepted_by.append(player_id)
+                    if (
+                        state.phase == GamePhase.CHALLENGE_WINDOW
+                        and state.pending_action.target_id is None
+                        and not eligible.issubset(set(state.pending_action.accepted_by))
+                    ):
+                        await self._save(state)
+                        return state, False
                 state = self._engine.handle_no_challenge(state)
             elif state.phase == GamePhase.BLOCK_WINDOW:
                 if player_id and state.pending_action:
@@ -136,6 +143,12 @@ class GameService:
                         return state, False
                     if player_id not in state.pending_action.accepted_by:
                         state.pending_action.accepted_by.append(player_id)
+                    if (
+                        state.pending_action.target_id is None
+                        and not eligible.issubset(set(state.pending_action.accepted_by))
+                    ):
+                        await self._save(state)
+                        return state, False
                 state = self._engine.handle_no_block(state)
             else:
                 self._logger.debug(
@@ -240,6 +253,14 @@ class GameService:
             state = self._ensure_terminal_state(state)
             await self._save(state)
             return state
+
+    async def delete_game(self, game_id: str) -> bool:
+        """Delete a finished or abandoned game from persistence and cache."""
+        async with self._get_game_lock(game_id):
+            deleted = await self._repo.delete(game_id)
+            type(self)._games.pop(game_id, None)
+            type(self)._game_locks.pop(game_id, None)
+            return deleted
 
     def get_public_state(self, state: GameState, player_id: str):
         """Get public state for a player."""

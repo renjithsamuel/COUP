@@ -200,8 +200,12 @@ def test_assassination_finishes_game_after_last_influence_loss(two_player_game: 
     asyncio.run(scenario())
 
 
-def test_untargeted_allow_resolves_on_first_valid_response(engine: GameEngine) -> None:
+def test_untargeted_allow_waits_for_all_eligible_responses(
+    engine: GameEngine,
+    monkeypatch,
+) -> None:
     async def scenario() -> None:
+        monkeypatch.setattr("app.engine.game_engine.random.choice", lambda players: players[0])
         state = engine.create_game("three-player-game")
         state, actor = engine.add_player(state, "Alice")
         state, responder = engine.add_player(state, "Bob")
@@ -215,6 +219,11 @@ def test_untargeted_allow_resolves_on_first_valid_response(engine: GameEngine) -
 
         state, processed = await service.process_accept(state.id, third_player.id)
 
+        assert processed is False
+        assert state.phase == GamePhase.BLOCK_WINDOW
+
+        state, processed = await service.process_accept(state.id, responder.id)
+
         assert processed is True
         assert state.phase == GamePhase.TURN_START
         assert state.current_turn_player_id == responder.id
@@ -224,8 +233,9 @@ def test_untargeted_allow_resolves_on_first_valid_response(engine: GameEngine) -
     asyncio.run(scenario())
 
 
-def test_targeted_challenge_rejects_uninvolved_player(engine: GameEngine) -> None:
+def test_targeted_challenge_rejects_uninvolved_player(engine: GameEngine, monkeypatch) -> None:
     async def scenario() -> None:
+        monkeypatch.setattr("app.engine.game_engine.random.choice", lambda players: players[0])
         state = engine.create_game("targeted-challenge-game")
         state, actor = engine.add_player(state, "Alice")
         state, target = engine.add_player(state, "Bob")
@@ -242,5 +252,26 @@ def test_targeted_challenge_rejects_uninvolved_player(engine: GameEngine) -> Non
             assert False, "Expected uninvolved challenger to be rejected"
         except ValueError as exc:
             assert "cannot challenge" in str(exc).lower()
+
+    asyncio.run(scenario())
+
+
+def test_delete_game_clears_repository_and_cache(two_player_game: GameState) -> None:
+    async def scenario() -> None:
+        GameService._games.pop(two_player_game.id, None)
+        GameService._game_locks.pop(two_player_game.id, None)
+
+        repo = InMemoryGameRepository()
+        await repo.create(two_player_game)
+        service = GameService(GameEngine(), repo)
+        GameService._games[two_player_game.id] = two_player_game
+        GameService._game_locks[two_player_game.id] = asyncio.Lock()
+
+        deleted = await service.delete_game(two_player_game.id)
+
+        assert deleted is True
+        assert await repo.get_by_id(two_player_game.id) is None
+        assert two_player_game.id not in GameService._games
+        assert two_player_game.id not in GameService._game_locks
 
     asyncio.run(scenario())

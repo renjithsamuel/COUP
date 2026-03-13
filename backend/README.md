@@ -88,6 +88,17 @@ cp .env.example .env
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
+Windows helper scripts are included for local development:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start-dev.ps1
+powershell -ExecutionPolicy Bypass -File .\stop-dev.ps1
+```
+
+`stop-dev.ps1` is intended for the Windows `uvicorn --reload` case where the parent process exits but child Python processes keep the port alive.
+
+The WebSocket handler also emits `CHALLENGE_ISSUED` before `CHALLENGE_RESULT` so clients can narrate a challenge cleanly without waiting for the outcome packet.
+
 The API will be available at `http://localhost:8000`.  
 Interactive docs at `http://localhost:8000/docs`.
 
@@ -120,6 +131,7 @@ python -m pytest -v
 | `POST` | `/api/lobbies/{id}/join` | Join lobby by room code (`{ player_name }`) |
 | `POST` | `/api/lobbies/{id}/leave` | Leave lobby (`?player_id=...` query param) |
 | `POST` | `/api/lobbies/{id}/start` | Start game (host only, optional `GameConfig` body) |
+| `POST` | `/api/lobbies/{id}/reset` | Reset completed room back to waiting state for replay |
 
 `GameConfig` request body fields:
 - `turn_timer_seconds` (`0-120`) — `0` disables turn timer (Peaceful Mode)
@@ -145,7 +157,7 @@ Connect to `ws://localhost:8000/ws/game/{game_id}?token={session_token}&player_i
 Response windows resolve as follows:
 - Targeted action challenges are one-on-one: only the target may challenge `steal` and `assassinate`.
 - Targeted blocks remain one-on-one: only the target may block, and only the acting player may challenge that block.
-- Untargeted challenge/block windows close on the first valid challenge, block, or allow instead of waiting for every non-actor to pass.
+- Untargeted challenge/block windows are still table-wide: any eligible non-actor may challenge or block, and an untargeted window only closes once every eligible responder has allowed it or a valid challenge/block interrupts it.
 
 #### Server Messages
 
@@ -168,6 +180,7 @@ Connection presence is reflected in `players[].connected` inside `GAME_STATE`. O
 
 All game constants are in **one place**: `app/config.py` (`Settings` class).  
 All action rules (costs, blocks, challenges) are in **one place**: `app/models/action.py` (`ACTION_RULES` dict).
+The first turn is chosen randomly from the seated players when a game starts.
 
 To change a rule:
 1. Edit the constant in `config.py` or the rule in `action.py`

@@ -6,6 +6,7 @@ manages phase transitions, and delegates to specific handlers.
 
 from __future__ import annotations
 
+import random
 import uuid
 
 from app.config import settings
@@ -87,7 +88,7 @@ class GameEngine:
         state.deck = deck
         state.status = GameStatus.IN_PROGRESS
         state.turn_number = 1
-        state.current_turn_player_id = state.players[0].id
+        state.current_turn_player_id = random.choice(state.players).id
         state.phase = GamePhase.TURN_START
 
         state.event_log.append({

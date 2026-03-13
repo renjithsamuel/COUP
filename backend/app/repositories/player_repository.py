@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.entities.player_entity import PlayerEntity
@@ -53,7 +53,10 @@ class PlayerRepository:
 
     async def update_player(self, player: Player, game_id: str) -> Player:
         result = await self._session.execute(
-            select(PlayerEntity).where(PlayerEntity.id == player.id)
+            select(PlayerEntity).where(
+                PlayerEntity.id == player.id,
+                PlayerEntity.game_id == game_id,
+            )
         )
         entity = result.scalar_one_or_none()
         if entity is None:
@@ -66,6 +69,11 @@ class PlayerRepository:
         entity.connected = player.connected
         entity.influences = json.dumps([c.model_dump() for c in player.influences])
         return player
+
+    async def delete_by_game_id(self, game_id: str) -> None:
+        await self._session.execute(
+            delete(PlayerEntity).where(PlayerEntity.game_id == game_id)
+        )
 
     def _to_model(self, entity: PlayerEntity) -> Player:
         influences_data = json.loads(entity.influences) if entity.influences else []

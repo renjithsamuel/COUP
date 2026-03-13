@@ -142,6 +142,24 @@ class LobbyService:
             lobby.status = "in_progress"
             lobby.game_id = game_id
 
+    def reset_lobby(self, lobby_id: str) -> LobbyResponse:
+        lobby = self._lobbies.get(lobby_id)
+        if lobby is None:
+            raise ValueError("Lobby not found")
+
+        lobby.status = "waiting"
+        lobby.game_id = None
+
+        return LobbyResponse(
+            id=lobby.id,
+            name=lobby.name,
+            players=lobby.players,
+            max_players=lobby.max_players,
+            status=lobby.status,
+            game_id=lobby.game_id,
+            player_count=len(lobby.players),
+        )
+
     def get_lobby_model(self, lobby_id: str) -> Lobby | None:
         return self._lobbies.get(lobby_id)
 
