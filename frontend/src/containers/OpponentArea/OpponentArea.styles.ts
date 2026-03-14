@@ -2,17 +2,18 @@ import { CSSProperties } from "react";
 import { tokens } from "@/theme/tokens";
 
 export function getOpponentAreaStyles(mobile: boolean, count: number) {
-  const gap = mobile ? tokens.spacing.xs + 6 : tokens.spacing.xs + 6;
-  const seatWidth = mobile ? 164 : 208;
+  const gap = mobile ? tokens.spacing.xs + 2 : tokens.spacing.xs + 2;
+  const seatWidth = mobile ? 148 : 206;
   const fadeWidth = mobile ? 14 : 20;
-  const isCompactTable = count <= 3;
+  const railInset = mobile ? fadeWidth + 10 : fadeWidth;
+  const shouldCenterTrack = mobile ? count <= 2 : count <= 3;
   const fitsViewport = !mobile && count <= 3;
 
   return {
     shell: {
       position: "relative",
       width: "100%",
-      minHeight: mobile ? 208 : 264,
+      minHeight: mobile ? 186 : 248,
       paddingBottom: mobile ? 2 : 4,
       minWidth: 0,
     } satisfies CSSProperties,
@@ -26,19 +27,28 @@ export function getOpponentAreaStyles(mobile: boolean, count: number) {
       scrollbarWidth: "none",
       msOverflowStyle: "none",
       scrollSnapType: "x proximity",
-      padding: `${tokens.spacing.xs}px ${fadeWidth}px ${mobile ? tokens.spacing.xs + 2 : tokens.spacing.sm + 4}px`,
+      scrollPaddingLeft: railInset,
+      scrollPaddingRight: railInset,
+      padding: `${mobile ? 2 : tokens.spacing.xs}px ${railInset}px ${mobile ? tokens.spacing.xs : tokens.spacing.sm + 4}px`,
       boxSizing: "border-box",
     } satisfies CSSProperties,
 
     track: {
       display: "flex",
       alignItems: "stretch",
-      justifyContent: isCompactTable ? "center" : "flex-start",
+      justifyContent: shouldCenterTrack ? "center" : "flex-start",
       gap,
-      width: isCompactTable ? "100%" : "max-content",
-      minWidth: "100%",
+      width: shouldCenterTrack ? "100%" : "max-content",
+      minWidth: shouldCenterTrack ? "100%" : "max-content",
       maxWidth: fitsViewport ? "100%" : "none",
       boxSizing: "border-box",
+    } satisfies CSSProperties,
+
+    railSpacer: {
+      flex: `0 0 ${railInset}px`,
+      width: railInset,
+      minWidth: railInset,
+      pointerEvents: "none",
     } satisfies CSSProperties,
 
     edgeFade: (side: "left" | "right", visible: boolean): CSSProperties => ({
@@ -71,24 +81,24 @@ export function getOpponentAreaStyles(mobile: boolean, count: number) {
       overflow: "hidden",
       gap: mobile ? tokens.spacing.xs : tokens.spacing.sm,
       padding: mobile
-        ? `${tokens.spacing.xs + 6}px ${tokens.spacing.xs + 6}px`
+        ? `${tokens.spacing.xs + 4}px ${tokens.spacing.xs + 4}px`
         : `${tokens.spacing.sm}px ${tokens.spacing.sm}px`,
       background: isActive
         ? "linear-gradient(180deg, rgba(38, 31, 10, 0.95) 0%, rgba(20, 18, 10, 0.96) 100%)"
         : isSelectable
           ? "linear-gradient(180deg, rgba(19, 35, 60, 0.98) 0%, rgba(10, 17, 31, 0.98) 100%)"
           : "linear-gradient(180deg, rgba(16, 24, 40, 0.98) 0%, rgba(9, 14, 26, 0.98) 100%)",
-      borderRadius: mobile ? 18 : 20,
+      borderRadius: mobile ? 16 : 20,
       border: isActive
         ? "1.5px solid rgba(255,193,7,0.45)"
         : isSelectable
           ? "1.5px solid rgba(96,165,250,0.42)"
           : `1px solid ${tokens.surface.border}`,
       boxShadow: isActive
-        ? "0 22px 42px rgba(0,0,0,0.32), 0 0 36px rgba(255,193,7,0.12)"
+        ? "0 20px 38px rgba(0,0,0,0.3), 0 0 30px rgba(255,193,7,0.1)"
         : isSelectable
-          ? "0 18px 36px rgba(0,0,0,0.28), 0 0 30px rgba(96,165,250,0.12)"
-          : "0 16px 30px rgba(0,0,0,0.22)",
+          ? "0 18px 32px rgba(0,0,0,0.26), 0 0 26px rgba(96,165,250,0.1)"
+          : "0 16px 28px rgba(0,0,0,0.22)",
       transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       width: seatWidth,
       minWidth: seatWidth,
@@ -117,8 +127,8 @@ export function getOpponentAreaStyles(mobile: boolean, count: number) {
     statsRow: {
       display: "flex",
       alignItems: "center",
-      gap: mobile ? tokens.spacing.xs + 2 : tokens.spacing.sm,
-      paddingTop: mobile ? 3 : 5,
+      gap: mobile ? tokens.spacing.xs + 2 : tokens.spacing.xs + 6,
+      paddingTop: mobile ? 2 : 5,
       borderTop: `1px solid rgba(255,255,255,0.08)`,
       width: "100%",
       justifyContent: "space-between",
@@ -128,7 +138,7 @@ export function getOpponentAreaStyles(mobile: boolean, count: number) {
       display: "inline-flex",
       alignItems: "center",
       gap: 5,
-      padding: mobile ? "3px 8px" : "4px 10px",
+      padding: mobile ? "2px 7px" : "4px 10px",
       borderRadius: 999,
       background: "rgba(255, 193, 7, 0.12)",
       border: "1px solid rgba(255, 193, 7, 0.2)",
@@ -145,7 +155,7 @@ export function getOpponentAreaStyles(mobile: boolean, count: number) {
     } satisfies CSSProperties,
 
     coinLabel: {
-      fontSize: mobile ? 12 : 13,
+      fontSize: mobile ? 11 : 13,
       fontWeight: 800,
       color: tokens.coin.color,
       display: "flex",
@@ -154,7 +164,7 @@ export function getOpponentAreaStyles(mobile: boolean, count: number) {
     } satisfies CSSProperties,
 
     influenceLabel: {
-      fontSize: mobile ? 10 : 11,
+      fontSize: mobile ? 9 : 11,
       fontWeight: 600,
       color: tokens.text.muted,
     } satisfies CSSProperties,

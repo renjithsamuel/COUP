@@ -3,12 +3,13 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import {
   Character,
   CHARACTER_LABELS,
   CHARACTER_ABILITIES,
 } from "@/models/card";
-import { guideModalStyles as s } from "./GuideModal.styles";
+import { getGuideModalStyles } from "./GuideModal.styles";
 
 export interface GuideModalProps {
   isOpen: boolean;
@@ -40,6 +41,9 @@ export function GuideModal({
   onPinCharacterActions,
   canPinCharacterActions = false,
 }: GuideModalProps) {
+  const isMobile = useIsMobile();
+  const s = getGuideModalStyles(isMobile);
+
   useEffect(() => {
     if (!isOpen) {
       return undefined;

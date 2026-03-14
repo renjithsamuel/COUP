@@ -210,6 +210,8 @@ const GAME_START_COUNTDOWN = [
 
 const GAME_START_STEP_MS = 700;
 const GAME_START_EXIT_MS = 200;
+const gameStartCountdownStorageKey = (gameId: string) =>
+  `coup:game-start-countdown:${gameId}`;
 
 export function GameBoard({
   gameId,
@@ -253,7 +255,6 @@ export function GameBoard({
   const { isMuted, playActionSound, playTurnSound, toggleMute } =
     useGameAudio();
   const previousIsMyTurnRef = React.useRef(false);
-  const hasShownStartCountdownRef = React.useRef(false);
   const hasGameLoaded = gameState != null;
 
   useEffect(() => {
@@ -292,32 +293,39 @@ export function GameBoard({
   }, [isGameOver, isMyTurn, playTurnSound]);
 
   useEffect(() => {
-    hasShownStartCountdownRef.current = false;
-    setCountdownStepIndex(null);
-  }, [gameId]);
-
-  useEffect(() => {
-    if (!hasGameLoaded || isGameOver || hasShownStartCountdownRef.current) {
+    if (!hasGameLoaded || isGameOver || typeof window === "undefined") {
       return;
     }
 
-    hasShownStartCountdownRef.current = true;
+    const storageKey = gameStartCountdownStorageKey(gameId);
+    if (window.sessionStorage.getItem(storageKey) === "shown") {
+      setCountdownStepIndex(null);
+      return;
+    }
+
+    window.sessionStorage.setItem(storageKey, "shown");
     setCountdownStepIndex(0);
 
     const stepTimers = GAME_START_COUNTDOWN.slice(1).map((_, index) =>
-      window.setTimeout(() => {
-        setCountdownStepIndex(index + 1);
-      }, (index + 1) * GAME_START_STEP_MS),
+      window.setTimeout(
+        () => {
+          setCountdownStepIndex(index + 1);
+        },
+        (index + 1) * GAME_START_STEP_MS,
+      ),
     );
-    const finishTimer = window.setTimeout(() => {
-      setCountdownStepIndex(null);
-    }, GAME_START_COUNTDOWN.length * GAME_START_STEP_MS + GAME_START_EXIT_MS);
+    const finishTimer = window.setTimeout(
+      () => {
+        setCountdownStepIndex(null);
+      },
+      GAME_START_COUNTDOWN.length * GAME_START_STEP_MS + GAME_START_EXIT_MS,
+    );
 
     return () => {
       stepTimers.forEach((timerId) => window.clearTimeout(timerId));
       window.clearTimeout(finishTimer);
     };
-  }, [hasGameLoaded, isGameOver]);
+  }, [gameId, hasGameLoaded, isGameOver]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -360,7 +368,9 @@ export function GameBoard({
   const desktopEventCopy =
     activeEvent?.compactMessage ?? activeEvent?.message ?? "";
   const activeCountdownStep =
-    countdownStepIndex == null ? null : GAME_START_COUNTDOWN[countdownStepIndex];
+    countdownStepIndex == null
+      ? null
+      : GAME_START_COUNTDOWN[countdownStepIndex];
   const desktopEventTitle =
     activeEvent == null
       ? ""
@@ -657,28 +667,59 @@ export function GameBoard({
                 )}
               </AnimatePresence>
 
-              <div style={s.playerCardArea(isMyTurn && !isGameOver)}>
-                <div style={s.playerInfoInline(isMyTurn && !isGameOver)}>
-                  <span style={s.playerNameLarge}>
-                    {myPlayer?.name ?? "You"}
-                  </span>
-                  <span style={s.playerCoinsLarge}>
-                    <CoinIcon size={isMobile ? 16 : 20} />{" "}
-                    {myPlayer?.coins ?? 0}
-                  </span>
+              {isMobile ? (
+                <>
+                  <div style={s.playerCardArea(isMyTurn && !isGameOver)}>
+                    <div style={s.playerInfoInline(isMyTurn && !isGameOver)}>
+                      <span style={s.playerNameLarge}>
+                        {myPlayer?.name ?? "You"}
+                      </span>
+                      <span style={s.playerCoinsLarge}>
+                        <CoinIcon size={isMobile ? 16 : 20} />{" "}
+                        {myPlayer?.coins ?? 0}
+                      </span>
+                    </div>
+                    <PlayerHand
+                      send={send}
+                      isMobile={isMobile}
+                      activeCardEffect={activeCardEffect}
+                    />
+                  </div>
+                  <ActionPanel
+                    {...actionPanel}
+                    isMobile={isMobile}
+                    onInactiveActionAttempt={handleInactiveActionAttempt}
+                    onActionPress={playActionSound}
+                  />
+                </>
+              ) : (
+                <div style={s.bottomDesktopRow}>
+                  <div style={s.playerCardAreaDesktop(isMyTurn && !isGameOver)}>
+                    <div style={s.playerInfoInline(isMyTurn && !isGameOver)}>
+                      <span style={s.playerNameLarge}>
+                        {myPlayer?.name ?? "You"}
+                      </span>
+                      <span style={s.playerCoinsLarge}>
+                        <CoinIcon size={20} /> {myPlayer?.coins ?? 0}
+                      </span>
+                    </div>
+                    <PlayerHand
+                      send={send}
+                      isMobile={false}
+                      activeCardEffect={activeCardEffect}
+                    />
+                  </div>
+                  <div style={s.actionPanelDesktopWrap}>
+                    <ActionPanel
+                      {...actionPanel}
+                      isMobile={false}
+                      desktopTwoColumn
+                      onInactiveActionAttempt={handleInactiveActionAttempt}
+                      onActionPress={playActionSound}
+                    />
+                  </div>
                 </div>
-                <PlayerHand
-                  send={send}
-                  isMobile={isMobile}
-                  activeCardEffect={activeCardEffect}
-                />
-              </div>
-              <ActionPanel
-                {...actionPanel}
-                isMobile={isMobile}
-                onInactiveActionAttempt={handleInactiveActionAttempt}
-                onActionPress={playActionSound}
-              />
+              )}
             </div>
           </div>
 
@@ -755,7 +796,9 @@ export function GameBoard({
                   transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <span
-                    style={s.startCountdownStepLabel(activeCountdownStep.accent)}
+                    style={s.startCountdownStepLabel(
+                      activeCountdownStep.accent,
+                    )}
                   >
                     {activeCountdownStep.eyebrow}
                   </span>

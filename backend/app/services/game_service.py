@@ -309,12 +309,14 @@ class GameService:
             if player is None:
                 return state
 
+            is_ai_match_human = connected and not player.is_bot and any(p.is_bot for p in state.players)
+            if is_ai_match_human:
+                type(self)._bot_activation.add(game_id)
+
             if player.connected == connected:
                 return state
 
             player.connected = connected
-            if connected and not player.is_bot and any(p.is_bot for p in state.players):
-                type(self)._bot_activation.add(game_id)
             await self._save(state)
             return state
 

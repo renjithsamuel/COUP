@@ -389,6 +389,52 @@ def test_bot_waits_for_human_connection_before_acting(monkeypatch) -> None:
     asyncio.run(scenario())
 
 
+def test_bot_reconnect_rearms_activation_when_human_is_already_marked_connected(monkeypatch) -> None:
+    async def scenario() -> None:
+        GameService._games.clear()
+        GameService._game_locks.clear()
+        GameService._phase_clocks.clear()
+        GameService._bot_activation.clear()
+
+        repo = InMemoryGameRepository()
+        service = GameService(GameEngine(), repo)
+
+        monkeypatch.setattr('app.engine.game_engine.random.choice', lambda players: players[1])
+        monkeypatch.setattr('app.services.game_service.choose_bot_turn_action', lambda state, player: (ActionType.INCOME, None))
+
+        state, human_player_id = await service.create_ai_match(
+            player_name='Alice',
+            bot_count=1,
+            difficulty=AiDifficulty.EASY,
+            profile_id='profile-alice',
+        )
+
+        state = await service.set_player_connected(state.id, human_player_id, True)
+        assert state is not None
+
+        GameService._bot_activation.clear()
+
+        reactivated_state = await service.set_player_connected(state.id, human_player_id, True)
+        assert reactivated_state is not None
+        assert state.id in GameService._bot_activation
+
+        reactivated_state.phase_started_at = (datetime.now(timezone.utc) - timedelta(seconds=10)).isoformat()
+        GameService._phase_clocks[state.id] = {
+            'signature': service._build_phase_signature(reactivated_state),
+            'phase_started_at': reactivated_state.phase_started_at,
+            'phase_deadline_at': reactivated_state.phase_deadline_at,
+        }
+
+        outcome = await service.process_bot_step(state.id)
+
+        assert outcome is not None
+        assert outcome['events'][0]['type'] == 'ACTION_DECLARED'
+        assert outcome['state'].turn_number == 2
+        assert outcome['state'].current_turn_player_id == human_player_id
+
+    asyncio.run(scenario())
+
+
 def test_process_timeout_resolves_response_window(two_player_game: GameState) -> None:
     async def scenario() -> None:
         service = await _create_service_with_state(two_player_game)

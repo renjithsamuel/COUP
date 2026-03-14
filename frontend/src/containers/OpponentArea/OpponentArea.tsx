@@ -42,6 +42,7 @@ export function OpponentArea({
   const gs = state.gameState;
   const scrollRef = useRef<HTMLDivElement>(null);
   const slotRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const previousCurrentPlayerIdRef = useRef<string | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
@@ -60,14 +61,26 @@ export function OpponentArea({
 
   useEffect(() => {
     if (!gs?.currentPlayerId) {
+      previousCurrentPlayerIdRef.current = null;
       updateScrollState();
       return;
     }
 
-    if (
-      !isMobile &&
-      gs.players.filter((p) => p.id !== state.myPlayerId).length <= 2
-    ) {
+    if (isMobile) {
+      const didTurnChange =
+        previousCurrentPlayerIdRef.current != null &&
+        previousCurrentPlayerIdRef.current !== gs.currentPlayerId;
+      previousCurrentPlayerIdRef.current = gs.currentPlayerId;
+
+      if (!didTurnChange) {
+        updateScrollState();
+        return;
+      }
+    } else {
+      previousCurrentPlayerIdRef.current = gs.currentPlayerId;
+    }
+
+    if (gs.players.filter((p) => p.id !== state.myPlayerId).length <= 2) {
       updateScrollState();
       return;
     }
@@ -122,6 +135,7 @@ export function OpponentArea({
   const targetActionLabel = targetModeAction
     ? ACTION_RULES[targetModeAction].label
     : null;
+  const showRailMargins = isMobile && opponents.length > 2;
 
   return (
     <div style={s.shell}>
@@ -129,6 +143,7 @@ export function OpponentArea({
       <div style={s.edgeFade("right", canScrollRight)} />
       <div ref={scrollRef} style={s.viewport} className={shellClassName}>
         <div style={s.track}>
+          {showRailMargins && <div style={s.railSpacer} aria-hidden="true" />}
           {opponents.map((opp) => (
             <motion.div
               key={opp.id}
@@ -274,6 +289,7 @@ export function OpponentArea({
               )}
             </motion.div>
           ))}
+          {showRailMargins && <div style={s.railSpacer} aria-hidden="true" />}
         </div>
       </div>
     </div>

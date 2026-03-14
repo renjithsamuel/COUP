@@ -46,10 +46,10 @@ src/
 ├── containers/             # Stateful composite containers
 │   ├── GameBoard/          # Main game board (top-bar turn status on every breakpoint, compact mobile connection dot, readable desktop top-bar event toasts, mobile utility dock, winner confetti, a brief premium start countdown, default-open desktop timeline, turn-highlighted player tray, and a pinnable desktop character-action reference)
 │   ├── PlayerHand/         # Current player's compact card hand
-│   ├── ActionPanel/        # Compact action ribbon with dense 3-column mobile layout, slimmer mobile standby strip, and minimal off-turn chrome
-│   ├── OpponentArea/       # Responsive opponent carousel with centered small-table seats, fixed-width cards, and subtle edge fades
+│   ├── ActionPanel/        # Compact action ribbon with dense mobile layout and a desktop two-column side panel beside a tighter local-hand module, plus slimmer mobile standby strip and minimal off-turn chrome
+│   ├── OpponentArea/       # Responsive opponent carousel with centered small-table seats, moderately enlarged desktop card sizing, fixed-width cards, and subtle edge fades
 │   ├── ChallengeBlockOverlay/ # Direct-response dock for challenge/block/allow decisions
-│   ├── GameDashboard/      # Compact live-table standings view used inside the in-game leaderboard modal
+│   ├── GameDashboard/      # Compact live-table standings view used inside the in-game leaderboard modal, including a flattened mobile stat strip for coins, influence, and reveals
 │   ├── GameLog/            # Real-time editorial timeline feed with numbered event rows, action highlights, and newest-first ordering
 │   └── LobbyRoom/         # Lobby waiting room with a full-screen room leaderboard modal, score-based standings, and refresh-safe presence handling
 ├── context/                # React Context + Reducer

@@ -17,8 +17,8 @@ export const actionButtonStyles = {
     pressed = false,
     presentation?: ActionPresentation,
   ): CSSProperties => ({
-    padding: compact ? "8px 10px" : "10px 12px",
-    borderRadius: compact ? 10 : 12,
+    padding: compact ? "6px 8px" : "9px 11px",
+    borderRadius: compact ? 9 : 14,
     border: disabled
       ? `1px solid ${tokens.surface.border}`
       : pressed && presentation
@@ -26,28 +26,28 @@ export const actionButtonStyles = {
         : selected
           ? "1px solid rgba(246, 196, 69, 0.5)"
           : isBluff
-            ? "1px solid rgba(239,83,80,0.28)"
-            : "1px solid rgba(255,255,255,0.12)",
+            ? "1px solid rgba(239,83,80,0.26)"
+            : "1px solid rgba(255,255,255,0.1)",
     fontWeight: 700,
-    fontSize: compact ? 9 : 11,
+    fontSize: compact ? 8 : 10,
     cursor: disabled ? "not-allowed" : "pointer",
     background: disabled
       ? "linear-gradient(180deg, rgba(20, 28, 45, 0.92) 0%, rgba(12, 18, 30, 0.95) 100%)"
       : selected
         ? "linear-gradient(180deg, rgba(56, 40, 10, 0.98) 0%, rgba(25, 19, 8, 0.98) 100%)"
         : isBluff
-          ? "linear-gradient(180deg, rgba(28, 21, 34, 0.98) 0%, rgba(18, 14, 26, 0.98) 100%)"
-          : "linear-gradient(180deg, rgba(18, 28, 48, 0.98) 0%, rgba(10, 16, 30, 0.98) 100%)",
+          ? "linear-gradient(180deg, rgba(31, 22, 33, 0.98) 0%, rgba(18, 14, 24, 0.98) 100%)"
+          : "linear-gradient(180deg, rgba(18, 27, 45, 0.98) 0%, rgba(10, 16, 28, 0.985) 100%)",
     color: disabled ? tokens.text.muted : tokens.text.primary,
     boxShadow: disabled
       ? "none"
       : pressed && presentation
-        ? `0 0 0 1px ${presentation.accent}66, 0 12px 24px rgba(0,0,0,0.24), 0 0 24px ${presentation.accent}3d, inset 0 0 0 1px ${presentation.accent}40`
+        ? `0 0 0 1px ${presentation.accent}66, 0 14px 26px rgba(0,0,0,0.24), 0 0 22px ${presentation.accent}33, inset 0 0 0 1px ${presentation.accent}33`
         : selected
-          ? "0 10px 18px rgba(0,0,0,0.24), 0 0 0 1px rgba(246,196,69,0.16), 0 0 18px rgba(246,196,69,0.1)"
+          ? "0 14px 24px rgba(0,0,0,0.24), 0 0 0 1px rgba(246,196,69,0.14), 0 0 16px rgba(246,196,69,0.08)"
           : isBluff
-            ? "0 10px 18px rgba(0,0,0,0.22), 0 0 0 1px rgba(239,83,80,0.1), inset 0 1px 0 rgba(255,255,255,0.05)"
-            : "0 8px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)",
+            ? "0 12px 22px rgba(0,0,0,0.22), 0 0 0 1px rgba(239,83,80,0.08), inset 0 1px 0 rgba(255,255,255,0.045)"
+            : "0 10px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.045)",
     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
     userSelect: "none",
     display: "flex",
@@ -56,7 +56,9 @@ export const actionButtonStyles = {
     gap: 0,
     position: "relative",
     minWidth: 0,
-    minHeight: compact ? 52 : 56,
+    minHeight: compact ? 44 : 54,
+    width: "100%",
+    boxSizing: "border-box",
     textAlign: "left",
     overflow: "hidden",
     isolation: "isolate",
@@ -103,7 +105,7 @@ export const actionButtonStyles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: compact ? 8 : 10,
+    gap: compact ? 6 : 8,
     minWidth: 0,
     flex: 1,
     width: "100%",
@@ -113,7 +115,7 @@ export const actionButtonStyles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "flex-start",
-    gap: compact ? 8 : 10,
+    gap: compact ? 6 : 8,
     minWidth: 0,
     flex: 1,
   }),
@@ -130,12 +132,13 @@ export const actionButtonStyles = {
   iconShell: (
     disabled: boolean,
     selected: boolean,
+    compact: boolean,
     presentation: ActionPresentation,
   ): CSSProperties => ({
-    width: 26,
-    height: 26,
-    minWidth: 26,
-    borderRadius: 9,
+    width: compact ? 22 : 24,
+    height: compact ? 22 : 24,
+    minWidth: compact ? 22 : 24,
+    borderRadius: compact ? 8 : 8,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
@@ -154,14 +157,14 @@ export const actionButtonStyles = {
     compact = false,
   ): CSSProperties => ({
     fontWeight: 800,
-    fontSize: compact ? 10 : 12,
-    letterSpacing: compact ? 0 : 0.1,
+    fontSize: compact ? 9 : 11,
+    letterSpacing: compact ? 0 : 0.08,
     textTransform: "none",
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
     color: disabled ? tokens.text.muted : tokens.text.primary,
-    lineHeight: 1.15,
+    lineHeight: compact ? 1.05 : 1.1,
     textAlign: "left",
     paddingRight: compact ? 2 : 4,
     display: "block",
@@ -174,9 +177,9 @@ export const actionButtonStyles = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: compact ? "2px 0" : "3px 0",
-    minWidth: compact ? 22 : 24,
-    fontSize: compact ? 9 : 10,
+    padding: compact ? "1px 0" : "3px 0",
+    minWidth: compact ? 18 : 24,
+    fontSize: compact ? 8 : 10,
     color: presentation.accent,
     fontWeight: 800,
     letterSpacing: 0.15,
@@ -190,12 +193,12 @@ export const actionButtonStyles = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    width: compact ? 16 : 18,
-    height: compact ? 16 : 18,
+    width: compact ? 14 : 18,
+    height: compact ? 14 : 18,
     borderRadius: 999,
     border: "1px solid rgba(239, 83, 80, 0.32)",
     background: "rgba(239, 83, 80, 0.12)",
-    fontSize: compact ? 9 : 10,
+    fontSize: compact ? 8 : 10,
     fontWeight: 900,
     color: "rgba(255, 210, 208, 0.95)",
     lineHeight: 1,

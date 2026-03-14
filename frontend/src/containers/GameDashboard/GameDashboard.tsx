@@ -111,24 +111,30 @@ export function GameDashboard({
                     </div>
                   </div>
                   <div style={styles.mobileStatGrid}>
-                    <div style={styles.mobileStatCard}>
+                    <span style={styles.mobileStatPair(true)}>
                       <span style={styles.mobileStatLabel}>Coins</span>
                       <span style={styles.mobileStatValueAccent}>
                         {player.coins}
                       </span>
-                    </div>
-                    <div style={styles.mobileStatCard}>
+                    </span>
+                    <span style={styles.mobileStatDivider} aria-hidden="true">
+                      |
+                    </span>
+                    <span style={styles.mobileStatPair()}>
                       <span style={styles.mobileStatLabel}>Inf</span>
                       <span style={styles.mobileStatValue}>
                         {player.influenceCount}
                       </span>
-                    </div>
-                    <div style={styles.mobileStatCard}>
+                    </span>
+                    <span style={styles.mobileStatDivider} aria-hidden="true">
+                      |
+                    </span>
+                    <span style={styles.mobileStatPair()}>
                       <span style={styles.mobileStatLabel}>Rev</span>
                       <span style={styles.mobileStatValue}>
                         {player.revealedCards.length}
                       </span>
-                    </div>
+                    </span>
                   </div>
                 </>
               ) : (
@@ -398,37 +404,46 @@ const styles = {
     flexShrink: 0,
   },
   mobileStatGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-    gap: 6,
-    width: "100%",
-  },
-  mobileStatCard: {
     display: "flex",
-    flexDirection: "column" as const,
-    gap: 2,
-    padding: "8px 10px",
-    borderRadius: 10,
-    background: "rgba(255,255,255,0.035)",
-    border: `1px solid ${tokens.surface.border}`,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: 8,
+    width: "100%",
     minWidth: 0,
+    padding: "2px 2px 0",
+  },
+  mobileStatPair: (accent = false) => ({
+    display: "inline-flex",
+    alignItems: "baseline",
+    gap: 5,
+    minWidth: 0,
+    color: accent ? tokens.text.accent : tokens.text.primary,
+  }),
+  mobileStatDivider: {
+    fontSize: 10,
+    color: "rgba(255,255,255,0.2)",
+    fontWeight: 700,
+    lineHeight: 1,
+    flexShrink: 0,
   },
   mobileStatLabel: {
-    fontSize: 8,
+    fontSize: 9,
     color: tokens.text.muted,
     fontWeight: 800,
-    letterSpacing: 0.8,
+    letterSpacing: 0.9,
     textTransform: "uppercase" as const,
   },
   mobileStatValue: {
-    fontSize: 14,
+    fontSize: 13,
     color: tokens.text.primary,
-    fontWeight: 800,
+    fontWeight: 900,
+    fontVariantNumeric: "tabular-nums" as const,
   },
   mobileStatValueAccent: {
-    fontSize: 14,
+    fontSize: 13,
     color: tokens.text.accent,
     fontWeight: 900,
+    fontVariantNumeric: "tabular-nums" as const,
   },
   eliminatedBadge: (isMobile: boolean) => ({
     fontSize: isMobile ? 9 : 10,

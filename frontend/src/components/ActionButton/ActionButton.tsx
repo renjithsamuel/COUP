@@ -223,10 +223,11 @@ export function ActionButton({
               style={actionButtonStyles.iconShell(
                 isDisabled,
                 selected,
+                compact,
                 presentation,
               )}
             >
-              <ActionGlyph name={presentation.icon} size={compact ? 12 : 16} />
+              <ActionGlyph name={presentation.icon} size={compact ? 11 : 16} />
             </span>
             <span
               style={actionButtonStyles.title(

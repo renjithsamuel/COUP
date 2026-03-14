@@ -8,8 +8,15 @@ import { getActionPanelStyles } from "./ActionPanel.styles";
 import { ACTION_RULES } from "@/models/action";
 import { ActionPanelController } from "./ActionPanel.hooks";
 
+const DEFAULT_ACTION_TYPES = new Set<ActionType>([
+  ActionType.INCOME,
+  ActionType.FOREIGN_AID,
+  ActionType.COUP,
+]);
+
 export interface ActionPanelProps extends ActionPanelController {
   isMobile?: boolean;
+  desktopTwoColumn?: boolean;
   onInactiveActionAttempt?: () => void;
   onActionPress?: (actionType: ActionType) => void;
 }
@@ -26,11 +33,19 @@ export function ActionPanel({
   myCoins,
   mustCoup,
   isMobile = false,
+  desktopTwoColumn = false,
   onInactiveActionAttempt,
   onActionPress,
 }: ActionPanelProps) {
-  const s = getActionPanelStyles(isMobile);
+  const s = getActionPanelStyles(isMobile, desktopTwoColumn);
   const selectedRule = selectedAction ? ACTION_RULES[selectedAction] : null;
+  const defaultActions = availableActions.filter((rule) =>
+    DEFAULT_ACTION_TYPES.has(rule.type),
+  );
+  const specialActions = availableActions.filter(
+    (rule) => !DEFAULT_ACTION_TYPES.has(rule.type),
+  );
+  const orderedActions = [...defaultActions, ...specialActions];
 
   const panelState = (() => {
     if (selectedRule) {
@@ -86,6 +101,24 @@ export function ActionPanel({
     isWaitingForInfluenceLoss ||
     (isMobile && panelState != null);
 
+  const renderActionButton = (rule: (typeof availableActions)[number]) => (
+    <ActionButton
+      key={rule.type}
+      actionType={rule.type}
+      onClick={() => {
+        onActionPress?.(rule.type);
+        beginAction(rule.type);
+      }}
+      selected={selectedAction === rule.type}
+      disabled={!canAct}
+      playerCoins={myCoins}
+      isBluff={rule.isBluff}
+      canAfford={rule.canAfford}
+      compact={isMobile}
+      helperText={undefined}
+    />
+  );
+
   return (
     <div style={s.dock}>
       {showPanelBar && (
@@ -130,22 +163,26 @@ export function ActionPanel({
         )}
         <div style={s.wrapper}>
           <AnimatePresence>
-            {availableActions.map((rule) => (
-              <ActionButton
-                key={rule.type}
-                actionType={rule.type}
-                onClick={() => {
-                  onActionPress?.(rule.type);
-                  beginAction(rule.type);
-                }}
-                selected={selectedAction === rule.type}
-                disabled={!canAct}
-                playerCoins={myCoins}
-                isBluff={rule.isBluff}
-                canAfford={rule.canAfford}
-                compact={isMobile}
-              />
-            ))}
+            {isMobile || desktopTwoColumn ? (
+              orderedActions.map((rule) => renderActionButton(rule))
+            ) : (
+              <>
+                <div style={s.desktopRow("default")}>
+                  {defaultActions.map((rule) => (
+                    <div key={rule.type} style={s.desktopButtonSlot}>
+                      {renderActionButton(rule)}
+                    </div>
+                  ))}
+                </div>
+                <div style={s.desktopRow("special")}>
+                  {specialActions.map((rule) => (
+                    <div key={rule.type} style={s.desktopButtonSlot}>
+                      {renderActionButton(rule)}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </AnimatePresence>
         </div>
       </div>

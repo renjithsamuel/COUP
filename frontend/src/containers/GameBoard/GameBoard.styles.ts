@@ -12,7 +12,7 @@ function s(mobile: boolean) {
       flexDirection: "column",
       position: "relative",
       overflowX: "hidden",
-      overflowY: "visible",
+      overflowY: "hidden",
     } satisfies CSSProperties,
 
     topBar: {
@@ -273,7 +273,11 @@ function s(mobile: boolean) {
       width: current ? 24 : 8,
       height: 8,
       borderRadius: 999,
-      background: current ? accent : passed ? `${accent}99` : "rgba(255,255,255,0.14)",
+      background: current
+        ? accent
+        : passed
+          ? `${accent}99`
+          : "rgba(255,255,255,0.14)",
       boxShadow: current ? `0 0 18px ${accent}66` : "none",
       transition: "all 0.18s ease",
     }),
@@ -297,10 +301,7 @@ function s(mobile: boolean) {
       color: accent,
     }),
 
-    startCountdownValue: (
-      accent: string,
-      isGo: boolean,
-    ): CSSProperties => ({
+    startCountdownValue: (accent: string, isGo: boolean): CSSProperties => ({
       fontSize: isGo ? (mobile ? 60 : 76) : mobile ? 96 : 124,
       lineHeight: 0.9,
       fontWeight: 900,
@@ -499,9 +500,9 @@ function s(mobile: boolean) {
       flexDirection: "column",
       justifyContent: "flex-start",
       padding: mobile
-        ? `0 ${tokens.spacing.sm}px 78px`
-        : `0 ${tokens.spacing.xl}px ${tokens.spacing.xl}px`,
-      gap: mobile ? 10 : tokens.spacing.md,
+        ? `0 ${tokens.spacing.sm}px 68px`
+        : `0 ${tokens.spacing.xl}px ${tokens.spacing.md}px`,
+      gap: mobile ? 8 : tokens.spacing.md,
       width: "100%",
       maxWidth: 1440,
       margin: "0 auto",
@@ -530,7 +531,7 @@ function s(mobile: boolean) {
       minWidth: 0,
       display: "flex",
       flexDirection: "column",
-      gap: mobile ? 12 : tokens.spacing.md,
+      gap: mobile ? 8 : tokens.spacing.md,
       overflow: mobile ? "visible" : "hidden",
     } satisfies CSSProperties,
 
@@ -641,8 +642,8 @@ function s(mobile: boolean) {
       minWidth: 0,
       overflowX: "hidden",
       overflowY: "hidden",
-      paddingTop: mobile ? 10 : 0,
-      paddingBottom: mobile ? 10 : 0,
+      paddingTop: mobile ? 6 : 0,
+      paddingBottom: mobile ? 4 : 4,
     } satisfies CSSProperties,
 
     sidePanel: (open: boolean): CSSProperties => {
@@ -983,13 +984,23 @@ function s(mobile: boolean) {
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
-      gap: mobile ? 10 : 10,
-      paddingBottom: mobile ? 4 : 10,
+      gap: mobile ? 6 : 8,
+      paddingBottom: mobile ? 2 : 2,
       width: "100%",
       flexShrink: 0,
       minWidth: 0,
       marginTop: mobile ? "auto" : 0,
       overflow: "visible",
+    } satisfies CSSProperties,
+
+    bottomDesktopRow: {
+      display: "flex",
+      alignItems: "stretch",
+      justifyContent: "center",
+      gap: 18,
+      width: "100%",
+      maxWidth: 980,
+      minWidth: 0,
     } satisfies CSSProperties,
 
     actionHintToast: {
@@ -1011,12 +1022,12 @@ function s(mobile: boolean) {
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
-      gap: mobile ? 6 : 6,
-      padding: mobile ? `7px 10px` : `6px 12px`,
+      gap: mobile ? 4 : 6,
+      padding: mobile ? `6px 8px` : `6px 10px 6px`,
       background: active
         ? "linear-gradient(180deg, rgba(44, 34, 12, 0.98) 0%, rgba(18, 14, 8, 0.99) 100%)"
         : "linear-gradient(180deg, rgba(16, 24, 40, 0.98) 0%, rgba(9, 14, 26, 0.98) 100%)",
-      borderRadius: mobile ? 16 : 18,
+      borderRadius: mobile ? 14 : 18,
       border: active
         ? "1px solid rgba(246,196,69,0.34)"
         : "1px solid rgba(255,255,255,0.08)",
@@ -1024,20 +1035,55 @@ function s(mobile: boolean) {
         ? "0 14px 30px rgba(0,0,0,0.24), 0 0 0 1px rgba(246,196,69,0.12), 0 0 24px rgba(246,196,69,0.18)"
         : "0 10px 20px rgba(0,0,0,0.18)",
       width: "100%",
-      maxWidth: mobile ? "100%" : 560,
+      maxWidth: mobile ? "100%" : 520,
       flexShrink: 0,
       minWidth: 0,
-      marginTop: mobile ? 4 : 0,
+      marginTop: mobile ? 0 : 0,
       boxSizing: "border-box",
       transition:
         "border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease",
     }),
 
+    playerCardAreaDesktop: (active = false): CSSProperties => ({
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 10,
+      padding: "10px 10px 12px",
+      background: active
+        ? "linear-gradient(180deg, rgba(44, 34, 12, 0.98) 0%, rgba(18, 14, 8, 0.99) 100%)"
+        : "linear-gradient(180deg, rgba(16, 24, 40, 0.98) 0%, rgba(9, 14, 26, 0.98) 100%)",
+      borderRadius: 18,
+      border: active
+        ? "1px solid rgba(246,196,69,0.34)"
+        : "1px solid rgba(255,255,255,0.08)",
+      boxShadow: active
+        ? "0 14px 30px rgba(0,0,0,0.24), 0 0 0 1px rgba(246,196,69,0.12), 0 0 24px rgba(246,196,69,0.18)"
+        : "0 10px 20px rgba(0,0,0,0.18)",
+      boxSizing: "border-box",
+      transition:
+        "border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease",
+      flex: "0 1 388px",
+      width: "min(388px, 100%)",
+      maxWidth: 388,
+      minWidth: 0,
+      minHeight: 0,
+    }),
+
+    actionPanelDesktopWrap: {
+      flex: "0 0 404px",
+      width: 404,
+      maxWidth: 404,
+      minWidth: 0,
+      display: "flex",
+      alignItems: "stretch",
+    } satisfies CSSProperties,
+
     playerInfoInline: (active = false): CSSProperties => ({
       display: "flex",
       alignItems: "center",
       gap: mobile ? tokens.spacing.xs : tokens.spacing.md,
-      paddingBottom: mobile ? 4 : 8,
+      paddingBottom: mobile ? 3 : 8,
       borderBottom: active
         ? "1px solid rgba(246,196,69,0.22)"
         : `1px solid rgba(255,255,255,0.08)`,
@@ -1116,13 +1162,13 @@ function s(mobile: boolean) {
       position: "fixed",
       left: 12,
       right: 12,
-      bottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)",
+      bottom: "calc(env(safe-area-inset-bottom, 0px) + 6px)",
       zIndex: 60,
       display: "flex",
       justifyContent: "center",
-      gap: 10,
-      padding: "6px 8px",
-      borderRadius: 18,
+      gap: 8,
+      padding: "5px 8px",
+      borderRadius: 16,
       border: "1px solid rgba(255,255,255,0.1)",
       background: "rgba(8, 14, 28, 0.86)",
       boxShadow: "0 18px 34px rgba(0,0,0,0.34)",

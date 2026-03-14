@@ -280,7 +280,7 @@ export function PlayerHand({
                   : undefined
               }
               disabled={card.isRevealed}
-              size="sm"
+              size={isMobile ? "sm" : "md"}
             />
           </motion.div>
         ))}

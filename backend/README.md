@@ -196,7 +196,7 @@ Finished games are retained temporarily for leaderboard aggregation, then purged
 
 Leaderboard rows award 1 participation point for every completed game plus 2 bonus points for each win, so a win is worth 3 total points. Leaderboards are room-scoped, and if the client supplies a stable `profile_id`, aggregation follows that identity instead of merging players purely by display name. Waiting-room seat reuse is driven by the saved lobby `session_token`, so refresh/rejoin continuity still works without collapsing separate deliberate players into one seat.
 
-Solo AI matches start directly into `/game/[id]` without a lobby. Bots are persisted as regular game players with bot metadata, and a background bot loop advances their decisions server-side after the human player connects.
+Solo AI matches start directly into `/game/[id]` without a lobby. Bots are persisted as regular game players with bot metadata, and a background bot loop advances their decisions server-side after the human player connects or reconnects.
 
 ## Modifying Game Rules
 
