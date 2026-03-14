@@ -44,7 +44,7 @@ src/
 │   ├── PreGameConfig/      # Pre-game configuration with timer controls + Peaceful Mode toggle
 │   └── TurnIndicator/      # Active turn display
 ├── containers/             # Stateful composite containers
-│   ├── GameBoard/          # Main game board (top-bar turn status on every breakpoint, compact mobile connection dot, readable desktop top-bar event toasts, mobile utility dock, winner confetti, default-open desktop timeline, turn-highlighted player tray, and a pinnable desktop character-action reference)
+│   ├── GameBoard/          # Main game board (top-bar turn status on every breakpoint, compact mobile connection dot, readable desktop top-bar event toasts, mobile utility dock, winner confetti, a brief premium start countdown, default-open desktop timeline, turn-highlighted player tray, and a pinnable desktop character-action reference)
 │   ├── PlayerHand/         # Current player's compact card hand
 │   ├── ActionPanel/        # Compact action ribbon with dense 3-column mobile layout, slimmer mobile standby strip, and minimal off-turn chrome
 │   ├── OpponentArea/       # Responsive opponent carousel with centered small-table seats, fixed-width cards, and subtle edge fades
@@ -188,6 +188,7 @@ Add the export to `src/components/index.ts`.
 - **Action audio**: `src/hooks/useGameAudio.ts` synthesizes very light, low-pass-filtered action-button cues plus a soft turn chime with the Web Audio API, and `src/containers/GameBoard/GameBoard.tsx` exposes a persistent mute toggle alongside the utility buttons
 - **Pinned character reference**: `src/components/GuideModal/GuideModal.tsx` can pin a concise character-action panel into the desktop game board, where it can be dragged and dismissed without reopening the full rules modal
 - **AI replay flow**: `src/app/game/[id]/GamePageContent.tsx` reuses the same AI bot count, difficulty, and timer config when `Play Again` is pressed after a solo match
+- **Game entry pacing**: `src/containers/GameBoard/GameBoard.tsx` shows a short 3-2-1-Go countdown overlay before the live board becomes interactive, so both friend matches and AI tables get a smoother start on desktop and mobile
 - **In-game leaderboard tabs**: `src/containers/GameBoard/GameBoard.tsx` presents a full-screen modal with tabs for the live table and the room's cross-game scores
 - **Fullscreen overlays**: `src/containers/LobbyRoom/LobbyRoom.tsx`, `src/components/GuideModal/GuideModal.tsx`, and `src/components/GameOverModal/GameOverModal.tsx` render overlays through portals so they cover the full viewport instead of being clipped by the surrounding layout
 - **Replay flow**: `src/app/lobby/[id]/page.tsx` now carries `lobbyId` into the game route, and `src/app/game/[id]/GamePageContent.tsx` resets that lobby before sending `Play Again` back to the same room so the room can continue together

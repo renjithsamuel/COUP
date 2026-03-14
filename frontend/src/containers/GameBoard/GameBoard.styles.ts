@@ -200,6 +200,122 @@ function s(mobile: boolean) {
       minWidth: 0,
     } satisfies CSSProperties,
 
+    startCountdownOverlay: {
+      position: "fixed",
+      inset: 0,
+      zIndex: tokens.zIndex.modal + 12,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: mobile ? `${tokens.spacing.xl}px` : `${tokens.spacing.xxl}px`,
+      background:
+        "radial-gradient(circle at 50% 36%, rgba(18, 27, 46, 0.72) 0%, rgba(7, 11, 22, 0.88) 52%, rgba(4, 7, 14, 0.94) 100%)",
+      backdropFilter: "blur(18px)",
+      pointerEvents: "auto",
+    } satisfies CSSProperties,
+
+    startCountdownAura: (accent: string): CSSProperties => ({
+      position: "absolute",
+      width: mobile ? 260 : 360,
+      height: mobile ? 260 : 360,
+      borderRadius: "50%",
+      background: `radial-gradient(circle, ${accent}30 0%, ${accent}14 36%, transparent 72%)`,
+      filter: "blur(14px)",
+      pointerEvents: "none",
+    }),
+
+    startCountdownCard: (accent: string): CSSProperties => ({
+      position: "relative",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: mobile ? 10 : 12,
+      width: mobile ? "min(88vw, 340px)" : "min(32vw, 420px)",
+      minHeight: mobile ? 240 : 290,
+      padding: mobile ? "22px 22px 20px" : "28px 34px 26px",
+      borderRadius: mobile ? 28 : 32,
+      border: `1px solid ${accent}2E`,
+      background:
+        "linear-gradient(180deg, rgba(16, 24, 40, 0.94) 0%, rgba(9, 14, 26, 0.98) 100%)",
+      boxShadow: `0 28px 70px rgba(0,0,0,0.42), 0 0 0 1px ${accent}12, 0 0 40px ${accent}16`,
+      overflow: "hidden",
+    }),
+
+    startCountdownHeader: {
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+    } satisfies CSSProperties,
+
+    startCountdownEyebrow: {
+      fontSize: mobile ? 10 : 11,
+      fontWeight: 800,
+      letterSpacing: mobile ? 1.4 : 1.8,
+      textTransform: "uppercase",
+      color: "rgba(232, 234, 240, 0.72)",
+    } satisfies CSSProperties,
+
+    startCountdownDots: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 8,
+      flexShrink: 0,
+    } satisfies CSSProperties,
+
+    startCountdownDot: (
+      current: boolean,
+      passed: boolean,
+      accent: string,
+    ): CSSProperties => ({
+      width: current ? 24 : 8,
+      height: 8,
+      borderRadius: 999,
+      background: current ? accent : passed ? `${accent}99` : "rgba(255,255,255,0.14)",
+      boxShadow: current ? `0 0 18px ${accent}66` : "none",
+      transition: "all 0.18s ease",
+    }),
+
+    startCountdownContent: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: mobile ? 8 : 10,
+      textAlign: "center",
+      minHeight: mobile ? 160 : 190,
+      width: "100%",
+    } satisfies CSSProperties,
+
+    startCountdownStepLabel: (accent: string): CSSProperties => ({
+      fontSize: mobile ? 11 : 12,
+      fontWeight: 900,
+      letterSpacing: mobile ? 1.8 : 2.2,
+      textTransform: "uppercase",
+      color: accent,
+    }),
+
+    startCountdownValue: (
+      accent: string,
+      isGo: boolean,
+    ): CSSProperties => ({
+      fontSize: isGo ? (mobile ? 60 : 76) : mobile ? 96 : 124,
+      lineHeight: 0.9,
+      fontWeight: 900,
+      letterSpacing: isGo ? 2.4 : -3,
+      color: tokens.text.primary,
+      textShadow: `0 0 26px ${accent}28`,
+    }),
+
+    startCountdownDetail: {
+      maxWidth: 260,
+      fontSize: mobile ? 12 : 13,
+      lineHeight: 1.55,
+      color: "rgba(232, 234, 240, 0.72)",
+    } satisfies CSSProperties,
+
     pinnedGuidePanel: {
       position: "fixed",
       top: 96,

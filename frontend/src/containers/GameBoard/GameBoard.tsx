@@ -181,6 +181,36 @@ const PINNED_CHARACTERS = [
   Character.CONTESSA,
 ];
 
+const GAME_START_COUNTDOWN = [
+  {
+    label: "3",
+    accent: "#F6C445",
+    eyebrow: "Match starting",
+    detail: "Take a breath. The table is about to open.",
+  },
+  {
+    label: "2",
+    accent: "#8FB8FF",
+    eyebrow: "Seats locked",
+    detail: "Everyone is in. Your opening read starts now.",
+  },
+  {
+    label: "1",
+    accent: "#7BE0B8",
+    eyebrow: "Focus up",
+    detail: "Cards are live and your first move is next.",
+  },
+  {
+    label: "GO",
+    accent: "#F59E0B",
+    eyebrow: "Table live",
+    detail: "Play sharp.",
+  },
+] as const;
+
+const GAME_START_STEP_MS = 700;
+const GAME_START_EXIT_MS = 200;
+
 export function GameBoard({
   gameId,
   playerId,
@@ -211,6 +241,9 @@ export function GameBoard({
   const [showPinnedGuide, setShowPinnedGuide] = useState(false);
   const [dashboardTab, setDashboardTab] = useState<"table" | "room">("table");
   const [actionHint, setActionHint] = useState<string | null>(null);
+  const [countdownStepIndex, setCountdownStepIndex] = useState<number | null>(
+    null,
+  );
   const pinnedGuideDragControls = useDragControls();
   const [timelinePreferenceTouched, setTimelinePreferenceTouched] =
     useState(false);
@@ -220,6 +253,8 @@ export function GameBoard({
   const { isMuted, playActionSound, playTurnSound, toggleMute } =
     useGameAudio();
   const previousIsMyTurnRef = React.useRef(false);
+  const hasShownStartCountdownRef = React.useRef(false);
+  const hasGameLoaded = gameState != null;
 
   useEffect(() => {
     if (timelinePreferenceTouched) {
@@ -255,6 +290,34 @@ export function GameBoard({
 
     previousIsMyTurnRef.current = isMyTurn;
   }, [isGameOver, isMyTurn, playTurnSound]);
+
+  useEffect(() => {
+    hasShownStartCountdownRef.current = false;
+    setCountdownStepIndex(null);
+  }, [gameId]);
+
+  useEffect(() => {
+    if (!hasGameLoaded || isGameOver || hasShownStartCountdownRef.current) {
+      return;
+    }
+
+    hasShownStartCountdownRef.current = true;
+    setCountdownStepIndex(0);
+
+    const stepTimers = GAME_START_COUNTDOWN.slice(1).map((_, index) =>
+      window.setTimeout(() => {
+        setCountdownStepIndex(index + 1);
+      }, (index + 1) * GAME_START_STEP_MS),
+    );
+    const finishTimer = window.setTimeout(() => {
+      setCountdownStepIndex(null);
+    }, GAME_START_COUNTDOWN.length * GAME_START_STEP_MS + GAME_START_EXIT_MS);
+
+    return () => {
+      stepTimers.forEach((timerId) => window.clearTimeout(timerId));
+      window.clearTimeout(finishTimer);
+    };
+  }, [hasGameLoaded, isGameOver]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -296,6 +359,8 @@ export function GameBoard({
 
   const desktopEventCopy =
     activeEvent?.compactMessage ?? activeEvent?.message ?? "";
+  const activeCountdownStep =
+    countdownStepIndex == null ? null : GAME_START_COUNTDOWN[countdownStepIndex];
   const desktopEventTitle =
     activeEvent == null
       ? ""
@@ -626,6 +691,91 @@ export function GameBoard({
       {isMobile && (
         <div style={s.mobileUtilityDock}>{renderUtilityButtons()}</div>
       )}
+
+      <AnimatePresence>
+        {activeCountdownStep && !isGameOver && (
+          <motion.div
+            style={s.startCountdownOverlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+          >
+            <motion.div
+              style={s.startCountdownAura(activeCountdownStep.accent)}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.08 }}
+              transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            />
+            <motion.div
+              style={s.startCountdownCard(activeCountdownStep.accent)}
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 1.03, y: -10 }}
+              transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div style={s.startCountdownHeader}>
+                <span style={s.startCountdownEyebrow}>Ready</span>
+                <div style={s.startCountdownDots} aria-hidden="true">
+                  {GAME_START_COUNTDOWN.map((step, index) => (
+                    <span
+                      key={step.label}
+                      style={s.startCountdownDot(
+                        index === countdownStepIndex,
+                        index <= (countdownStepIndex ?? -1),
+                        step.accent,
+                      )}
+                    />
+                  ))}
+                </div>
+              </div>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeCountdownStep.label}
+                  style={s.startCountdownContent}
+                  initial={{
+                    opacity: 0,
+                    scale: 0.82,
+                    y: 22,
+                    filter: "blur(12px)",
+                  }}
+                  animate={{
+                    opacity: 1,
+                    scale: 1,
+                    y: 0,
+                    filter: "blur(0px)",
+                  }}
+                  exit={{
+                    opacity: 0,
+                    scale: 1.08,
+                    y: -12,
+                    filter: "blur(10px)",
+                  }}
+                  transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <span
+                    style={s.startCountdownStepLabel(activeCountdownStep.accent)}
+                  >
+                    {activeCountdownStep.eyebrow}
+                  </span>
+                  <span
+                    style={s.startCountdownValue(
+                      activeCountdownStep.accent,
+                      activeCountdownStep.label === "GO",
+                    )}
+                  >
+                    {activeCountdownStep.label}
+                  </span>
+                  <span style={s.startCountdownDetail}>
+                    {activeCountdownStep.detail}
+                  </span>
+                </motion.div>
+              </AnimatePresence>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isGameOver && isWinner && (
