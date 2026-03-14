@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { targetSlotHoverMotion, targetSlotTapMotion } from '@/animations';
 import { useGameContext } from '@/context/GameContext';
 import { PlayerAvatar } from '@/components/PlayerAvatar';
 import { Card } from '@/components/Card';
@@ -99,7 +100,7 @@ export function OpponentArea({
       <div ref={scrollRef} style={s.viewport} className={shellClassName}>
         <div style={s.track}>
           {opponents.map((opp) => (
-            <div
+            <motion.div
               key={opp.id}
               ref={(el) => {
                 if (el) {
@@ -114,6 +115,8 @@ export function OpponentArea({
                 selectableTargetIds.includes(opp.id),
                 targetModeAction != null,
               )}
+              whileHover={opp.isAlive && selectableTargetIds.includes(opp.id) ? targetSlotHoverMotion : undefined}
+              whileTap={opp.isAlive && selectableTargetIds.includes(opp.id) ? targetSlotTapMotion : undefined}
               onClick={
                 opp.isAlive && selectableTargetIds.includes(opp.id) && onSelectTarget
                   ? () => onSelectTarget(opp.id)
@@ -211,7 +214,7 @@ export function OpponentArea({
                   <span style={s.offlineBadge}>offline</span>
                 </div>
               )}
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

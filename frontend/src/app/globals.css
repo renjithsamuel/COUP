@@ -11,6 +11,50 @@ html {
   -webkit-tap-highlight-color: transparent;
 }
 
+button,
+a,
+[role='button'],
+[tabindex='0'],
+input[type='button'],
+input[type='submit'],
+input[type='reset'] {
+  transition:
+    transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    opacity 160ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button:not(:disabled):hover,
+  a:hover,
+  input:not(:disabled):hover,
+  [tabindex='0']:hover {
+    transform: translateY(-1px) scale(1.01);
+    filter: brightness(1.03) saturate(1.03);
+  }
+}
+
+button:active,
+a:active,
+[role='button']:active,
+[tabindex='0']:active,
+input[type='button']:active,
+input[type='submit']:active,
+input[type='reset']:active {
+  transform: translateY(1px) scale(0.968);
+  filter: brightness(1.12) saturate(1.08);
+}
+
+button:disabled:active,
+[role='button'][aria-disabled='true']:active,
+input:disabled:active {
+  transform: none;
+  filter: none;
+}
+
 @media (hover: none) and (pointer: coarse) {
   button,
   a,
@@ -24,13 +68,6 @@ html {
     -webkit-user-select: none;
     user-select: none;
     touch-action: manipulation;
-    transition:
-      transform 140ms ease,
-      filter 140ms ease,
-      box-shadow 140ms ease,
-      background-color 140ms ease,
-      border-color 140ms ease,
-      opacity 140ms ease;
   }
 
   button:active,
@@ -40,14 +77,7 @@ html {
   input[type='button']:active,
   input[type='submit']:active,
   input[type='reset']:active {
-    transform: translateY(1px) scale(0.985);
-    filter: brightness(1.06);
-  }
-
-  button:disabled:active,
-  [role='button'][aria-disabled='true']:active,
-  input:disabled:active {
-    transform: none;
-    filter: none;
+    transform: translateY(1px) scale(0.962);
+    filter: brightness(1.15) saturate(1.12);
   }
 }

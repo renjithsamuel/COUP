@@ -1,5 +1,10 @@
 export { ANIM, EASING } from './constants';
 export {
+  interactiveHoverMotion,
+  interactiveTapMotion,
+  cardTapMotion,
+  targetSlotHoverMotion,
+  targetSlotTapMotion,
   cardFlipVariants,
   cardDealVariants,
   cardHoverVariants,

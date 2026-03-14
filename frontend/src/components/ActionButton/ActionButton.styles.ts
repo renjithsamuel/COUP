@@ -2,14 +2,29 @@ import { CSSProperties } from 'react';
 import { ActionPresentation } from '@/models/action';
 import { tokens } from '@/theme/tokens';
 
+interface ActionButtonRippleStyle {
+  left: number;
+  top: number;
+  size: number;
+}
+
 export const actionButtonStyles = {
-  button: (disabled: boolean, isBluff = false, compact = false, selected = false): CSSProperties => ({
+  button: (
+    disabled: boolean,
+    isBluff = false,
+    compact = false,
+    selected = false,
+    pressed = false,
+    presentation?: ActionPresentation,
+  ): CSSProperties => ({
     padding: compact
       ? '7px 7px 8px'
       : '10px 12px 9px',
     borderRadius: compact ? 10 : 12,
     border: disabled
       ? `1px solid ${tokens.surface.border}`
+      : pressed && presentation
+        ? `1px solid ${presentation.accent}`
       : selected
         ? '1px solid rgba(246, 196, 69, 0.5)'
       : isBluff
@@ -26,6 +41,8 @@ export const actionButtonStyles = {
     color: disabled ? tokens.text.muted : tokens.text.primary,
     boxShadow: disabled
       ? 'none'
+      : pressed && presentation
+        ? `0 0 0 1px ${presentation.accent}66, 0 12px 24px rgba(0,0,0,0.24), 0 0 24px ${presentation.accent}3d, inset 0 0 0 1px ${presentation.accent}40`
       : selected
         ? '0 10px 18px rgba(0,0,0,0.24), 0 0 0 1px rgba(246,196,69,0.16), 0 0 18px rgba(246,196,69,0.1)'
         : '0 8px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
@@ -40,7 +57,38 @@ export const actionButtonStyles = {
     minHeight: compact ? 52 : 46,
     textAlign: compact ? 'center' : 'left',
     overflow: 'hidden',
+    isolation: 'isolate',
   }),
+
+  rippleLayer: {
+    position: 'absolute',
+    inset: 0,
+    pointerEvents: 'none',
+    overflow: 'hidden',
+    borderRadius: 'inherit',
+    zIndex: 1,
+  } satisfies CSSProperties,
+
+  ripple: (ripple: ActionButtonRippleStyle, innerColor: string, midColor: string, outerColor: string): CSSProperties => ({
+    position: 'absolute',
+    left: ripple.left,
+    top: ripple.top,
+    width: ripple.size,
+    height: ripple.size,
+    borderRadius: '50%',
+    background: `radial-gradient(circle, ${innerColor} 0%, ${midColor} 34%, ${outerColor} 72%)`,
+    boxShadow: `0 0 42px ${midColor}`,
+    filter: 'blur(0.5px)',
+    opacity: 0.95,
+  }),
+
+  content: {
+    position: 'relative',
+    zIndex: 2,
+    display: 'flex',
+    flex: 1,
+    minWidth: 0,
+  } satisfies CSSProperties,
 
   header: (compact: boolean): CSSProperties => ({
     display: 'flex',
@@ -50,6 +98,7 @@ export const actionButtonStyles = {
     gap: compact ? 3 : tokens.spacing.xs,
     minWidth: 0,
     flex: 1,
+    width: '100%',
   }),
 
   identityRow: (compact: boolean): CSSProperties => ({

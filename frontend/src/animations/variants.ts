@@ -78,6 +78,41 @@ export const scalePopVariants: Variants = {
   exit: { scale: 0.6, opacity: 0, transition: { duration: ANIM.FADE_OUT } },
 };
 
+export const interactiveHoverMotion = {
+  scale: 1.03,
+  y: -2,
+  filter: 'brightness(1.04) saturate(1.04)',
+  transition: { duration: 0.18, ease: EASING.smooth },
+};
+
+export const interactiveTapMotion = {
+  scale: 0.965,
+  y: 1,
+  filter: 'brightness(1.12) saturate(1.08)',
+  transition: { duration: 0.12, ease: EASING.snappy },
+};
+
+export const cardTapMotion = {
+  scale: 0.96,
+  y: 3,
+  filter: 'brightness(1.08) saturate(1.06)',
+  transition: { duration: 0.12, ease: EASING.snappy },
+};
+
+export const targetSlotHoverMotion = {
+  scale: 1.015,
+  y: -3,
+  filter: 'brightness(1.05) saturate(1.04)',
+  transition: { duration: 0.18, ease: EASING.smooth },
+};
+
+export const targetSlotTapMotion = {
+  scale: 0.982,
+  y: 2,
+  filter: 'brightness(1.12) saturate(1.1)',
+  transition: { duration: 0.12, ease: EASING.snappy },
+};
+
 /** Shake — for errors, failed challenges */
 export const shakeVariants: Variants = {
   idle: { x: 0 },

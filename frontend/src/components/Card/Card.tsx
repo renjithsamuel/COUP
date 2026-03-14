@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Character, CHARACTER_LABELS } from '@/models/card';
-import { cardHoverVariants } from '@/animations';
+import { cardHoverVariants, cardTapMotion } from '@/animations';
 import { cardStyles } from './Card.styles';
 import { useCardHover } from './Card.hooks';
 import dukeArt from '@/assets/card_faces/duke.jpg';
@@ -48,6 +48,7 @@ export function Card({
       variants={cardHoverVariants}
       initial="rest"
       whileHover={disabled ? undefined : 'hover'}
+      whileTap={disabled ? undefined : cardTapMotion}
       style={{
         ...cardStyles.wrapper,
         width: cardStyles.wrapper.width * scale,

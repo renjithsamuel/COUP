@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCreateLobby, useJoinLobby } from '@/queries/useLobbyQueries';
 import { lobbySessionStore } from '@/services/lobbyService';
-import { fadeInVariants, slideUpVariants, scalePopVariants } from '@/animations';
+import { fadeInVariants, interactiveHoverMotion, interactiveTapMotion, slideUpVariants, scalePopVariants } from '@/animations';
 import { CoupBackgroundSVG } from '@/components/CoupBackgroundSVG';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { tokens } from '@/theme/tokens';
@@ -452,8 +452,8 @@ export default function HomePage() {
                           cursor: !playerName.trim() ? 'not-allowed' : 'pointer',
                         }}
                         variants={scalePopVariants}
-                        whileHover={playerName.trim() ? { scale: 1.02 } : {}}
-                        whileTap={playerName.trim() ? { scale: 0.98 } : {}}
+                        whileHover={playerName.trim() ? interactiveHoverMotion : undefined}
+                        whileTap={playerName.trim() ? interactiveTapMotion : undefined}
                         onClick={handleCreate}
                         disabled={createLobby.isPending || !playerName.trim()}
                       >
@@ -487,8 +487,8 @@ export default function HomePage() {
                           cursor: !playerName.trim() || !roomCode.trim() ? 'not-allowed' : 'pointer',
                         }}
                         variants={scalePopVariants}
-                        whileHover={playerName.trim() && roomCode.trim() ? { scale: 1.02 } : {}}
-                        whileTap={playerName.trim() && roomCode.trim() ? { scale: 0.98 } : {}}
+                        whileHover={playerName.trim() && roomCode.trim() ? interactiveHoverMotion : undefined}
+                        whileTap={playerName.trim() && roomCode.trim() ? interactiveTapMotion : undefined}
                         onClick={handleJoin}
                         disabled={joinLobby.isPending || !playerName.trim() || !roomCode.trim()}
                       >
@@ -518,8 +518,8 @@ export default function HomePage() {
                     cursor: !playerName.trim() ? 'not-allowed' : 'pointer',
                   }}
                   variants={scalePopVariants}
-                  whileHover={playerName.trim() ? { scale: 1.02 } : {}}
-                  whileTap={playerName.trim() ? { scale: 0.98 } : {}}
+                  whileHover={playerName.trim() ? interactiveHoverMotion : undefined}
+                  whileTap={playerName.trim() ? interactiveTapMotion : undefined}
                   onClick={handleCreate}
                   disabled={createLobby.isPending || !playerName.trim()}
                 >
@@ -550,8 +550,8 @@ export default function HomePage() {
                     cursor: !playerName.trim() || !roomCode.trim() ? 'not-allowed' : 'pointer',
                   }}
                   variants={scalePopVariants}
-                  whileHover={playerName.trim() && roomCode.trim() ? { scale: 1.02 } : {}}
-                  whileTap={playerName.trim() && roomCode.trim() ? { scale: 0.98 } : {}}
+                  whileHover={playerName.trim() && roomCode.trim() ? interactiveHoverMotion : undefined}
+                  whileTap={playerName.trim() && roomCode.trim() ? interactiveTapMotion : undefined}
                   onClick={handleJoin}
                   disabled={joinLobby.isPending || !playerName.trim() || !roomCode.trim()}
                 >
