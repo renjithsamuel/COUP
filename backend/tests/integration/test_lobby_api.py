@@ -1,17 +1,20 @@
 """Integration tests for lobby API."""
 
 import pytest
+import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
 from app.main import create_app
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def client():
     app = create_app()
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
-        yield c
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(transport=transport, base_url="http://test") as c:
+            yield c
+    await transport.aclose()
 
 
 class TestHealthEndpoint:
@@ -57,6 +60,27 @@ class TestLobbyAPI:
         assert join_resp.json()["player_count"] == 2
 
     @pytest.mark.asyncio
+    async def test_join_lobby_reuses_profile_identity(self, client: AsyncClient):
+        create_resp = await client.post(
+            "/api/lobbies", json={"host_name": "Alice", "profile_id": "profile-alice"}
+        )
+        lobby_id = create_resp.json()["id"]
+
+        first_join_resp = await client.post(
+            f"/api/lobbies/{lobby_id}/join",
+            json={"player_name": "Bob", "profile_id": "profile-bob"},
+        )
+        second_join_resp = await client.post(
+            f"/api/lobbies/{lobby_id}/join",
+            json={"player_name": "Bobby", "profile_id": "profile-bob"},
+        )
+
+        assert first_join_resp.status_code == 200
+        assert second_join_resp.status_code == 200
+        assert second_join_resp.json()["player_count"] == 2
+        assert second_join_resp.json()["player_id"] == first_join_resp.json()["player_id"]
+
+    @pytest.mark.asyncio
     async def test_get_lobby(self, client: AsyncClient):
         create_resp = await client.post(
             "/api/lobbies", json={"host_name": "Alice"}
@@ -97,3 +121,38 @@ class TestLobbyAPI:
 
         start_resp = await client.post(f"/api/lobbies/{lobby_id}/start")
         assert start_resp.status_code == 400
+
+    @pytest.mark.asyncio
+    async def test_can_start_same_room_again_after_reset(self, client: AsyncClient):
+        create_resp = await client.post(
+            "/api/lobbies", json={"host_name": "Alice", "profile_id": "profile-alice"}
+        )
+        lobby_id = create_resp.json()["id"]
+        host_token = create_resp.json()["session_token"]
+
+        join_resp = await client.post(
+            f"/api/lobbies/{lobby_id}/join",
+            json={"player_name": "Bob", "profile_id": "profile-bob"},
+        )
+        join_token = join_resp.json()["session_token"]
+
+        first_start_resp = await client.post(f"/api/lobbies/{lobby_id}/start")
+        assert first_start_resp.status_code == 200
+
+        reset_resp = await client.post(f"/api/lobbies/{lobby_id}/reset")
+        assert reset_resp.status_code == 200
+
+        host_lobby_resp = await client.get(
+            f"/api/lobbies/{lobby_id}?session_token={host_token}"
+        )
+        join_lobby_resp = await client.get(
+            f"/api/lobbies/{lobby_id}?session_token={join_token}"
+        )
+        assert host_lobby_resp.status_code == 200
+        assert join_lobby_resp.status_code == 200
+        assert host_lobby_resp.json()["player_count"] == 2
+        assert join_lobby_resp.json()["player_count"] == 2
+
+        second_start_resp = await client.post(f"/api/lobbies/{lobby_id}/start")
+        assert second_start_resp.status_code == 200
+        assert second_start_resp.json()["game_id"] != first_start_resp.json()["game_id"]

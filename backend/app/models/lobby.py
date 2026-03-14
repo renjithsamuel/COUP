@@ -12,6 +12,7 @@ class LobbyPlayer(BaseModel):
 
     id: str
     name: str
+    profile_id: str = ""
     is_host: bool = False
     is_ready: bool = False
 
@@ -24,6 +25,7 @@ class LobbyCreate(BaseModel):
     host_name: str = Field(..., min_length=1, max_length=20)
     name: str = Field(default="", max_length=30)
     max_players: int = Field(default=6, ge=2, le=6)
+    profile_id: str = Field(default="", max_length=64)
 
 
 class LobbyJoin(BaseModel):
@@ -32,6 +34,7 @@ class LobbyJoin(BaseModel):
     model_config = ConfigDict(strict=True)
 
     player_name: str = Field(..., min_length=1, max_length=20)
+    profile_id: str = Field(default="", max_length=64)
 
 
 class Lobby(BaseModel):
@@ -71,7 +74,21 @@ class LobbyResponse(BaseModel):
     status: str
     game_id: str | None = None
     player_count: int
+    player_id: str | None = None
     session_token: str | None = None  # only returned on create/join
+
+
+class LeaderboardEntry(BaseModel):
+    """Aggregated finished-game standings for lobby views."""
+
+    model_config = ConfigDict(strict=True)
+
+    player_name: str
+    player_key: str
+    wins: int
+    games_played: int
+    win_rate: float
+    score: int
 
 
 class GameConfig(BaseModel):

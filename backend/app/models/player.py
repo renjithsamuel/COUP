@@ -14,6 +14,7 @@ class Player(BaseModel):
 
     id: str
     name: str
+    profile_id: str = ""
     coins: int = 2
     influences: list[Card] = Field(default_factory=list)
     is_alive: bool = True

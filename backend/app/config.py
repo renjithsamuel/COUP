@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     block_window_seconds: int = 10
     reconnect_grace_seconds: int = 60
     max_messages_per_second: int = 10
+    finished_game_retention_minutes: int = 180
     min_players: int = 2
     max_players: int = 6
     starting_coins: int = 2

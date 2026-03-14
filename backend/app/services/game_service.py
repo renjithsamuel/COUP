@@ -5,12 +5,13 @@ from __future__ import annotations
 import asyncio
 import logging
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, ClassVar
 
 from app.engine.game_engine import GameEngine
 from app.models.action import ActionType, PlayerAction
 from app.models.game import GameConfig, GamePhase, GameState, GameStatus
-from app.models.lobby import GameConfig as LobbyGameConfig, Lobby
+from app.models.lobby import GameConfig as LobbyGameConfig, LeaderboardEntry, Lobby
 
 if TYPE_CHECKING:
     from app.repositories.game_repository import GameRepository
@@ -22,6 +23,7 @@ class GameService:
     _logger = logging.getLogger(__name__)
     _games: ClassVar[dict[str, GameState]] = {}
     _game_locks: ClassVar[dict[str, asyncio.Lock]] = {}
+    _phase_clocks: ClassVar[dict[str, dict[str, str | None]]] = {}
 
     def __init__(self, engine: GameEngine, game_repo: GameRepository) -> None:
         self._engine = engine
@@ -44,10 +46,16 @@ class GameService:
 
         # Add all lobby players (preserve their IDs)
         for lp in lobby.players:
-            state, _ = self._engine.add_player(state, lp.name, player_id=lp.id)
+            state, _ = self._engine.add_player(
+                state,
+                lp.name,
+                player_id=lp.id,
+                profile_id=lp.profile_id,
+            )
 
         # Start the game
         state = self._engine.start_game(state)
+        self._sync_phase_clock(state)
 
         # Persist and cache
         await self._repo.create(state)
@@ -58,9 +66,11 @@ class GameService:
         """Get game state, preferring cache."""
         shared_games = type(self)._games
         if game_id in shared_games:
+            self._sync_phase_clock(shared_games[game_id])
             return shared_games[game_id]
         state = await self._repo.get_by_id(game_id)
         if state:
+            self._sync_phase_clock(state)
             shared_games[game_id] = state
         return state
 
@@ -260,11 +270,82 @@ class GameService:
             deleted = await self._repo.delete(game_id)
             type(self)._games.pop(game_id, None)
             type(self)._game_locks.pop(game_id, None)
+            type(self)._phase_clocks.pop(game_id, None)
             return deleted
 
     def get_public_state(self, state: GameState, player_id: str):
         """Get public state for a player."""
+        self._sync_phase_clock(state)
         return self._engine.to_public_state(state, player_id)
+
+    async def get_leaderboard(self, limit: int = 10) -> list[LeaderboardEntry]:
+        rows = await self._repo.get_leaderboard(limit=limit)
+        return [LeaderboardEntry.model_validate(row) for row in rows]
+
+    async def cleanup_finished_games(self, retention_minutes: int) -> int:
+        if retention_minutes <= 0:
+            return 0
+
+        cutoff = self._utc_now() - timedelta(minutes=retention_minutes)
+        deleted_game_ids = await self._repo.delete_finished_before(cutoff)
+        for game_id in deleted_game_ids:
+            type(self)._games.pop(game_id, None)
+            type(self)._game_locks.pop(game_id, None)
+            type(self)._phase_clocks.pop(game_id, None)
+        return len(deleted_game_ids)
+
+    async def process_expired_timers(self) -> list[dict[str, object]]:
+        resolutions: list[dict[str, object]] = []
+        for game_id in list(type(self)._games.keys()):
+            resolution = await self.process_timeout(game_id)
+            if resolution is not None:
+                resolutions.append(resolution)
+        return resolutions
+
+    async def process_timeout(self, game_id: str) -> dict[str, object] | None:
+        async with self._get_game_lock(game_id):
+            state = await self._get_or_raise(game_id)
+            self._sync_phase_clock(state)
+
+            deadline_at = self._parse_iso8601(state.phase_deadline_at)
+            if deadline_at is None or deadline_at > self._utc_now():
+                return None
+
+            previous_phase = state.phase
+            previous_turn_number = state.turn_number
+            previous_player_id = state.current_turn_player_id
+
+            if state.phase == GamePhase.TURN_START:
+                timed_out_player_id = state.current_turn_player_id
+                state.event_log.append({
+                    "type": "turn_timed_out",
+                    "player_id": timed_out_player_id,
+                    "turn_number": state.turn_number,
+                })
+                state.phase = GamePhase.TURN_END
+                state = self._advance_if_turn_end(state)
+            elif state.phase in (
+                GamePhase.CHALLENGE_WINDOW,
+                GamePhase.BLOCK_CHALLENGE_WINDOW,
+            ):
+                state = self._engine.handle_no_challenge(state)
+                state = self._advance_if_turn_end(state)
+            elif state.phase == GamePhase.BLOCK_WINDOW:
+                state = self._engine.handle_no_block(state)
+                state = self._advance_if_turn_end(state)
+            else:
+                return None
+
+            state = self._ensure_terminal_state(state)
+            await self._save(state)
+
+            return {
+                "game_id": game_id,
+                "state": state,
+                "previous_phase": previous_phase.value,
+                "previous_turn_number": previous_turn_number,
+                "previous_player_id": previous_player_id,
+            }
 
     async def _get_or_raise(self, game_id: str) -> GameState:
         state = await self.get_game(game_id)
@@ -273,6 +354,7 @@ class GameService:
         return state
 
     async def _save(self, state: GameState) -> None:
+        self._sync_phase_clock(state)
         type(self)._games[state.id] = state
         await self._repo.update(state)
 
@@ -289,3 +371,67 @@ class GameService:
         if state.phase == GamePhase.TURN_END:
             return self._engine.advance_turn(state)
         return state
+
+    @staticmethod
+    def _utc_now() -> datetime:
+        return datetime.now(timezone.utc)
+
+    @staticmethod
+    def _parse_iso8601(value: str | None) -> datetime | None:
+        if not value:
+            return None
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError:
+            return None
+
+    def _sync_phase_clock(self, state: GameState) -> None:
+        signature = self._build_phase_signature(state)
+        current = type(self)._phase_clocks.get(state.id)
+
+        if current is None or current.get("signature") != signature:
+            now = self._utc_now()
+            timer_seconds = self._get_phase_timer_seconds(state)
+            deadline_at = (
+                (now + timedelta(seconds=timer_seconds)).isoformat()
+                if timer_seconds > 0
+                else None
+            )
+            current = {
+                "signature": signature,
+                "phase_started_at": now.isoformat(),
+                "phase_deadline_at": deadline_at,
+            }
+            type(self)._phase_clocks[state.id] = current
+
+        state.phase_started_at = current.get("phase_started_at")
+        state.phase_deadline_at = current.get("phase_deadline_at")
+
+    @staticmethod
+    def _build_phase_signature(state: GameState) -> str:
+        pending = state.pending_action
+        pending_bits = "|".join([
+            pending.action_type if pending else "",
+            pending.player_id if pending else "",
+            pending.target_id or "" if pending else "",
+            pending.blocked_by or "" if pending else "",
+            pending.blocking_character or "" if pending else "",
+            pending.challenged_by or "" if pending else "",
+        ])
+        return "::".join([
+            state.phase.value,
+            state.current_turn_player_id or "",
+            str(state.turn_number),
+            pending_bits,
+            state.awaiting_influence_loss_from or "",
+        ])
+
+    @staticmethod
+    def _get_phase_timer_seconds(state: GameState) -> int:
+        if state.phase == GamePhase.TURN_START:
+            return state.config.turn_timer_seconds
+        if state.phase in (GamePhase.CHALLENGE_WINDOW, GamePhase.BLOCK_CHALLENGE_WINDOW):
+            return state.config.challenge_window_seconds
+        if state.phase == GamePhase.BLOCK_WINDOW:
+            return state.config.block_window_seconds
+        return 0

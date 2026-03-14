@@ -13,6 +13,7 @@ class PlayerEntity(Base):
     id = Column(String, primary_key=True)
     game_id = Column(String, nullable=False, index=True)
     name = Column(String, nullable=False)
+    profile_id = Column(String, nullable=False, default="", index=True)
     coins = Column(Integer, nullable=False, default=2)
     seat_index = Column(Integer, nullable=False)
     is_alive = Column(Boolean, nullable=False, default=True)

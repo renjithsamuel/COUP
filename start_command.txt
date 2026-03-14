@@ -4,5 +4,8 @@ powershell -ExecutionPolicy Bypass -File .\backend\start-dev.ps1
 backend stop:
 powershell -ExecutionPolicy Bypass -File .\backend\stop-dev.ps1
 
+simple start backend:
+C:\Python312\python.exe -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
 frontend start:
 yarn dev

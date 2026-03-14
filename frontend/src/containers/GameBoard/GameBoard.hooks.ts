@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useGameContext } from '@/context/GameContext';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useAnimationQueue } from '@/hooks/useAnimationQueue';
-import { useCountdown } from '@/hooks/useCountdown';
 import { ServerMessage, ServerMessageType, ClientMessageType } from '@/models/websocket-message';
 import { GamePhase } from '@/models/game';
 import { ACTION_PRESENTATIONS, ACTION_RULES, ActionType } from '@/models/action';
@@ -88,17 +87,17 @@ function formatActionLog(actionType: string, actorName: string, targetName: stri
     case ActionType.INCOME:
       return `${actorName} took Income.`;
     case ActionType.FOREIGN_AID:
-      return `${actorName} went for Foreign Aid.`;
+      return `${actorName} took Foreign Aid.`;
     case ActionType.COUP:
       return `${actorName} launched Coup on ${targetName}.`;
     case ActionType.TAX:
-      return `${actorName} bluffed Duke for Tax.`;
+      return `${actorName} used Tax.`;
     case ActionType.ASSASSINATE:
-      return `${actorName} lined up Assassinate on ${targetName}.`;
+      return `${actorName} used Assassinate on ${targetName}.`;
     case ActionType.STEAL:
-      return `${actorName} tried to Steal from ${targetName}.`;
+      return `${actorName} used Steal on ${targetName}.`;
     case ActionType.EXCHANGE:
-      return `${actorName} bluffed Ambassador for Exchange.`;
+      return `${actorName} used Exchange.`;
     default:
       return targetName ? `${actorName} used ${rule.label} on ${targetName}.` : `${actorName} used ${rule.label}.`;
   }
@@ -426,33 +425,55 @@ export function useGameBoard(gameId: string, playerId: string) {
           ? (gameConfig?.turnTimerSeconds ?? GAME_CONSTANTS.TURN_TIMER_SECONDS)
           : 0;
 
-  const { remaining, progress, isRunning, start: startTimer, reset: resetTimer } = useCountdown(timerSeconds, false);
+  const phaseStartedAt = state.gameState?.phaseStartedAt ?? null;
+  const phaseDeadlineAt = state.gameState?.phaseDeadlineAt ?? null;
+  const [clockNow, setClockNow] = useState(() => Date.now());
 
   useEffect(() => {
-    if (timerSeconds > 0) {
-      startTimer();
-    } else {
-      resetTimer();
+    if (timerSeconds <= 0 || !phaseDeadlineAt) {
+      setClockNow(Date.now());
+      return undefined;
     }
-  }, [timerSeconds, currentPhase, startTimer, resetTimer]);
 
-  // Auto-accept when timer expires during challenge/block windows
-  // Only auto-accept if we can actually respond (not the actor/blocker)
-  const autoAcceptedRef = useRef(false);
-  const timerHasStartedRef = useRef(false);
+    setClockNow(Date.now());
+    const intervalId = window.setInterval(() => {
+      setClockNow(Date.now());
+    }, 250);
 
-  useEffect(() => {
-    // Reset flags when phase changes
-    autoAcceptedRef.current = false;
-    timerHasStartedRef.current = false;
-  }, [currentPhase]);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [phaseDeadlineAt, timerSeconds]);
 
-  // Track when the timer actually starts running (deferred state update applied)
-  useEffect(() => {
-    if (isRunning) {
-      timerHasStartedRef.current = true;
+  const remaining = useMemo(() => {
+    if (timerSeconds <= 0 || !phaseDeadlineAt) {
+      return 0;
     }
-  }, [isRunning]);
+
+    const deadlineMs = Date.parse(phaseDeadlineAt);
+    if (Number.isNaN(deadlineMs)) {
+      return 0;
+    }
+
+    return Math.max(0, Math.ceil((deadlineMs - clockNow) / 1000));
+  }, [clockNow, phaseDeadlineAt, timerSeconds]);
+
+  const progress = useMemo(() => {
+    if (timerSeconds <= 0 || !phaseDeadlineAt) {
+      return 0;
+    }
+
+    const deadlineMs = Date.parse(phaseDeadlineAt);
+    const startedMs = phaseStartedAt ? Date.parse(phaseStartedAt) : Number.NaN;
+    if (Number.isNaN(deadlineMs)) {
+      return 0;
+    }
+
+    const totalMs = Number.isNaN(startedMs) ? timerSeconds * 1000 : Math.max(deadlineMs - startedMs, 1);
+    return Math.min(1, Math.max(0, (deadlineMs - clockNow) / totalMs));
+  }, [clockNow, phaseDeadlineAt, phaseStartedAt, timerSeconds]);
+
+  const isRunning = timerSeconds > 0 && Boolean(phaseDeadlineAt) && remaining > 0;
 
   // Track timer expiration to show consequence
   const timerExpiredRef = useRef(false);
@@ -461,17 +482,11 @@ export function useGameBoard(gameId: string, playerId: string) {
   useEffect(() => {
     timerExpiredRef.current = false;
     setTimerExpiredMessage(null);
-  }, [currentPhase]);
+  }, [currentPhase, phaseDeadlineAt]);
 
   useEffect(() => {
-    // Show timer expiration consequence and auto-accept
-    // This prevents a race condition where deferred state updates from
-    // startTimer() haven't applied yet (remaining=0, isRunning=false from
-    // the previous phase), which would cause immediate auto-accept.
-    if (!timerHasStartedRef.current) return;
-    if (remaining > 0 || isRunning || autoAcceptedRef.current) return;
+    if (timerSeconds <= 0 || !phaseDeadlineAt || remaining > 0 || isRunning) return;
 
-    // Compute and show the consequence
     if (!timerExpiredRef.current && currentPhase) {
       timerExpiredRef.current = true;
       const consequence = getTimerExpiredConsequence(currentPhase);
@@ -479,14 +494,7 @@ export function useGameBoard(gameId: string, playerId: string) {
         setTimerExpiredMessage(consequence);
       }
     }
-
-    // Auto-accept if we can respond
-    const canRespond = isPlayerEligibleForCurrentResponse(state.gameState, playerId);
-    if (canRespond) {
-      autoAcceptedRef.current = true;
-      send({ type: ClientMessageType.ACCEPT, payload: {} });
-    }
-  }, [remaining, isRunning, currentPhase, send, playerId, state.gameState]);
+  }, [currentPhase, isRunning, phaseDeadlineAt, remaining, timerSeconds]);
 
   const gs = state.gameState;
   const currentPlayerName = useMemo(

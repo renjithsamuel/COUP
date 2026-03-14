@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "backend-lobby-replay-test",
+			"type": "shell",
+			"command": "C:\\Python312\\python.exe",
+			"args": [
+				"-m",
+				"pytest",
+				"backend\\tests\\integration\\test_lobby_api.py",
+				"-q"
+			],
+			"isBackground": false
+		}
+	]
+}

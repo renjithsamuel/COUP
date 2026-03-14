@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.entities.game_entity import GameEntity
+from app.entities.player_entity import PlayerEntity
 from app.models.card import Card
 from app.models.game import GameConfig, GamePhase, GameState, GameStatus, PendingAction
 from app.models.player import Player
@@ -132,6 +134,89 @@ class GameRepository(Repository[GameState]):
             await self._session.rollback()
             raise
         return True
+
+    async def get_leaderboard(self, limit: int = 10) -> list[dict[str, Any]]:
+        result = await self._session.execute(
+            select(GameEntity)
+            .where(GameEntity.status == GameStatus.FINISHED.value)
+            .order_by(GameEntity.updated_at.desc())
+        )
+        finished_games = result.scalars().all()
+
+        standings: dict[str, dict[str, Any]] = {}
+
+        for entity in finished_games:
+            players = await self._player_repo.get_by_game_id(entity.id)
+            for player in players:
+                display_name = player.name.strip()
+                if not display_name:
+                    continue
+
+                player_key = player.profile_id.strip() or f"name::{display_name.lower()}"
+
+                entry = standings.setdefault(
+                    player_key,
+                    {
+                        "player_name": display_name,
+                        "player_key": player_key,
+                        "wins": 0,
+                        "games_played": 0,
+                    },
+                )
+                entry["games_played"] += 1
+                if player.id == entity.winner_id:
+                    entry["wins"] += 1
+
+        leaderboard = [
+            {
+                "player_name": entry["player_name"],
+                "player_key": entry["player_key"],
+                "wins": entry["wins"],
+                "games_played": entry["games_played"],
+                "win_rate": round(entry["wins"] / entry["games_played"], 3)
+                if entry["games_played"]
+                else 0.0,
+                "score": entry["games_played"] + (entry["wins"] * 2),
+            }
+            for entry in standings.values()
+        ]
+
+        leaderboard.sort(
+            key=lambda row: (
+                -row["score"],
+                -row["wins"],
+                -row["win_rate"],
+                -row["games_played"],
+                row["player_name"].lower(),
+            )
+        )
+        return leaderboard[:limit]
+
+    async def delete_finished_before(self, cutoff: datetime) -> list[str]:
+        cutoff_iso = cutoff.astimezone(timezone.utc).isoformat()
+        result = await self._session.execute(
+            select(GameEntity.id).where(
+                GameEntity.status == GameStatus.FINISHED.value,
+                GameEntity.updated_at < cutoff_iso,
+            )
+        )
+        game_ids = list(result.scalars().all())
+        if not game_ids:
+            return []
+
+        try:
+            await self._session.execute(
+                delete(PlayerEntity).where(PlayerEntity.game_id.in_(game_ids))
+            )
+            await self._session.execute(
+                delete(GameEntity).where(GameEntity.id.in_(game_ids))
+            )
+            await self._session.commit()
+        except Exception:
+            await self._session.rollback()
+            raise
+
+        return game_ids
 
     def _to_model(self, entity: GameEntity, players: list[Player]) -> GameState:
         deck_data = json.loads(entity.deck) if entity.deck else []

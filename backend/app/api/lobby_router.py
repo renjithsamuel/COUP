@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
-from app.models.lobby import LobbyCreate, LobbyJoin, LobbyResponse, GameConfig
+from app.models.game import GamePhase
+from app.models.lobby import GameConfig, LeaderboardEntry, LobbyCreate, LobbyJoin, LobbyResponse
 
 router = APIRouter(prefix="/api/lobbies", tags=["lobbies"])
 
@@ -22,7 +23,12 @@ def init_lobby_router(lobby_service, game_service) -> None:
 
 @router.post("", response_model=LobbyResponse)
 async def create_lobby(body: LobbyCreate) -> LobbyResponse:
-    return _lobby_service.create_lobby(body.host_name, body.max_players, body.name)
+    return _lobby_service.create_lobby(
+        body.host_name,
+        body.max_players,
+        body.name,
+        body.profile_id,
+    )
 
 
 @router.get("", response_model=list[LobbyResponse])
@@ -30,9 +36,17 @@ async def list_lobbies() -> list[LobbyResponse]:
     return _lobby_service.list_lobbies()
 
 
+@router.get("/leaderboard", response_model=list[LeaderboardEntry])
+async def get_leaderboard(limit: int = Query(default=10, ge=1, le=25)) -> list[LeaderboardEntry]:
+    return await _game_service.get_leaderboard(limit=limit)
+
+
 @router.get("/{lobby_id}", response_model=LobbyResponse)
-async def get_lobby(lobby_id: str) -> LobbyResponse:
-    lobby = _lobby_service.get_lobby(lobby_id.upper())
+async def get_lobby(
+    lobby_id: str,
+    session_token: str | None = Query(default=None),
+) -> LobbyResponse:
+    lobby = _lobby_service.get_lobby(lobby_id.upper(), session_token=session_token)
     if lobby is None:
         raise HTTPException(status_code=404, detail="Lobby not found")
     return lobby
@@ -41,15 +55,23 @@ async def get_lobby(lobby_id: str) -> LobbyResponse:
 @router.post("/{lobby_id}/join", response_model=LobbyResponse)
 async def join_lobby(lobby_id: str, body: LobbyJoin) -> LobbyResponse:
     try:
-        return _lobby_service.join_lobby(lobby_id.upper(), body.player_name)
+        return _lobby_service.join_lobby(lobby_id.upper(), body.player_name, body.profile_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/{lobby_id}/leave")
-async def leave_lobby(lobby_id: str, player_id: str) -> dict:
+async def leave_lobby(
+    lobby_id: str,
+    player_id: str | None = Query(default=None),
+    session_token: str | None = Query(default=None),
+) -> dict:
     try:
-        result = _lobby_service.leave_lobby(lobby_id, player_id)
+        result = _lobby_service.leave_lobby(
+            lobby_id.upper(),
+            player_id=player_id,
+            session_token=session_token,
+        )
         return {"ok": True, "lobby": result}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -79,7 +101,9 @@ async def reset_lobby(lobby_id: str) -> LobbyResponse:
             raise ValueError("Lobby not found")
 
         if lobby.game_id:
-            await _game_service.delete_game(lobby.game_id)
+            game = await _game_service.get_game(lobby.game_id)
+            if game is not None and game.phase != GamePhase.GAME_OVER:
+                await _game_service.delete_game(lobby.game_id)
 
         return _lobby_service.reset_lobby(lobby_id.upper())
     except ValueError as e:

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCreateLobby, useJoinLobby } from '@/queries/useLobbyQueries';
+import { lobbySessionStore } from '@/services/lobbyService';
 import { fadeInVariants, slideUpVariants, scalePopVariants } from '@/animations';
 import { CoupBackgroundSVG } from '@/components/CoupBackgroundSVG';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -317,6 +318,9 @@ export default function HomePage() {
       playerName: playerName.trim(),
       maxPlayers: GAME_CONSTANTS.MAX_PLAYERS,
     });
+    if (res.playerId && res.sessionToken) {
+      lobbySessionStore.save(res.lobby.id, res.playerId, res.sessionToken);
+    }
     router.push(`/lobby/${res.lobby.id}?playerId=${res.playerId}`);
   };
 
@@ -328,6 +332,9 @@ export default function HomePage() {
         lobbyId: roomCode.trim(),
         data: { playerName: playerName.trim() },
       });
+      if (res.playerId && res.sessionToken) {
+        lobbySessionStore.save(res.lobby.id, res.playerId, res.sessionToken);
+      }
       router.push(`/lobby/${res.lobby.id}?playerId=${res.playerId}`);
     } catch {
       setJoinError('Room not found or is full.');

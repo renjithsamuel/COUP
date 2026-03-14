@@ -86,6 +86,8 @@ function toGameStatePublic(raw: any): GameStatePublic {
     players: (raw.players ?? []).map(toPlayerPublic),
     currentPlayerId: raw.current_turn_player_id ?? raw.currentPlayerId ?? null,
     pendingAction: toPendingAction(raw.pending_action ?? raw.pendingAction),
+    phaseStartedAt: raw.phase_started_at ?? raw.phaseStartedAt ?? null,
+    phaseDeadlineAt: raw.phase_deadline_at ?? raw.phaseDeadlineAt ?? null,
     awaitingInfluenceLossFrom: raw.awaiting_influence_loss_from ?? raw.awaitingInfluenceLossFrom ?? null,
     turnNumber: raw.turn_number ?? raw.turnNumber ?? 0,
     winnerId: raw.winner_id ?? raw.winnerId ?? null,

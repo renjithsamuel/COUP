@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import timedelta, timezone, datetime
 
 from app.engine.game_engine import GameEngine
-from app.models.game import GamePhase, GameState
+from app.models.game import GamePhase, GameState, GameStatus
 from app.services.game_service import GameService
 
 
@@ -14,6 +15,7 @@ class InMemoryGameRepository:
 
     def __init__(self) -> None:
         self._states: dict[str, GameState] = {}
+        self._updated_at: dict[str, datetime] = {}
 
     async def get_by_id(self, id: str) -> GameState | None:
         return self._states.get(id)
@@ -23,14 +25,29 @@ class InMemoryGameRepository:
 
     async def create(self, entity: GameState) -> GameState:
         self._states[entity.id] = entity
+        self._updated_at[entity.id] = datetime.now(timezone.utc)
         return entity
 
     async def update(self, entity: GameState) -> GameState:
         self._states[entity.id] = entity
+        self._updated_at[entity.id] = datetime.now(timezone.utc)
         return entity
 
     async def delete(self, id: str) -> bool:
+        self._updated_at.pop(id, None)
         return self._states.pop(id, None) is not None
+
+    async def delete_finished_before(self, cutoff: datetime) -> list[str]:
+        deleted_ids = [
+            game_id
+            for game_id, state in self._states.items()
+            if state.status == GameStatus.FINISHED
+            and self._updated_at.get(game_id, datetime.max.replace(tzinfo=timezone.utc)) < cutoff
+        ]
+        for game_id in deleted_ids:
+            self._states.pop(game_id, None)
+            self._updated_at.pop(game_id, None)
+        return deleted_ids
 
 
 async def _create_service_with_state(state: GameState) -> GameService:
@@ -273,5 +290,114 @@ def test_delete_game_clears_repository_and_cache(two_player_game: GameState) -> 
         assert await repo.get_by_id(two_player_game.id) is None
         assert two_player_game.id not in GameService._games
         assert two_player_game.id not in GameService._game_locks
+
+    asyncio.run(scenario())
+
+
+def test_process_timeout_advances_turn_after_turn_timer(two_player_game: GameState) -> None:
+    async def scenario() -> None:
+        service = await _create_service_with_state(two_player_game)
+        actor = two_player_game.players[0]
+        responder = two_player_game.players[1]
+
+        state = await service.get_game(two_player_game.id)
+        assert state is not None
+        state.phase_started_at = (datetime.now(timezone.utc) - timedelta(seconds=31)).isoformat()
+        state.phase_deadline_at = (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat()
+        GameService._phase_clocks[state.id] = {
+            "signature": service._build_phase_signature(state),
+            "phase_started_at": state.phase_started_at,
+            "phase_deadline_at": state.phase_deadline_at,
+        }
+
+        resolution = await service.process_timeout(two_player_game.id)
+
+        assert resolution is not None
+        assert state.phase == GamePhase.TURN_START
+        assert state.current_turn_player_id == responder.id
+        assert state.turn_number == 2
+        assert state.event_log[-1]["type"] == "turn_changed"
+        assert actor.coins == 2
+
+    asyncio.run(scenario())
+
+
+def test_process_timeout_resolves_response_window(two_player_game: GameState) -> None:
+    async def scenario() -> None:
+        service = await _create_service_with_state(two_player_game)
+        actor = two_player_game.players[0]
+        responder = two_player_game.players[1]
+
+        state = await service.process_action(two_player_game.id, actor.id, "foreign_aid")
+        assert state.phase == GamePhase.BLOCK_WINDOW
+
+        state.phase_started_at = (datetime.now(timezone.utc) - timedelta(seconds=11)).isoformat()
+        state.phase_deadline_at = (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat()
+        GameService._phase_clocks[state.id] = {
+            "signature": service._build_phase_signature(state),
+            "phase_started_at": state.phase_started_at,
+            "phase_deadline_at": state.phase_deadline_at,
+        }
+
+        resolution = await service.process_timeout(two_player_game.id)
+
+        assert resolution is not None
+        assert state.phase == GamePhase.TURN_START
+        assert state.current_turn_player_id == responder.id
+        assert state.turn_number == 2
+        assert actor.coins == 4
+
+    asyncio.run(scenario())
+
+
+def test_cleanup_finished_games_removes_only_expired_finished_records(
+    two_player_game: GameState,
+) -> None:
+    async def scenario() -> None:
+        GameService._games.clear()
+        GameService._game_locks.clear()
+        GameService._phase_clocks.clear()
+
+        repo = InMemoryGameRepository()
+        service = GameService(GameEngine(), repo)
+
+        expired_finished = two_player_game.model_copy(deep=True)
+        expired_finished.id = "expired-finished"
+        expired_finished.status = GameStatus.FINISHED
+        expired_finished.phase = GamePhase.GAME_OVER
+
+        recent_finished = two_player_game.model_copy(deep=True)
+        recent_finished.id = "recent-finished"
+        recent_finished.status = GameStatus.FINISHED
+        recent_finished.phase = GamePhase.GAME_OVER
+
+        active_game = two_player_game.model_copy(deep=True)
+        active_game.id = "active-game"
+
+        await repo.create(expired_finished)
+        await repo.create(recent_finished)
+        await repo.create(active_game)
+
+        repo._updated_at[expired_finished.id] = datetime.now(timezone.utc) - timedelta(hours=2)
+        repo._updated_at[recent_finished.id] = datetime.now(timezone.utc) - timedelta(minutes=10)
+        repo._updated_at[active_game.id] = datetime.now(timezone.utc) - timedelta(hours=2)
+
+        GameService._games[expired_finished.id] = expired_finished
+        GameService._games[recent_finished.id] = recent_finished
+        GameService._games[active_game.id] = active_game
+        GameService._game_locks[expired_finished.id] = asyncio.Lock()
+        GameService._game_locks[recent_finished.id] = asyncio.Lock()
+        GameService._game_locks[active_game.id] = asyncio.Lock()
+
+        removed = await service.cleanup_finished_games(retention_minutes=60)
+
+        assert removed == 1
+        assert await repo.get_by_id(expired_finished.id) is None
+        assert await repo.get_by_id(recent_finished.id) is not None
+        assert await repo.get_by_id(active_game.id) is not None
+        assert expired_finished.id not in GameService._games
+        assert expired_finished.id not in GameService._game_locks
+        assert recent_finished.id in GameService._games
+        assert active_game.id in GameService._games
 
     asyncio.run(scenario())

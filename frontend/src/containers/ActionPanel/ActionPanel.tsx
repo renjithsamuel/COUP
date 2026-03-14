@@ -64,6 +64,7 @@ export function ActionPanel({
     }
     return null;
   })();
+  const compactMobileBar = isMobile && panelState != null && !selectedRule && !isExchangePhase && !mustCoup;
   const shouldCaptureInactiveTap = !canAct && !isWaitingForResponse && !isExchangePhase && !isWaitingForInfluenceLoss && !selectedRule;
   const showPanelBar =
     mustCoup ||
@@ -75,8 +76,8 @@ export function ActionPanel({
   return (
     <div style={s.dock}>
       {showPanelBar && (
-        <div style={s.bar(panelState?.tone ?? 'ok')}>
-          <div style={s.barCopy}>
+        <div style={s.bar(panelState?.tone ?? 'ok', compactMobileBar)}>
+          <div style={s.barCopy(compactMobileBar)}>
             <span style={s.barEyebrow}>{panelState?.eyebrow ?? (mustCoup ? 'Forced move' : 'Command deck')}</span>
             <span style={s.barTitle}>
               {mustCoup
@@ -84,7 +85,7 @@ export function ActionPanel({
                 : panelState?.title ?? 'Choose an action'}
             </span>
           </div>
-          <div style={s.barMeta}>
+          <div style={s.barMeta(compactMobileBar)}>
             <span style={s.metaChip('ok')}>{myCoins}c</span>
             {panelState?.chip && <span style={s.metaChip(panelState.tone)}>{panelState.chip}</span>}
             {selectedRule && (

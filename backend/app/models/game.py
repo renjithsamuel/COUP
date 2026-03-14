@@ -74,6 +74,8 @@ class GameState(BaseModel):
     current_turn_player_id: str | None = None
     turn_number: int = 0
     pending_action: PendingAction | None = None
+    phase_started_at: str | None = None
+    phase_deadline_at: str | None = None
     awaiting_influence_loss_from: str | None = None
     exchange_cards: list[Card] = Field(default_factory=list)
     winner_id: str | None = None
@@ -103,6 +105,8 @@ class GameStatePublic(BaseModel):
     current_turn_player_id: str | None
     turn_number: int
     pending_action: PendingAction | None
+    phase_started_at: str | None = None
+    phase_deadline_at: str | None = None
     awaiting_influence_loss_from: str | None
     winner_id: str | None
     deck_count: int

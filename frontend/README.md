@@ -45,12 +45,12 @@ src/
 ├── containers/             # Stateful composite containers
 │   ├── GameBoard/          # Main game board (top-bar turn status on every breakpoint, compact mobile connection dot, quieter event overlays, mobile utility dock, winner confetti, default-open desktop timeline)
 │   ├── PlayerHand/         # Current player's compact card hand
-│   ├── ActionPanel/        # Compact action ribbon with dense 3-column mobile layout and minimal off-turn chrome
+│   ├── ActionPanel/        # Compact action ribbon with dense 3-column mobile layout, slimmer mobile standby strip, and minimal off-turn chrome
 │   ├── OpponentArea/       # Responsive opponent carousel with centered small-table seats, fixed-width cards, and subtle edge fades
 │   ├── ChallengeBlockOverlay/ # Direct-response dock for challenge/block/allow decisions
 │   ├── GameDashboard/      # Game statistics dashboard (standings, revealed cards)
 │   ├── GameLog/            # Real-time editorial timeline feed with numbered event rows, action highlights, and newest-first ordering
-│   └── LobbyRoom/         # Lobby waiting room
+│   └── LobbyRoom/         # Lobby waiting room with a button-triggered leaderboard modal, score-based standings, and refresh-safe presence handling
 ├── context/                # React Context + Reducer
 │   ├── GameContext/        # Game state management
 │   └── LobbyContext/       # Lobby state management
@@ -69,7 +69,7 @@ src/
 │   └── useLobbyQueries.ts  # Lobby CRUD queries + mutations
 ├── services/               # API client layer
 │   ├── api.ts              # Typed fetch wrapper
-│   ├── lobbyService.ts     # Lobby REST endpoints
+│   ├── lobbyService.ts     # Lobby REST endpoints + per-lobby session persistence
 │   └── wsMessageMapper.ts  # WebSocket snake_case → camelCase mapper
 ├── theme/                  # Visual design system
 │   ├── theme.ts            # Mantine theme config
@@ -163,11 +163,13 @@ Add the export to `src/components/index.ts`.
 - **Target mode flow**: `src/containers/ActionPanel/ActionPanel.hooks.ts`, `ActionPanel.tsx`, and `src/containers/OpponentArea/OpponentArea.tsx` keep Coup, Assassinate, and Steal available, then highlight valid opponents on the board
 - **Response rules**: `src/utils/responseWindows.ts`, `src/containers/GameBoard/GameBoard.hooks.ts`, and `src/containers/ChallengeBlockOverlay/ChallengeBlockOverlay.tsx` mirror backend one-on-one response windows for targeted actions and full-table allow windows for untargeted actions
 - **Response clarity**: `src/containers/ChallengeBlockOverlay/ChallengeBlockOverlay.tsx` renders the bottom decision dock only for the player who can currently respond
+- **Server-authoritative timers**: `src/containers/GameBoard/GameBoard.hooks.ts` reads `phaseStartedAt` and `phaseDeadlineAt` from `GAME_STATE`, so countdowns stay aligned across reconnects and timeout consequences no longer depend on a single client tab
 - **Timeline narration**: `src/containers/GameBoard/GameBoard.hooks.ts` records richer action, challenge, block, reveal, elimination, and turn messages for the timeline feed
 - **Mobile utility dock**: `src/containers/GameBoard/GameBoard.tsx` keeps leaderboard, timeline, and rules controls in a compact bottom dock on mobile while leaving turn status and Exit in the top bar
 - **Ambient background motif**: `src/components/CoupBackgroundSVG/CoupBackgroundSVG.tsx` provides subtle abstract Coup symbolism, used as full-page ambient art in lobby and as low-opacity atmosphere in-game
 - **Exit controls**: `src/containers/LobbyRoom/LobbyRoom.tsx` exposes room leave action and `src/containers/GameBoard/GameBoard.tsx` includes an explicit top-bar Exit button
-- **Replay flow**: `src/app/lobby/[id]/page.tsx` now carries `lobbyId` into the game route, and `src/app/game/[id]/GamePageContent.tsx` resets that lobby before sending `Play Again` back to the same room with the same player id so the room can continue together
+- **Lobby continuity**: `src/services/lobbyService.ts` stores the per-lobby session token and a browser-stable player profile id in local storage, and `src/app/lobby/[id]/page.tsx` uses them to survive refreshes, reuse the same waiting-room seat, and keep leaderboard identity stable across games
+- **Replay flow**: `src/app/lobby/[id]/page.tsx` now carries `lobbyId` into the game route, and `src/app/game/[id]/GamePageContent.tsx` resets that lobby before sending `Play Again` back to the same room so the room can continue together
 
 ## Routes
 

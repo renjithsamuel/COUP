@@ -39,7 +39,13 @@ class GameEngine:
             config=config or GameConfig(),
         )
 
-    def add_player(self, state: GameState, name: str, player_id: str | None = None) -> tuple[GameState, Player]:
+    def add_player(
+        self,
+        state: GameState,
+        name: str,
+        player_id: str | None = None,
+        profile_id: str | None = None,
+    ) -> tuple[GameState, Player]:
         """Add a player to a waiting game."""
         if state.status != GameStatus.WAITING:
             raise ValueError("Cannot join a game that is not in waiting status")
@@ -49,6 +55,7 @@ class GameEngine:
         player = Player(
             id=player_id or str(uuid.uuid4()),
             name=name,
+            profile_id=profile_id or "",
             coins=state.config.starting_coins,
             session_token=str(uuid.uuid4()),
             seat_index=len(state.players),
@@ -466,6 +473,8 @@ class GameEngine:
             current_turn_player_id=state.current_turn_player_id,
             turn_number=state.turn_number,
             pending_action=state.pending_action,
+            phase_started_at=state.phase_started_at,
+            phase_deadline_at=state.phase_deadline_at,
             awaiting_influence_loss_from=state.awaiting_influence_loss_from,
             winner_id=state.winner_id,
             deck_count=len(state.deck),

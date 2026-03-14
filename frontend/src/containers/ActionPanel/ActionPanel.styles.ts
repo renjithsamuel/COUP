@@ -13,13 +13,17 @@ export function getActionPanelStyles(mobile: boolean) {
       boxSizing: 'border-box',
     } satisfies CSSProperties,
 
-    bar: (tone: 'info' | 'warn' | 'danger' | 'ok'): CSSProperties => ({
+    bar: (tone: 'info' | 'warn' | 'danger' | 'ok', compact = false): CSSProperties => ({
       display: 'flex',
-      alignItems: mobile ? 'flex-start' : 'center',
+      alignItems: mobile ? 'center' : 'center',
       justifyContent: 'space-between',
       gap: mobile ? tokens.spacing.xs : tokens.spacing.sm,
-      flexDirection: mobile ? 'column' : 'row',
-      padding: mobile ? `${tokens.spacing.xs + 2}px ${tokens.spacing.sm}px` : `${tokens.spacing.xs + 4}px ${tokens.spacing.sm + 2}px`,
+      flexDirection: mobile && compact ? 'row' : mobile ? 'column' : 'row',
+      padding: mobile
+        ? compact
+          ? `6px ${tokens.spacing.sm}px`
+          : `${tokens.spacing.xs + 2}px ${tokens.spacing.sm}px`
+        : `${tokens.spacing.xs + 4}px ${tokens.spacing.sm + 2}px`,
       background: 'linear-gradient(180deg, rgba(15, 23, 39, 0.96) 0%, rgba(9, 14, 25, 0.98) 100%)',
       borderRadius: mobile ? 14 : 16,
       border: tone === 'danger'
@@ -30,15 +34,17 @@ export function getActionPanelStyles(mobile: boolean) {
             ? '1px solid rgba(52,211,153,0.2)'
             : '1px solid rgba(96,165,250,0.2)',
       boxShadow: '0 12px 24px rgba(0,0,0,0.18)',
-      minHeight: mobile ? 48 : 52,
+        minHeight: mobile ? (compact ? 38 : 48) : 52,
     }),
 
-    barCopy: {
+      barCopy: (compact = false): CSSProperties => ({
       display: 'flex',
-      flexDirection: 'column',
-      gap: 4,
+        flexDirection: compact ? 'row' : 'column',
+        alignItems: compact ? 'baseline' : 'stretch',
+        gap: compact ? 6 : 4,
       minWidth: 0,
-    } satisfies CSSProperties,
+        flex: 1,
+      }),
 
     barEyebrow: {
       fontSize: mobile ? 10 : 11,
@@ -55,12 +61,14 @@ export function getActionPanelStyles(mobile: boolean) {
       lineHeight: 1.2,
     } satisfies CSSProperties,
 
-    barMeta: {
+    barMeta: (compact = false): CSSProperties => ({
       display: 'flex',
       alignItems: 'center',
       gap: 6,
       flexWrap: 'wrap',
-    } satisfies CSSProperties,
+      justifyContent: compact ? 'flex-end' : 'flex-start',
+      flexShrink: 0,
+    }),
 
     metaChip: (tone: 'info' | 'warn' | 'danger' | 'ok' = 'info'): CSSProperties => ({
       padding: mobile ? '4px 7px' : '5px 8px',

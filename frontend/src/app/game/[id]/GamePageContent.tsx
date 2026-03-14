@@ -20,15 +20,14 @@ export function GamePageContent() {
   const handlePlayAgain = async () => {
     if (lobbyId && playerId) {
       try {
-        const resetLobby = await lobbyService.reset(lobbyId);
-        queryClient.setQueryData(lobbyKeys.detail(lobbyId), resetLobby);
+        await lobbyService.reset(lobbyId);
         queryClient.invalidateQueries({ queryKey: lobbyKeys.detail(lobbyId) });
         queryClient.invalidateQueries({ queryKey: lobbyKeys.list() });
       } catch {
         router.push('/');
         return;
       }
-      router.replace(`/lobby/${lobbyId}?playerId=${playerId}`);
+      router.replace(`/lobby/${lobbyId}`);
       return;
     }
     router.push('/');

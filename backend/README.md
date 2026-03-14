@@ -125,13 +125,14 @@ python -m pytest -v
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/api/health` | Health check |
-| `POST` | `/api/lobbies` | Create lobby (`{ host_name, max_players }`) — returns 6-char room code |
+| `POST` | `/api/lobbies` | Create lobby (`{ host_name, max_players, profile_id? }`) — returns 6-char room code |
 | `GET` | `/api/lobbies` | List open lobbies |
-| `GET` | `/api/lobbies/{id}` | Get lobby details (case-insensitive code) |
-| `POST` | `/api/lobbies/{id}/join` | Join lobby by room code (`{ player_name }`) |
-| `POST` | `/api/lobbies/{id}/leave` | Leave lobby (`?player_id=...` query param) |
+| `GET` | `/api/lobbies/leaderboard` | Aggregate finished-game leaderboard for the lobby UI using stable player identities when available |
+| `GET` | `/api/lobbies/{id}` | Get lobby details (case-insensitive code). Optional `?session_token=...` refreshes presence and returns the caller's `player_id` |
+| `POST` | `/api/lobbies/{id}/join` | Join lobby by room code (`{ player_name, profile_id? }`) |
+| `POST` | `/api/lobbies/{id}/leave` | Leave lobby (`?player_id=...` or `?session_token=...`) |
 | `POST` | `/api/lobbies/{id}/start` | Start game (host only, optional `GameConfig` body) |
-| `POST` | `/api/lobbies/{id}/reset` | Reset completed room back to waiting state for replay |
+| `POST` | `/api/lobbies/{id}/reset` | Reset completed room back to waiting state for replay while keeping finished-game history for leaderboard aggregation |
 
 `GameConfig` request body fields:
 - `turn_timer_seconds` (`0-120`) — `0` disables turn timer (Peaceful Mode)
@@ -158,6 +159,7 @@ Response windows resolve as follows:
 - Targeted action challenges are one-on-one: only the target may challenge `steal` and `assassinate`.
 - Targeted blocks remain one-on-one: only the target may block, and only the acting player may challenge that block.
 - Untargeted challenge/block windows are still table-wide: any eligible non-actor may challenge or block, and an untargeted window only closes once every eligible responder has allowed it or a valid challenge/block interrupts it.
+- Timed phases are server-authoritative. `GAME_STATE` now includes `phase_started_at` and `phase_deadline_at`, and the backend auto-resolves expired turn, challenge, and block windows even if the acting client stalls or disconnects.
 
 #### Server Messages
 
@@ -175,6 +177,12 @@ Response windows resolve as follows:
 | `ERROR` | Error message |
 
 Connection presence is reflected in `players[].connected` inside `GAME_STATE`. On connect/disconnect, the server emits `PLAYER_CONNECTED`/`PLAYER_DISCONNECTED` and then sends updated game state so other players can see presence changes immediately.
+
+Lobby presence is tracked separately from in-game WebSocket presence. Lobby reads that include a valid `session_token` refresh the player's lobby session, and waiting-room players who stop refreshing are evicted automatically after a short grace period so offline hosts cannot block a new game from starting. When a room is reset for replay, all lobby sessions in that room are refreshed so players returning from the game screen are not pruned immediately.
+
+Finished games are retained temporarily for leaderboard aggregation, then purged automatically by a background cleanup sweep. The retention window is controlled by `finished_game_retention_minutes` in `app/config.py`; set it to `0` to disable automatic purging.
+
+Leaderboard rows award 1 participation point for every completed game plus 2 bonus points for each win, so a win is worth 3 total points. If the client supplies a stable `profile_id`, leaderboard aggregation follows that identity instead of merging players purely by display name.
 
 ## Modifying Game Rules
 

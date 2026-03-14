@@ -145,6 +145,111 @@ export const lobbyRoomStyles = {
     fontWeight: 800,
   } satisfies CSSProperties,
 
+  sectionHeader: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4,
+  } satisfies CSSProperties,
+
+  sectionEyebrow: {
+    fontSize: 10,
+    fontWeight: 800,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: tokens.text.accent,
+  } satisfies CSSProperties,
+
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 800,
+    color: tokens.text.primary,
+  } satisfies CSSProperties,
+
+  leaderboardList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+  } satisfies CSSProperties,
+
+  leaderboardRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    padding: '10px 12px',
+    borderRadius: 16,
+    background: 'linear-gradient(180deg, rgba(18, 29, 49, 0.92) 0%, rgba(10, 17, 31, 0.98) 100%)',
+    border: '1px solid rgba(255,255,255,0.06)',
+  } satisfies CSSProperties,
+
+  leaderboardMeta: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    minWidth: 0,
+  } satisfies CSSProperties,
+
+  leaderboardCopy: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
+    minWidth: 0,
+  } satisfies CSSProperties,
+
+  leaderboardName: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: tokens.text.primary,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  } satisfies CSSProperties,
+
+  leaderboardSubline: {
+    fontSize: 11,
+    color: tokens.text.muted,
+  } satisfies CSSProperties,
+
+  leaderboardWins: {
+    fontSize: 13,
+    fontWeight: 800,
+    color: tokens.text.accent,
+    flexShrink: 0,
+  } satisfies CSSProperties,
+
+  scoreBadge: {
+    fontSize: 12,
+    fontWeight: 800,
+    color: '#FFD87A',
+    flexShrink: 0,
+    padding: '8px 10px',
+    borderRadius: 999,
+    border: '1px solid rgba(255,216,122,0.18)',
+    background: 'rgba(255,216,122,0.08)',
+    letterSpacing: 0.4,
+  } satisfies CSSProperties,
+
+  rankBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 999,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'rgba(255,193,7,0.14)',
+    border: '1px solid rgba(255,193,7,0.2)',
+    color: tokens.text.accent,
+    fontSize: 12,
+    fontWeight: 800,
+    flexShrink: 0,
+  } satisfies CSSProperties,
+
+  emptyLeaderboard: {
+    fontSize: 12,
+    color: tokens.text.muted,
+    lineHeight: 1.5,
+  } satisfies CSSProperties,
+
   playerList: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -222,5 +327,72 @@ export const lobbyRoomStyles = {
     alignItems: 'center',
     gap: 12,
     flexWrap: 'wrap',
+  } satisfies CSSProperties,
+
+  footerActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    flexWrap: 'wrap',
+  } satisfies CSSProperties,
+
+  secondaryButton: {
+    padding: `${tokens.spacing.sm}px ${tokens.spacing.md}px`,
+    borderRadius: 12,
+    border: '1px solid rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.05)',
+    color: tokens.text.primary,
+    fontWeight: 700,
+    fontSize: 12,
+    cursor: 'pointer',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  } satisfies CSSProperties,
+
+  modalOverlay: {
+    position: 'fixed',
+    inset: 0,
+    zIndex: tokens.zIndex.modal,
+    background: 'rgba(6, 10, 18, 0.74)',
+    backdropFilter: 'blur(10px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '24px 16px',
+  } satisfies CSSProperties,
+
+  modalCard: {
+    width: 'min(640px, 100%)',
+    maxHeight: 'min(80vh, 720px)',
+    overflowY: 'auto',
+    borderRadius: 24,
+    padding: '22px 20px',
+    background: 'linear-gradient(180deg, rgba(12, 19, 35, 0.98) 0%, rgba(17, 28, 48, 0.98) 100%)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    boxShadow: tokens.elevation.dp24,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
+  } satisfies CSSProperties,
+
+  modalHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  } satisfies CSSProperties,
+
+  closeButton: {
+    padding: '8px 12px',
+    borderRadius: 999,
+    border: '1px solid rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.04)',
+    color: tokens.text.secondary,
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: 'pointer',
+    textTransform: 'uppercase',
+    letterSpacing: 0.7,
+    flexShrink: 0,
   } satisfies CSSProperties,
 };

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { lobbyService } from '@/services/lobbyService';
-import { LobbyCreate, LobbyJoin, GameConfig } from '@/models/lobby';
+import { GameConfig, LobbyCreate, LobbyJoin } from '@/models/lobby';
 
 export const lobbyKeys = {
   all: ['lobbies'] as const,
@@ -16,12 +16,20 @@ export function useLobbies() {
   });
 }
 
-export function useLobby(lobbyId: string) {
+export function useLobby(lobbyId: string, sessionToken?: string | null) {
   return useQuery({
-    queryKey: lobbyKeys.detail(lobbyId),
-    queryFn: () => lobbyService.get(lobbyId),
+    queryKey: [...lobbyKeys.detail(lobbyId), sessionToken ?? 'anonymous'],
+    queryFn: () => lobbyService.get(lobbyId, sessionToken),
     enabled: !!lobbyId,
     refetchInterval: 3000,
+  });
+}
+
+export function useLobbyLeaderboard(limit = 6) {
+  return useQuery({
+    queryKey: [...lobbyKeys.all, 'leaderboard', limit],
+    queryFn: () => lobbyService.leaderboard(limit),
+    refetchInterval: 15000,
   });
 }
 

@@ -17,6 +17,7 @@ Engine (pure logic, no I/O) → Services (orchestration) → Repositories (data 
 - Game constants: `backend/app/config.py` (`Settings` class) — single source of truth for defaults
 - Per-game config: `backend/app/models/game.py` (`GameConfig`) — host-configurable settings (timers, starting coins) sent at game start and stored in `GameState.config` (timer values may be set to `0` for timerless/Peaceful mode)
 - Action rules: `backend/app/models/action.py` (`ACTION_RULES` dict) — single source of truth
+- Lobby and leaderboard identity: clients may send a stable `profile_id` so replay flows and cross-game scores follow the same person even if they reconnect or rename themselves
 - WebSocket messages: discriminated union JSON `{ type, payload }`
 - WebSocket broadcasts: game events (ACTION_DECLARED, CHALLENGE_RESULT, BLOCK_DECLARED, INFLUENCE_LOST, TURN_CHANGED) are sent as separate messages before GAME_STATE
 
@@ -27,7 +28,7 @@ Pages (App Router) → Containers (logic + layout) → Components (presentationa
 - State: React Context + Reducer for complex state (game, lobby)
 - Server state: TanStack React Query
 - Models: `frontend/src/models/` — TypeScript interfaces mirroring backend Pydantic models
-- Service layer: `frontend/src/services/` — API calls with snake_case → camelCase mapping
+- Service layer: `frontend/src/services/` — API calls with snake_case → camelCase mapping and browser-stable player identity for lobby/replay flows
 
 ## Conventions
 

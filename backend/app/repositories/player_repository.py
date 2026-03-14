@@ -19,6 +19,15 @@ class PlayerRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
+    @staticmethod
+    def _db_player_id(player_id: str, game_id: str) -> str:
+        return f"{game_id}:{player_id}"
+
+    @staticmethod
+    def _model_player_id(entity_id: str) -> str:
+        parts = entity_id.split(":", 1)
+        return parts[1] if len(parts) == 2 else entity_id
+
     async def get_by_game_id(self, game_id: str) -> list[Player]:
         result = await self._session.execute(
             select(PlayerEntity)
@@ -37,9 +46,10 @@ class PlayerRepository:
 
     async def create(self, player: Player, game_id: str) -> Player:
         entity = PlayerEntity(
-            id=player.id,
+            id=self._db_player_id(player.id, game_id),
             game_id=game_id,
             name=player.name,
+            profile_id=player.profile_id,
             coins=player.coins,
             seat_index=player.seat_index,
             is_alive=player.is_alive,
@@ -54,7 +64,7 @@ class PlayerRepository:
     async def update_player(self, player: Player, game_id: str) -> Player:
         result = await self._session.execute(
             select(PlayerEntity).where(
-                PlayerEntity.id == player.id,
+                PlayerEntity.id == self._db_player_id(player.id, game_id),
                 PlayerEntity.game_id == game_id,
             )
         )
@@ -63,6 +73,7 @@ class PlayerRepository:
             return await self.create(player, game_id)
 
         entity.name = player.name
+        entity.profile_id = player.profile_id
         entity.coins = player.coins
         entity.seat_index = player.seat_index
         entity.is_alive = player.is_alive
@@ -79,8 +90,9 @@ class PlayerRepository:
         influences_data = json.loads(entity.influences) if entity.influences else []
         influences = [Card.model_validate(c, strict=False) for c in influences_data]
         return Player(
-            id=entity.id,
+            id=self._model_player_id(entity.id),
             name=entity.name,
+            profile_id=entity.profile_id,
             coins=entity.coins,
             influences=influences,
             is_alive=entity.is_alive,

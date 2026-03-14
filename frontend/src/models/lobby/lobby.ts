@@ -27,8 +27,17 @@ export interface LobbyJoin {
 
 export interface LobbyResponse {
   lobby: Lobby;
-  playerId: string;
+  playerId: string | null;
   sessionToken: string | null;
+}
+
+export interface LeaderboardEntry {
+  playerName: string;
+  playerKey: string;
+  wins: number;
+  gamesPlayed: number;
+  winRate: number;
+  score: number;
 }
 
 /** Host-configurable game settings sent to the backend at game start. */

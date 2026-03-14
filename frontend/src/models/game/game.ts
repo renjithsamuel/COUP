@@ -49,6 +49,8 @@ export interface GameStatePublic {
   players: PlayerPublic[];
   currentPlayerId: string | null;
   pendingAction: PendingAction | null;
+  phaseStartedAt: string | null;
+  phaseDeadlineAt: string | null;
   awaitingInfluenceLossFrom: string | null;
   turnNumber: number;
   winnerId: string | null;
