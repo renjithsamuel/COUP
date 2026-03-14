@@ -19,5 +19,7 @@ class PlayerEntity(Base):
     is_alive = Column(Boolean, nullable=False, default=True)
     session_token = Column(String, nullable=False, unique=True)
     connected = Column(Boolean, nullable=False, default=False)
+    is_bot = Column(Boolean, nullable=False, default=False)
+    bot_difficulty = Column(String, nullable=False, default="")
     influences = Column(Text, nullable=False, default="[]")  # JSON: list of Card
     created_at = Column(String, nullable=False)

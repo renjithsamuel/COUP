@@ -45,6 +45,10 @@ class GameEngine:
         name: str,
         player_id: str | None = None,
         profile_id: str | None = None,
+        *,
+        connected: bool = True,
+        is_bot: bool = False,
+        bot_difficulty: str = "",
     ) -> tuple[GameState, Player]:
         """Add a player to a waiting game."""
         if state.status != GameStatus.WAITING:
@@ -59,7 +63,9 @@ class GameEngine:
             coins=state.config.starting_coins,
             session_token=str(uuid.uuid4()),
             seat_index=len(state.players),
-            connected=True,
+            connected=connected,
+            is_bot=is_bot,
+            bot_difficulty=bot_difficulty,
         )
         state.players.append(player)
         return state, player

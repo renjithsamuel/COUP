@@ -2,7 +2,17 @@
 
 from __future__ import annotations
 
+from enum import Enum
+
 from pydantic import BaseModel, ConfigDict, Field
+
+
+class AiDifficulty(str, Enum):
+    """Supported bot difficulty levels for solo matches."""
+
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard"
 
 
 class LobbyPlayer(BaseModel):
@@ -111,3 +121,25 @@ class GameConfig(BaseModel):
     challenge_window_seconds: int = Field(default=10, ge=0, le=30)
     block_window_seconds: int = Field(default=10, ge=0, le=30)
     starting_coins: int = Field(default=2, ge=1, le=5)
+
+
+class AiMatchCreate(BaseModel):
+    """Request body to start a human-vs-bots match immediately."""
+
+    model_config = ConfigDict(strict=True)
+
+    player_name: str = Field(..., min_length=1, max_length=20)
+    bot_count: int = Field(..., ge=1, le=5)
+    difficulty: str = Field(default=AiDifficulty.MEDIUM.value, pattern="^(easy|medium|hard)$")
+    profile_id: str = Field(default="", max_length=64)
+    config: GameConfig | None = None
+
+
+class AiMatchResponse(BaseModel):
+    """Response body returned after creating an AI match."""
+
+    model_config = ConfigDict(strict=True)
+
+    ok: bool = True
+    game_id: str
+    player_id: str

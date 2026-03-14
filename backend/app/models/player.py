@@ -21,6 +21,8 @@ class Player(BaseModel):
     session_token: str = ""
     connected: bool = False
     seat_index: int = 0
+    is_bot: bool = False
+    bot_difficulty: str = ""
 
     @property
     def alive_influences(self) -> list[Card]:
@@ -48,6 +50,8 @@ class PlayerPublic(BaseModel):
     is_alive: bool
     connected: bool
     seat_index: int
+    is_bot: bool = False
+    bot_difficulty: str = ""
 
 
 def to_public(player: Player) -> PlayerPublic:
@@ -61,4 +65,6 @@ def to_public(player: Player) -> PlayerPublic:
         is_alive=player.is_alive,
         connected=player.connected,
         seat_index=player.seat_index,
+        is_bot=player.is_bot,
+        bot_difficulty=player.bot_difficulty,
     )

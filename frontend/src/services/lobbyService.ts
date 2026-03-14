@@ -1,5 +1,5 @@
 import { api } from './api';
-import { GameConfig, LeaderboardEntry, Lobby, LobbyCreate, LobbyJoin, LobbyPlayer, LobbyResponse } from '@/models/lobby';
+import { AiMatchCreate, AiMatchResponse, GameConfig, LeaderboardEntry, Lobby, LobbyCreate, LobbyJoin, LobbyPlayer, LobbyResponse } from '@/models/lobby';
 
 export interface StoredLobbySession {
   lobbyId: string;
@@ -136,6 +136,14 @@ function toLeaderboardEntry(raw: any): LeaderboardEntry {
     score: raw.score ?? 0,
   };
 }
+
+function toAiMatchResponse(raw: any): AiMatchResponse {
+  return {
+    ok: raw.ok ?? true,
+    gameId: raw.game_id ?? raw.gameId ?? '',
+    playerId: raw.player_id ?? raw.playerId ?? '',
+  };
+}
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export const lobbyService = {
@@ -152,6 +160,14 @@ export const lobbyService = {
       max_players: data.maxPlayers,
       profile_id: playerIdentityStore.getOrCreate().profileId,
     }).then(toCreateResponse),
+
+  createAiMatch: (data: AiMatchCreate) =>
+    api.post<any>('/api/games/ai-match', {
+      player_name: data.playerName,
+      bot_count: data.botCount,
+      difficulty: data.difficulty,
+      profile_id: playerIdentityStore.getOrCreate().profileId,
+    }).then(toAiMatchResponse),
 
   join: (lobbyId: string, data: LobbyJoin) =>
     api.post<any>(`/api/lobbies/${lobbyId}/join`, {

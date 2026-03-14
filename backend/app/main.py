@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager, suppress
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.game_router import init_game_router
 from app.api.lobby_router import init_lobby_router
 from app.api.router import api_router
 from app.config import settings
@@ -102,6 +103,28 @@ async def _run_game_timer_loop(game_service, connection_manager) -> None:
         raise
 
 
+async def _run_bot_loop(game_service, connection_manager) -> None:
+    """Progress server-side bot actions for AI matches."""
+    try:
+        while True:
+            await asyncio.sleep(0.35)
+            outcomes = await game_service.process_bot_turns()
+            for outcome in outcomes:
+                state = outcome["state"]
+                for event in outcome["events"]:
+                    await connection_manager.broadcast_to_game(state.id, event)
+
+                for player_id in connection_manager.get_connected_players(state.id):
+                    public_state = game_service.get_public_state(state, player_id)
+                    await connection_manager.send_to_player(state.id, player_id, {
+                        "type": "GAME_STATE",
+                        "payload": json.loads(public_state.model_dump_json()),
+                    })
+    except asyncio.CancelledError:
+        logger.debug("Bot loop cancelled")
+        raise
+
+
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     container = AppContainer()
@@ -119,6 +142,7 @@ def create_app() -> FastAPI:
             asyncio.create_task(_run_lobby_cleanup_loop(lobby_service), name="lobby-cleanup-loop"),
             asyncio.create_task(_run_persistence_cleanup_loop(game_service), name="persistence-cleanup-loop"),
             asyncio.create_task(_run_game_timer_loop(game_service, connection_manager), name="game-timer-loop"),
+            asyncio.create_task(_run_bot_loop(game_service, connection_manager), name="bot-loop"),
         ]
 
         try:
@@ -153,6 +177,7 @@ def create_app() -> FastAPI:
 
     # Wire services into lobby router
     init_lobby_router(lobby_service, game_service)
+    init_game_router(game_service)
 
     # Include REST routes
     application.include_router(api_router)

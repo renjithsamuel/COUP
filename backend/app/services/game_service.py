@@ -11,7 +11,15 @@ from typing import TYPE_CHECKING, ClassVar
 from app.engine.game_engine import GameEngine
 from app.models.action import ActionType, PlayerAction
 from app.models.game import GameConfig, GamePhase, GameState, GameStatus
-from app.models.lobby import GameConfig as LobbyGameConfig, LeaderboardEntry, Lobby
+from app.models.lobby import AiDifficulty, GameConfig as LobbyGameConfig, LeaderboardEntry, Lobby
+from app.services.bot_logic import (
+    choose_bot_block,
+    choose_bot_turn_action,
+    choose_exchange_keep_indices,
+    choose_influence_loss_index,
+    normalize_difficulty,
+    should_bot_challenge,
+)
 
 if TYPE_CHECKING:
     from app.repositories.game_repository import GameRepository
@@ -24,6 +32,7 @@ class GameService:
     _games: ClassVar[dict[str, GameState]] = {}
     _game_locks: ClassVar[dict[str, asyncio.Lock]] = {}
     _phase_clocks: ClassVar[dict[str, dict[str, str | None]]] = {}
+    _bot_activation: ClassVar[set[str]] = set()
 
     def __init__(self, engine: GameEngine, game_repo: GameRepository) -> None:
         self._engine = engine
@@ -65,6 +74,54 @@ class GameService:
         await self._repo.create(state)
         self._games[game_id] = state
         return state
+
+    async def create_ai_match(
+        self,
+        *,
+        player_name: str,
+        bot_count: int,
+        difficulty: AiDifficulty,
+        profile_id: str = "",
+        lobby_config: LobbyGameConfig | None = None,
+    ) -> tuple[GameState, str]:
+        """Create and start a single-human match against AI bots."""
+        if bot_count < 1 or bot_count > 5:
+            raise ValueError("Bot count must be between 1 and 5")
+
+        game_id = str(uuid.uuid4())[:8]
+        lc = lobby_config or LobbyGameConfig()
+        config = GameConfig(
+            max_players=bot_count + 1,
+            turn_timer_seconds=lc.turn_timer_seconds,
+            challenge_window_seconds=lc.challenge_window_seconds,
+            block_window_seconds=lc.block_window_seconds,
+            starting_coins=lc.starting_coins,
+        )
+
+        state = self._engine.create_game(game_id, config)
+        state, human_player = self._engine.add_player(
+            state,
+            player_name,
+            profile_id=profile_id.strip() or str(uuid.uuid4()),
+            connected=False,
+        )
+
+        for index in range(bot_count):
+            state, _ = self._engine.add_player(
+                state,
+                self._build_bot_name(index),
+                profile_id=f"bot::{difficulty.value}::{game_id}::{index + 1}",
+                connected=True,
+                is_bot=True,
+                bot_difficulty=difficulty.value,
+            )
+
+        state = self._engine.start_game(state)
+        self._sync_phase_clock(state)
+        await self._repo.create(state)
+        self._games[game_id] = state
+        type(self)._bot_activation.discard(game_id)
+        return state, human_player.id
 
     async def get_game(self, game_id: str) -> GameState | None:
         """Get game state, preferring cache."""
@@ -256,8 +313,173 @@ class GameService:
                 return state
 
             player.connected = connected
+            if connected and not player.is_bot and any(p.is_bot for p in state.players):
+                type(self)._bot_activation.add(game_id)
             await self._save(state)
             return state
+
+    async def process_bot_turns(self) -> list[dict[str, object]]:
+        outcomes: list[dict[str, object]] = []
+        for game_id in list(type(self)._games.keys()):
+            outcome = await self.process_bot_step(game_id)
+            if outcome is not None:
+                outcomes.append(outcome)
+        return outcomes
+
+    async def process_bot_step(self, game_id: str) -> dict[str, object] | None:
+        state = await self.get_game(game_id)
+        if state is None or state.status != GameStatus.IN_PROGRESS:
+            return None
+        if not any(player.is_bot and player.is_alive for player in state.players):
+            return None
+        if any(not player.is_bot for player in state.players) and game_id not in type(self)._bot_activation:
+            return None
+
+        previous_phase = state.phase
+        previous_turn_number = state.turn_number
+        previous_player_id = state.current_turn_player_id
+        events: list[dict[str, object]] = []
+
+        try:
+            if state.phase == GamePhase.TURN_START:
+                acting_player = state.get_player(state.current_turn_player_id) if state.current_turn_player_id else None
+                if acting_player is None or not acting_player.is_bot or not acting_player.is_alive:
+                    return None
+                if not self._bot_delay_elapsed(state, acting_player, role="turn"):
+                    return None
+
+                action_type, target_id = choose_bot_turn_action(state, acting_player)
+                actor_name = acting_player.name
+                target_name = state.get_player(target_id).name if target_id and state.get_player(target_id) else ""
+                state = await self.process_action(game_id, acting_player.id, action_type.value, target_id)
+                events.append({
+                    "type": "ACTION_DECLARED",
+                    "payload": {
+                        "actorId": acting_player.id,
+                        "actorName": actor_name,
+                        "actionType": action_type.value,
+                        "targetId": target_id or "",
+                        "targetName": target_name,
+                    },
+                })
+            elif state.phase in (GamePhase.CHALLENGE_WINDOW, GamePhase.BLOCK_CHALLENGE_WINDOW):
+                responder = self._next_ready_bot_responder(state)
+                if responder is None:
+                    return None
+
+                pending = state.pending_action
+                if pending is None:
+                    return None
+
+                challenged_player_id = (
+                    pending.blocked_by
+                    if state.phase == GamePhase.BLOCK_CHALLENGE_WINDOW
+                    else pending.player_id
+                ) or ""
+                challenged_player = state.get_player(challenged_player_id)
+                if should_bot_challenge(state, responder):
+                    state, challenger_won = await self.process_challenge(game_id, responder.id)
+                    events.append({
+                        "type": "CHALLENGE_ISSUED",
+                        "payload": {
+                            "challengerId": responder.id,
+                            "challengerName": responder.name,
+                            "challengedPlayerId": challenged_player_id,
+                            "challengedPlayerName": challenged_player.name if challenged_player else "",
+                            "actionType": pending.action_type,
+                            "blockingCharacter": pending.blocking_character or "",
+                            "window": previous_phase.value,
+                        },
+                    })
+                    events.append({
+                        "type": "CHALLENGE_RESULT",
+                        "payload": {
+                            "challengerId": responder.id,
+                            "challengerName": responder.name,
+                            "challengedPlayerId": challenged_player_id,
+                            "challengedPlayerName": challenged_player.name if challenged_player else "",
+                            "actionType": pending.action_type,
+                            "blockingCharacter": pending.blocking_character or "",
+                            "window": previous_phase.value,
+                            "challengerWon": challenger_won,
+                            "success": challenger_won,
+                        },
+                    })
+                else:
+                    state, _ = await self.process_accept(game_id, responder.id)
+            elif state.phase == GamePhase.BLOCK_WINDOW:
+                responder = self._next_ready_bot_responder(state)
+                if responder is None:
+                    return None
+
+                blocking_character = choose_bot_block(state, responder)
+                if blocking_character is not None:
+                    pending = state.pending_action
+                    state = await self.process_block(game_id, responder.id, blocking_character.value)
+                    events.append({
+                        "type": "BLOCK_DECLARED",
+                        "payload": {
+                            "blockerId": responder.id,
+                            "blockerName": responder.name,
+                            "actionType": pending.action_type if pending else "",
+                            "actorId": pending.player_id if pending else "",
+                            "blockingCharacter": blocking_character.value,
+                            "character": blocking_character.value,
+                        },
+                    })
+                else:
+                    state, _ = await self.process_accept(game_id, responder.id)
+            elif state.phase == GamePhase.AWAITING_INFLUENCE_LOSS:
+                player_id = state.awaiting_influence_loss_from
+                player = state.get_player(player_id) if player_id else None
+                if player is None or not player.is_bot or not player.is_alive:
+                    return None
+                if not self._bot_delay_elapsed(state, player, role="reveal"):
+                    return None
+
+                alive_cards = [card for card in player.influences if not card.revealed]
+                card_index = choose_influence_loss_index(state, player)
+                lost_character = alive_cards[card_index].character.value if 0 <= card_index < len(alive_cards) else ""
+                state = await self.process_influence_loss(game_id, player.id, card_index)
+                updated_player = state.get_player(player.id)
+                events.append({
+                    "type": "INFLUENCE_LOST",
+                    "payload": {
+                        "playerId": player.id,
+                        "playerName": player.name,
+                        "character": lost_character,
+                    },
+                })
+                if updated_player is not None and not updated_player.is_alive:
+                    events.append({
+                        "type": "PLAYER_ELIMINATED",
+                        "payload": {
+                            "playerId": player.id,
+                            "playerName": player.name,
+                        },
+                    })
+            elif state.phase == GamePhase.AWAITING_EXCHANGE:
+                pending = state.pending_action
+                player = state.get_player(pending.player_id) if pending else None
+                if player is None or not player.is_bot or not self._bot_delay_elapsed(state, player, role="exchange"):
+                    return None
+
+                keep_indices = choose_exchange_keep_indices(state, player)
+                state = await self.process_exchange_return(game_id, player.id, keep_indices)
+            else:
+                return None
+        except ValueError as exc:
+            self._logger.debug("Ignoring stale bot step in game %s: %s", game_id, exc)
+            return None
+
+        self._append_phase_boundary_event(
+            events,
+            state,
+            previous_phase=previous_phase,
+            previous_turn_number=previous_turn_number,
+            previous_player_id=previous_player_id,
+        )
+        return {"game_id": game_id, "state": state, "events": events}
 
     async def advance_turn(self, game_id: str) -> GameState:
         """Explicitly advance to next turn."""
@@ -275,6 +497,7 @@ class GameService:
             type(self)._games.pop(game_id, None)
             type(self)._game_locks.pop(game_id, None)
             type(self)._phase_clocks.pop(game_id, None)
+            type(self)._bot_activation.discard(game_id)
             return deleted
 
     def get_public_state(self, state: GameState, player_id: str):
@@ -410,6 +633,84 @@ class GameService:
 
         state.phase_started_at = current.get("phase_started_at")
         state.phase_deadline_at = current.get("phase_deadline_at")
+
+    def _bot_delay_elapsed(self, state: GameState, player, *, role: str) -> bool:
+        started_at = self._parse_iso8601(state.phase_started_at)
+        if started_at is None:
+            return True
+        elapsed = (self._utc_now() - started_at).total_seconds()
+        return elapsed >= self._bot_delay_seconds(state, player.id, player.bot_difficulty, role=role)
+
+    def _bot_delay_seconds(self, state: GameState, player_id: str, difficulty: str, *, role: str) -> float:
+        normalized = normalize_difficulty(difficulty)
+        base = {
+            "turn": {"easy": 2.4, "medium": 1.7, "hard": 1.15},
+            "response": {"easy": 1.8, "medium": 1.25, "hard": 0.85},
+            "reveal": {"easy": 1.6, "medium": 1.1, "hard": 0.8},
+            "exchange": {"easy": 1.9, "medium": 1.35, "hard": 0.95},
+        }[role][normalized]
+        signature = f"{state.id}|{self._build_phase_signature(state)}|{player_id}|{role}"
+        jitter = (sum(ord(char) for char in signature) % 7) * 0.18
+        return base + jitter
+
+    def _next_ready_bot_responder(self, state: GameState):
+        eligible_ids = self._get_eligible_responders(state)
+        ready_players = []
+        for player_id in eligible_ids:
+            player = state.get_player(player_id)
+            if player is None or not player.is_bot or not player.is_alive:
+                continue
+            if state.pending_action and player.id in state.pending_action.accepted_by:
+                continue
+            delay = self._bot_delay_seconds(state, player.id, player.bot_difficulty, role="response")
+            if self._bot_delay_elapsed(state, player, role="response"):
+                ready_players.append((delay, player))
+
+        if not ready_players:
+            return None
+
+        ready_players.sort(key=lambda item: item[0])
+        return ready_players[0][1]
+
+    @staticmethod
+    def _append_phase_boundary_event(
+        events: list[dict[str, object]],
+        state: GameState,
+        *,
+        previous_phase: GamePhase,
+        previous_turn_number: int,
+        previous_player_id: str | None,
+    ) -> None:
+        if state.phase == GamePhase.GAME_OVER and previous_phase != GamePhase.GAME_OVER:
+            winner = state.get_player(state.winner_id) if state.winner_id else None
+            events.append({
+                "type": "GAME_OVER",
+                "payload": {
+                    "winnerId": state.winner_id or "",
+                    "winnerName": winner.name if winner else "",
+                },
+            })
+        elif state.turn_number != previous_turn_number or state.current_turn_player_id != previous_player_id:
+            current_player = state.get_player(state.current_turn_player_id) if state.current_turn_player_id else None
+            events.append({
+                "type": "TURN_CHANGED",
+                "payload": {
+                    "turnNumber": state.turn_number,
+                    "playerId": state.current_turn_player_id or "",
+                    "playerName": current_player.name if current_player else "",
+                },
+            })
+
+    @staticmethod
+    def _build_bot_name(index: int) -> str:
+        names = [
+            "Silk Bot",
+            "Marlow Bot",
+            "Iris Bot",
+            "Vale Bot",
+            "Rook Bot",
+        ]
+        return names[index % len(names)]
 
     @staticmethod
     def _build_phase_signature(state: GameState) -> str:

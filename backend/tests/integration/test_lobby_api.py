@@ -205,6 +205,24 @@ class TestLobbyAPI:
         assert start_resp.status_code == 400
 
     @pytest.mark.asyncio
+    async def test_create_ai_match(self, client: AsyncClient):
+        resp = await client.post(
+            "/api/games/ai-match",
+            json={
+                "player_name": "Alice",
+                "bot_count": 2,
+                "difficulty": "medium",
+                "profile_id": "profile-alice",
+            },
+        )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is True
+        assert data["game_id"]
+        assert data["player_id"]
+
+    @pytest.mark.asyncio
     async def test_can_start_same_room_again_after_reset(self, client: AsyncClient):
         create_resp = await client.post(
             "/api/lobbies", json={"host_name": "Alice", "profile_id": "profile-alice"}

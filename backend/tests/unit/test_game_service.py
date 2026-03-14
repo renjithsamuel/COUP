@@ -6,7 +6,9 @@ import asyncio
 from datetime import timedelta, timezone, datetime
 
 from app.engine.game_engine import GameEngine
+from app.models.action import ActionType
 from app.models.game import GamePhase, GameState, GameStatus
+from app.models.lobby import AiDifficulty
 from app.services.game_service import GameService
 
 
@@ -318,6 +320,71 @@ def test_process_timeout_advances_turn_after_turn_timer(two_player_game: GameSta
         assert state.turn_number == 2
         assert state.event_log[-1]["type"] == "turn_changed"
         assert actor.coins == 2
+
+    asyncio.run(scenario())
+
+
+def test_create_ai_match_adds_requested_bots() -> None:
+    async def scenario() -> None:
+        repo = InMemoryGameRepository()
+        service = GameService(GameEngine(), repo)
+
+        state, human_player_id = await service.create_ai_match(
+            player_name="Alice",
+            bot_count=3,
+            difficulty=AiDifficulty.MEDIUM,
+            profile_id="profile-alice",
+        )
+
+        assert state.status == GameStatus.IN_PROGRESS
+        assert len(state.players) == 4
+        assert human_player_id == state.players[0].id
+        assert state.players[0].is_bot is False
+        assert [player.is_bot for player in state.players[1:]] == [True, True, True]
+        assert {player.bot_difficulty for player in state.players[1:]} == {AiDifficulty.MEDIUM.value}
+
+    asyncio.run(scenario())
+
+
+def test_bot_waits_for_human_connection_before_acting(monkeypatch) -> None:
+    async def scenario() -> None:
+        GameService._games.clear()
+        GameService._game_locks.clear()
+        GameService._phase_clocks.clear()
+        GameService._bot_activation.clear()
+
+        repo = InMemoryGameRepository()
+        service = GameService(GameEngine(), repo)
+
+        monkeypatch.setattr('app.engine.game_engine.random.choice', lambda players: players[1])
+        monkeypatch.setattr('app.services.game_service.choose_bot_turn_action', lambda state, player: (ActionType.INCOME, None))
+
+        state, human_player_id = await service.create_ai_match(
+            player_name='Alice',
+            bot_count=1,
+            difficulty=AiDifficulty.EASY,
+            profile_id='profile-alice',
+        )
+
+        blocked_outcome = await service.process_bot_step(state.id)
+        assert blocked_outcome is None
+
+        activated_state = await service.set_player_connected(state.id, human_player_id, True)
+        assert activated_state is not None
+
+        activated_state.phase_started_at = (datetime.now(timezone.utc) - timedelta(seconds=10)).isoformat()
+        GameService._phase_clocks[state.id] = {
+            'signature': service._build_phase_signature(activated_state),
+            'phase_started_at': activated_state.phase_started_at,
+            'phase_deadline_at': activated_state.phase_deadline_at,
+        }
+
+        outcome = await service.process_bot_step(state.id)
+
+        assert outcome is not None
+        assert outcome['events'][0]['type'] == 'ACTION_DECLARED'
+        assert outcome['state'].turn_number == 2
+        assert outcome['state'].current_turn_player_id == human_player_id
 
     asyncio.run(scenario())
 

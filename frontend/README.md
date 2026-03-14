@@ -21,7 +21,7 @@ Next.js 14 (App Router) frontend for the multiplayer Coup card game with real-ti
 src/
 ├── app/                    # Next.js App Router pages
 │   ├── layout.tsx          # Root layout + providers + metadata icons
-│   ├── page.tsx            # Home page (desktop split layout, mobile play-first flow, branded logo)
+│   ├── page.tsx            # Home page with Play with Friends / Play with AI entry modes, desktop mode cards, and mobile play-first flow
 │   ├── providers.tsx       # Client-side providers
 │   ├── global-error.tsx    # Error boundary
 │   ├── lobby/[id]/page.tsx # Lobby detail page
@@ -67,10 +67,10 @@ src/
 │   ├── lobby/              # Lobby models
 │   └── websocket-message/  # Client/Server message types
 ├── queries/                # TanStack React Query hooks
-│   └── useLobbyQueries.ts  # Lobby CRUD queries + mutations
+│   └── useLobbyQueries.ts  # Lobby CRUD queries + mutations, plus AI match start mutation
 ├── services/               # API client layer
 │   ├── api.ts              # Typed fetch wrapper
-│   ├── lobbyService.ts     # Lobby REST endpoints + per-lobby session persistence
+│   ├── lobbyService.ts     # Lobby REST endpoints, AI match setup, and per-lobby session persistence
 │   └── wsMessageMapper.ts  # WebSocket snake_case → camelCase mapper
 ├── theme/                  # Visual design system
 │   ├── theme.ts            # Mantine theme config
@@ -159,7 +159,7 @@ Add the export to `src/components/index.ts`.
 - **Opponent carousel**: `src/containers/OpponentArea/OpponentArea.tsx` keeps opponents in a fixed-height horizontal rail on both desktop and mobile, centers one- and two-opponent tables without changing order, auto-centers the active seat, and uses subtle edge fades so the strip stays readable when many players join
 - **Static app icon**: `public/icon.svg` serves the browser icon directly so local navigation and multi-tab dev sessions do not depend on the app icon route
 - **Unified turn status**: `src/containers/GameBoard/GameBoard.tsx` keeps turn and response context in the top bar on both desktop and mobile, with only a compact mobile status pill plus a connection dot so more of the board stays playable on small screens
-- **Mobile landing flow**: `src/app/page.tsx` uses a play-first entry flow on mobile before exposing create/join forms, while desktop keeps the split create/join layout
+- **Mode-based landing flow**: `src/app/page.tsx` separates Play with Friends and Play with AI, keeps create/join inside the friends branch, and lets mobile users choose between friends and AI after the play-first step
 - **Branding**: `src/app/page.tsx` renders a custom Coup logo and `public/icon.svg` provides the browser tab icon
 - **Target mode flow**: `src/containers/ActionPanel/ActionPanel.hooks.ts`, `ActionPanel.tsx`, and `src/containers/OpponentArea/OpponentArea.tsx` keep Coup, Assassinate, and Steal available, then highlight valid opponents on the board
 - **Press feedback**: `src/animations/variants.ts`, `src/app/globals.css`, `src/components/ActionButton/ActionButton.tsx`, `src/components/Card/Card.tsx`, and `src/containers/OpponentArea/OpponentArea.tsx` share a stronger hover/tap response, and the shared action buttons now include an inkwell-style ripple so taps read clearly on both mobile and desktop
@@ -184,7 +184,7 @@ Add the export to `src/components/index.ts`.
 
 | Route | Page | Description |
 |---|---|---|
-| `/` | Home | Create/join lobbies |
+| `/` | Home | Choose Play with Friends or Play with AI; create/join rooms or start an AI table |
 | `/lobby/[id]` | Lobby | Waiting room before game |
 | `/game/[id]` | Game | Live game board |
 

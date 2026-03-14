@@ -32,6 +32,20 @@ export interface LobbyResponse {
   sessionToken: string | null;
 }
 
+export type AiDifficulty = 'easy' | 'medium' | 'hard';
+
+export interface AiMatchCreate {
+  playerName: string;
+  botCount: number;
+  difficulty: AiDifficulty;
+}
+
+export interface AiMatchResponse {
+  ok: boolean;
+  gameId: string;
+  playerId: string;
+}
+
 export interface LeaderboardEntry {
   playerName: string;
   playerKey: string;

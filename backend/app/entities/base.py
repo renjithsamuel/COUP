@@ -56,6 +56,14 @@ def _run_dev_migrations(sync_conn) -> None:
         sync_conn.exec_driver_sql(
             "ALTER TABLE players ADD COLUMN profile_id VARCHAR NOT NULL DEFAULT ''"
         )
+    if "is_bot" not in player_columns:
+        sync_conn.exec_driver_sql(
+            "ALTER TABLE players ADD COLUMN is_bot BOOLEAN NOT NULL DEFAULT 0"
+        )
+    if "bot_difficulty" not in player_columns:
+        sync_conn.exec_driver_sql(
+            "ALTER TABLE players ADD COLUMN bot_difficulty VARCHAR NOT NULL DEFAULT ''"
+        )
 
 
 async def close_db() -> None:

@@ -6,8 +6,9 @@ Real-time multiplayer Coup card game — FastAPI backend with WebSocket support,
 
 This is the Python backend for the Coup multiplayer card game. It handles:
 - **Game logic engine** — Pure, stateless game rules implementation
-- **REST API** — Lobby management (create, join, list, start)
+- **REST API** — Lobby management plus direct AI-match creation
 - **WebSocket** — Real-time gameplay (actions, challenges, blocks, state sync)
+- **Bot orchestration** — Server-side turn, challenge, block, reveal, and exchange decisions for solo AI matches
 - **SQLite database** — Game state persistence via SQLAlchemy 2.0
 
 ## Tech Stack
@@ -26,7 +27,7 @@ This is the Python backend for the Coup multiplayer card game. It handles:
 ```
 backend/
 ├── app/
-│   ├── api/              # REST endpoints (lobby, health)
+│   ├── api/              # REST endpoints (lobby, game setup, health)
 │   ├── engine/           # Pure game logic (no I/O)
 │   │   ├── game_engine.py      # State machine & turn management
 │   │   ├── action_handler.py   # Per-action handlers (strategy pattern)
@@ -41,7 +42,7 @@ backend/
 │   │   ├── player.py     # Player, PlayerPublic
 │   │   └── lobby.py
 │   ├── repositories/     # Data access layer
-│   ├── services/         # Business logic orchestration
+│   ├── services/         # Business logic orchestration + bot decision helpers
 │   ├── ws/               # WebSocket connection management
 │   ├── config.py         # Settings (single source of truth for game constants)
 │   ├── container.py      # DI container
@@ -125,6 +126,7 @@ python -m pytest -v
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/api/health` | Health check |
+| `POST` | `/api/games/ai-match` | Start an immediate solo match against 1-5 bots (`{ player_name, bot_count, difficulty, profile_id? }`) |
 | `POST` | `/api/lobbies` | Create lobby (`{ host_name, max_players, profile_id? }`) — returns 6-char room code |
 | `GET` | `/api/lobbies` | List open lobbies |
 | `GET` | `/api/lobbies/{id}` | Get lobby details (case-insensitive code). Optional `?session_token=...` refreshes presence and returns the caller's `player_id` |
@@ -140,6 +142,11 @@ python -m pytest -v
 - `challenge_window_seconds` (`0-30`) — `0` disables challenge timeout
 - `block_window_seconds` (`0-30`) — `0` disables block timeout
 - `starting_coins` (`1-5`)
+
+AI match difficulty values:
+- `easy` — looser bluffing and weaker responses
+- `medium` — balanced play with some mistakes
+- `hard` — stronger targeting and challenge logic without perfect play
 
 ### WebSocket
 
@@ -187,6 +194,8 @@ Finished games are retained temporarily for leaderboard aggregation, then purged
 
 Leaderboard rows award 1 participation point for every completed game plus 2 bonus points for each win, so a win is worth 3 total points. Leaderboards are room-scoped, and if the client supplies a stable `profile_id`, aggregation follows that identity instead of merging players purely by display name. Waiting-room seat reuse is driven by the saved lobby `session_token`, so refresh/rejoin continuity still works without collapsing separate deliberate players into one seat.
 
+Solo AI matches start directly into `/game/[id]` without a lobby. Bots are persisted as regular game players with bot metadata, and a background bot loop advances their decisions server-side after the human player connects.
+
 ## Modifying Game Rules
 
 All game constants are in **one place**: `app/config.py` (`Settings` class).  
@@ -200,7 +209,7 @@ To change a rule:
 ## Architecture
 
 - **Engine** (`app/engine/`) — Pure functions, no I/O. All game logic lives here.
-- **Services** — Orchestrate engine + repositories. Manage game lifecycle. `GameService` shares per-game in-memory state and per-game mutation locks across WebSocket handlers so all players operate on the same live turn state.
+- **Services** — Orchestrate engine + repositories. Manage game lifecycle. `GameService` shares per-game in-memory state and per-game mutation locks across WebSocket handlers so all players operate on the same live turn state, and also coordinates server-side bot actions for AI matches with `bot_logic.py`.
 - **Repositories** — Data access via SQLAlchemy. Abstract DB operations.
 - **DI Container** (`app/container.py`) — Wires everything together.
 

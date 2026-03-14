@@ -3,13 +3,17 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { useCreateLobby, useJoinLobby } from '@/queries/useLobbyQueries';
+import { useCreateAiMatch, useCreateLobby, useJoinLobby } from '@/queries/useLobbyQueries';
 import { lobbySessionStore } from '@/services/lobbyService';
 import { fadeInVariants, interactiveHoverMotion, interactiveTapMotion, slideUpVariants, scalePopVariants } from '@/animations';
 import { CoupBackgroundSVG } from '@/components/CoupBackgroundSVG';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { tokens } from '@/theme/tokens';
+import { AiDifficulty } from '@/models/lobby';
 import { GAME_CONSTANTS } from '@/utils/constants';
+
+type PlayMode = 'friends' | 'ai';
+type MobileFlow = 'home' | 'mode' | 'friends' | 'create' | 'join' | 'ai';
 
 function CoupLogo({ compact = false }: { compact?: boolean }) {
   const size = compact ? 64 : 88;
@@ -45,7 +49,8 @@ const s = {
     flexDirection: 'column' as const,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: `${tokens.spacing.md}px`,
+    padding: 'clamp(10px, 2vw, 16px)',
+    boxSizing: 'border-box' as const,
     zIndex: 1,
   },
   stage: {
@@ -53,7 +58,7 @@ const s = {
     maxWidth: 1180,
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-    gap: 'clamp(20px, 4vw, 40px)',
+    gap: 'clamp(14px, 2.8vw, 28px)',
     alignItems: 'stretch',
     position: 'relative' as const,
     zIndex: 1,
@@ -69,7 +74,7 @@ const s = {
     display: 'flex',
     flexDirection: 'column' as const,
     justifyContent: 'space-between',
-    minHeight: 540,
+    minHeight: 500,
   },
   heroGlow: {
     position: 'absolute' as const,
@@ -89,29 +94,29 @@ const s = {
     fontWeight: 800,
   },
   title: {
-    fontSize: 'clamp(32px, 8vw, 52px)',
+    fontSize: 'clamp(28px, 7vw, 48px)',
     fontWeight: 900,
     color: tokens.text.primary,
     letterSpacing: 'clamp(3px, 1vw, 6px)',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 14,
     color: tokens.text.secondary,
-    marginBottom: 'clamp(18px, 4vw, 32px)',
+    marginBottom: 'clamp(14px, 3vw, 24px)',
     textAlign: 'left' as const,
-    lineHeight: 1.6,
-    maxWidth: 520,
+    lineHeight: 1.55,
+    maxWidth: 500,
   },
   featureGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-    gap: 12,
-    marginTop: 'auto',
+    gap: 10,
+    marginTop: 8,
   },
   featureCard: {
-    padding: '14px 14px 15px',
-    borderRadius: 18,
+    padding: '12px 12px 13px',
+    borderRadius: 16,
     background: 'rgba(255,255,255,0.04)',
     border: '1px solid rgba(255,255,255,0.08)',
     backdropFilter: 'blur(12px)',
@@ -132,61 +137,18 @@ const s = {
   actionColumn: {
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: 16,
+    gap: 12,
   },
   actionShell: {
     width: '100%',
-    padding: 'clamp(18px, 4vw, 26px)',
-    borderRadius: 24,
+    padding: 'clamp(14px, 3vw, 22px)',
+    borderRadius: 22,
     background: 'linear-gradient(180deg, rgba(9, 15, 28, 0.96) 0%, rgba(14, 22, 40, 0.96) 100%)',
     border: '1px solid rgba(255,255,255,0.08)',
     boxShadow: tokens.elevation.dp16,
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: 16,
-  },
-  mobilePlayButton: {
-    padding: '16px 20px',
-    borderRadius: 18,
-    border: '1px solid rgba(255, 193, 7, 0.26)',
-    background: 'linear-gradient(135deg, rgba(255,193,7,0.16), rgba(255,143,0,0.12))',
-    color: tokens.text.primary,
-    fontSize: 16,
-    fontWeight: 800,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase' as const,
-    cursor: 'pointer',
-    boxShadow: tokens.elevation.dp8,
-  },
-  mobileChoiceGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 10,
-  },
-  mobileChoiceButton: {
-    padding: '14px 12px',
-    borderRadius: 16,
-    border: '1px solid rgba(255,255,255,0.08)',
-    background: 'rgba(255,255,255,0.04)',
-    color: tokens.text.primary,
-    fontWeight: 800,
-    fontSize: 13,
-    letterSpacing: 0.7,
-    textTransform: 'uppercase' as const,
-    cursor: 'pointer',
-  },
-  mobileBackButton: {
-    alignSelf: 'flex-start',
-    padding: '6px 10px',
-    borderRadius: 999,
-    border: '1px solid rgba(255,255,255,0.08)',
-    background: 'rgba(255,255,255,0.04)',
-    color: tokens.text.secondary,
-    fontSize: 11,
-    fontWeight: 800,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase' as const,
-    cursor: 'pointer',
+    gap: 12,
   },
   actionHeader: {
     display: 'flex',
@@ -201,21 +163,66 @@ const s = {
     textTransform: 'uppercase' as const,
   },
   actionSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: tokens.text.secondary,
-    lineHeight: 1.5,
+    lineHeight: 1.45,
+  },
+  input: {
+    padding: `${tokens.spacing.sm + 1}px ${tokens.spacing.md - 1}px`,
+    borderRadius: 10,
+    border: `1px solid ${tokens.surface.borderLight}`,
+    background: tokens.surface.elevated,
+    color: tokens.text.primary,
+    fontSize: 13,
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box' as const,
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
+  },
+  modeGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gap: 10,
+  },
+  modeCard: {
+    padding: '14px 14px 15px',
+    borderRadius: 16,
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.03)',
+    color: tokens.text.primary,
+    textAlign: 'left' as const,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 6,
+    cursor: 'pointer',
+  },
+  modeCardActive: {
+    border: '1px solid rgba(255,193,7,0.26)',
+    background: 'linear-gradient(135deg, rgba(255,193,7,0.16), rgba(255,143,0,0.08))',
+    boxShadow: tokens.elevation.dp8,
+  },
+  modeCardTitle: {
+    fontSize: 13,
+    fontWeight: 800,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 1,
+  },
+  modeCardText: {
+    fontSize: 12,
+    color: tokens.text.secondary,
+    lineHeight: 1.55,
   },
   card: {
     width: '100%',
-    padding: 'clamp(16px, 4vw, 22px)',
-    borderRadius: 20,
+    padding: 'clamp(14px, 3vw, 18px)',
+    borderRadius: 18,
     background: 'linear-gradient(180deg, rgba(18, 27, 45, 0.92) 0%, rgba(11, 17, 32, 0.98) 100%)',
     border: '1px solid rgba(255,255,255,0.08)',
     boxShadow: tokens.elevation.dp8,
     backdropFilter: 'blur(12px)',
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: 14,
+    gap: 12,
   },
   cardTitle: {
     fontSize: 16,
@@ -225,26 +232,57 @@ const s = {
     letterSpacing: 1,
     textTransform: 'uppercase' as const,
   },
-  input: {
-    padding: `${tokens.spacing.sm + 2}px ${tokens.spacing.md}px`,
-    borderRadius: 10,
-    border: `1px solid ${tokens.surface.borderLight}`,
-    background: tokens.surface.elevated,
+  helperText: {
+    color: tokens.text.secondary,
+    fontSize: 11,
+    lineHeight: 1.55,
+    textAlign: 'left' as const,
+  },
+  optionSection: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 6,
+  },
+  optionLabel: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase' as const,
+  },
+  optionGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    gap: 6,
+  },
+  optionGridWide: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+    gap: 6,
+  },
+  optionButton: {
+    padding: '10px 8px',
+    borderRadius: 12,
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.04)',
     color: tokens.text.primary,
-    fontSize: 14,
-    outline: 'none',
-    width: '100%',
-    boxSizing: 'border-box' as const,
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)',
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: 'pointer',
+  },
+  optionButtonActive: {
+    border: '1px solid rgba(255,193,7,0.32)',
+    background: 'linear-gradient(135deg, rgba(255,193,7,0.16), rgba(255,143,0,0.08))',
+    color: tokens.text.accent,
   },
   createBtn: {
-    padding: `${tokens.spacing.sm + 2}px ${tokens.spacing.xl}px`,
+    padding: `${tokens.spacing.sm + 1}px ${tokens.spacing.xl - 2}px`,
     borderRadius: 10,
-    border: `1px solid rgba(255,193,7,0.3)`,
-    background: `linear-gradient(135deg, rgba(255,193,7,0.12), rgba(255,143,0,0.08))`,
+    border: '1px solid rgba(255,193,7,0.3)',
+    background: 'linear-gradient(135deg, rgba(255,193,7,0.12), rgba(255,143,0,0.08))',
     color: tokens.text.accent,
     fontWeight: 700,
-    fontSize: 13,
+    fontSize: 12,
     cursor: 'pointer',
     boxShadow: tokens.elevation.dp2,
     letterSpacing: 1,
@@ -252,13 +290,13 @@ const s = {
     width: '100%',
   },
   joinBtn: {
-    padding: `${tokens.spacing.sm + 2}px ${tokens.spacing.xl}px`,
+    padding: `${tokens.spacing.sm + 1}px ${tokens.spacing.xl - 2}px`,
     borderRadius: 10,
     border: '1px solid rgba(76,175,80,0.3)',
     background: 'linear-gradient(135deg, rgba(46,125,50,0.2), rgba(76,175,80,0.15))',
     color: '#81C784',
     fontWeight: 700,
-    fontSize: 13,
+    fontSize: 12,
     cursor: 'pointer',
     boxShadow: tokens.elevation.dp2,
     letterSpacing: 1,
@@ -270,7 +308,7 @@ const s = {
     alignItems: 'center' as const,
     gap: tokens.spacing.md,
     width: '100%',
-    margin: '2px 0',
+    margin: '0',
   },
   dividerLine: {
     flex: 1,
@@ -289,26 +327,72 @@ const s = {
     fontSize: 12,
     textAlign: 'left' as const,
   },
+  mobilePlayButton: {
+    padding: '14px 18px',
+    borderRadius: 16,
+    border: '1px solid rgba(255, 193, 7, 0.26)',
+    background: 'linear-gradient(135deg, rgba(255,193,7,0.16), rgba(255,143,0,0.12))',
+    color: tokens.text.primary,
+    fontSize: 15,
+    fontWeight: 800,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase' as const,
+    cursor: 'pointer',
+    boxShadow: tokens.elevation.dp8,
+  },
+  mobileBackButton: {
+    alignSelf: 'flex-start',
+    padding: '6px 10px',
+    borderRadius: 999,
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.04)',
+    color: tokens.text.secondary,
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase' as const,
+    cursor: 'pointer',
+  },
 };
+
+const difficultyNotes: Record<AiDifficulty, string> = {
+  easy: 'Bluffs more, reads worse, and sometimes passes on strong plays.',
+  medium: 'Balanced bot table with believable pressure and occasional greed.',
+  hard: 'Sharper targeting and better challenges, but still not perfect.',
+};
+
+const modeOptions: Array<{ key: PlayMode; title: string; text: string }> = [
+  {
+    key: 'friends',
+    title: 'Play With Friends',
+    text: 'Create a private room or join by code. Same waiting room and replay flow as now.',
+  },
+  {
+    key: 'ai',
+    title: 'Play With AI',
+    text: 'Start immediately against 1 to 5 bots with difficulty-based bluff logic.',
+  },
+];
 
 export default function HomePage() {
   const router = useRouter();
   const isMobile = useIsMobile();
   const createLobby = useCreateLobby();
   const joinLobby = useJoinLobby();
+  const createAiMatch = useCreateAiMatch();
 
   const [playerName, setPlayerName] = useState('');
   const [lobbyName, setLobbyName] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [joinError, setJoinError] = useState('');
-  const [mobileFlow, setMobileFlow] = useState<'home' | 'choose' | 'create' | 'join'>('home');
+  const [aiError, setAiError] = useState('');
+  const [playMode, setPlayMode] = useState<PlayMode>('friends');
+  const [mobileFlow, setMobileFlow] = useState<MobileFlow>('home');
+  const [botCount, setBotCount] = useState(3);
+  const [difficulty, setDifficulty] = useState<AiDifficulty>('medium');
 
   useEffect(() => {
-    if (!isMobile) {
-      setMobileFlow('choose');
-    } else {
-      setMobileFlow('home');
-    }
+    setMobileFlow(isMobile ? 'home' : 'mode');
   }, [isMobile]);
 
   const handleCreate = async () => {
@@ -344,6 +428,163 @@ export default function HomePage() {
     }
   };
 
+  const handleStartAi = async () => {
+    if (!playerName.trim()) return;
+    setAiError('');
+    try {
+      const res = await createAiMatch.mutateAsync({
+        playerName: playerName.trim(),
+        botCount,
+        difficulty,
+      });
+      router.push(`/game/${res.gameId}?playerId=${res.playerId}`);
+    } catch {
+      setAiError('Unable to start an AI table right now.');
+    }
+  };
+
+  const modeCards = (
+    <div style={{ ...s.modeGrid, gridTemplateColumns: isMobile ? '1fr' : s.modeGrid.gridTemplateColumns }}>
+      {modeOptions.map((mode) => {
+        const active = !isMobile && playMode === mode.key;
+        return (
+          <button
+            key={mode.key}
+            style={{ ...s.modeCard, ...(active ? s.modeCardActive : {}) }}
+            onClick={() => {
+              setPlayMode(mode.key);
+              if (isMobile) {
+                setMobileFlow(mode.key === 'friends' ? 'friends' : 'ai');
+              }
+            }}
+          >
+            <span style={s.modeCardTitle}>{mode.title}</span>
+            <span style={s.modeCardText}>{mode.text}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const friendsCards = (
+    <>
+      <motion.div style={s.card} variants={slideUpVariants} initial="hidden" animate="visible">
+        <div style={s.cardTitle}>Create Room</div>
+        <input
+          style={s.input}
+          placeholder="Room name (optional)"
+          value={lobbyName}
+          onChange={(event) => setLobbyName(event.target.value)}
+          maxLength={30}
+        />
+        <motion.button
+          style={{
+            ...s.createBtn,
+            opacity: !playerName.trim() ? 0.5 : 1,
+            cursor: !playerName.trim() ? 'not-allowed' : 'pointer',
+          }}
+          variants={scalePopVariants}
+          whileHover={playerName.trim() ? interactiveHoverMotion : undefined}
+          whileTap={playerName.trim() ? interactiveTapMotion : undefined}
+          onClick={handleCreate}
+          disabled={createLobby.isPending || !playerName.trim()}
+        >
+          {createLobby.isPending ? 'Creating...' : 'Create Room'}
+        </motion.button>
+      </motion.div>
+
+      <div style={s.divider}>
+        <div style={s.dividerLine} />
+        <div style={s.dividerText}>or</div>
+        <div style={s.dividerLine} />
+      </div>
+
+      <motion.div style={s.card} variants={slideUpVariants} initial="hidden" animate="visible">
+        <div style={s.cardTitle}>Join Room</div>
+        <input
+          style={s.input}
+          placeholder="Room code"
+          value={roomCode}
+          onChange={(event) => {
+            setRoomCode(event.target.value);
+            setJoinError('');
+          }}
+          maxLength={8}
+        />
+        {joinError && <div style={s.error}>{joinError}</div>}
+        <motion.button
+          style={{
+            ...s.joinBtn,
+            opacity: !playerName.trim() || !roomCode.trim() ? 0.5 : 1,
+            cursor: !playerName.trim() || !roomCode.trim() ? 'not-allowed' : 'pointer',
+          }}
+          variants={scalePopVariants}
+          whileHover={playerName.trim() && roomCode.trim() ? interactiveHoverMotion : undefined}
+          whileTap={playerName.trim() && roomCode.trim() ? interactiveTapMotion : undefined}
+          onClick={handleJoin}
+          disabled={joinLobby.isPending || !playerName.trim() || !roomCode.trim()}
+        >
+          {joinLobby.isPending ? 'Joining...' : 'Join Room'}
+        </motion.button>
+      </motion.div>
+    </>
+  );
+
+  const aiContent = (
+    <>
+      <div style={s.cardTitle}>AI Table</div>
+      <div style={s.helperText}>Start a match instantly. Bots use lightweight bluff-and-response logic, not perfect information.</div>
+
+      <div style={s.optionSection}>
+        <div style={s.optionLabel}>Bot count</div>
+        <div style={s.optionGridWide}>
+          {[1, 2, 3, 4, 5].map((count) => (
+            <button
+              key={count}
+              style={{ ...s.optionButton, ...(botCount === count ? s.optionButtonActive : {}) }}
+              onClick={() => setBotCount(count)}
+            >
+              {count}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={s.optionSection}>
+        <div style={s.optionLabel}>Difficulty</div>
+        <div style={s.optionGrid}>
+          {(['easy', 'medium', 'hard'] as AiDifficulty[]).map((level) => (
+            <button
+              key={level}
+              style={{ ...s.optionButton, ...(difficulty === level ? s.optionButtonActive : {}) }}
+              onClick={() => setDifficulty(level)}
+            >
+              {level}
+            </button>
+          ))}
+        </div>
+        <div style={s.helperText}>{difficultyNotes[difficulty]}</div>
+      </div>
+
+      {aiError && <div style={s.error}>{aiError}</div>}
+
+      <motion.button
+        style={{
+          ...s.createBtn,
+          opacity: !playerName.trim() ? 0.5 : 1,
+          cursor: !playerName.trim() ? 'not-allowed' : 'pointer',
+        }}
+        variants={scalePopVariants}
+        whileHover={playerName.trim() ? interactiveHoverMotion : undefined}
+        whileTap={playerName.trim() ? interactiveTapMotion : undefined}
+        onClick={handleStartAi}
+        disabled={createAiMatch.isPending || !playerName.trim()}
+      >
+        {createAiMatch.isPending ? 'Starting...' : `Play vs ${botCount} AI${botCount > 1 ? ' Bots' : ' Bot'}`}
+      </motion.button>
+    </>
+  );
+
   return (
     <motion.div style={s.page} variants={fadeInVariants} initial="hidden" animate="visible">
       <div
@@ -374,11 +615,11 @@ export default function HomePage() {
       </div>
 
       <div style={s.stage}>
-        <motion.section style={{ ...s.heroCard, minHeight: isMobile ? 320 : 540 }} variants={slideUpVariants} initial="hidden" animate="visible">
+        <motion.section style={{ ...s.heroCard, minHeight: isMobile ? 300 : 500 }} variants={slideUpVariants} initial="hidden" animate="visible">
           <div style={s.heroGlow} />
           <div>
             <div style={s.heroEyebrow}>Realtime multiplayer bluffing</div>
-            <div style={{ marginBottom: 18 }}>
+            <div style={{ marginBottom: isMobile ? 12 : 14 }}>
               <CoupLogo compact={isMobile} />
             </div>
             <div style={s.title}>COUP</div>
@@ -390,125 +631,83 @@ export default function HomePage() {
 
           <div style={{ ...s.featureGrid, gridTemplateColumns: isMobile ? '1fr' : s.featureGrid.gridTemplateColumns }}>
             <div style={s.featureCard}>
-              <div style={s.featureTitle}>Fast Table Reads</div>
-              <div style={s.featureText}>Targeted actions and response windows keep pressure clear instead of noisy.</div>
+              <div style={s.featureTitle}>Play Your Way</div>
+              <div style={s.featureText}>Jump into a private room with friends or start a solo table instantly against bots.</div>
             </div>
-            {!isMobile && <div style={s.featureCard}>
-              <div style={s.featureTitle}>Live Timeline</div>
-              <div style={s.featureText}>Track every declaration, challenge, reveal, and elimination in one feed.</div>
-            </div>}
-            {!isMobile && <div style={s.featureCard}>
-              <div style={s.featureTitle}>Phone Ready</div>
-              <div style={s.featureText}>Compact controls, bottom utility dock, and cleaner boards on smaller screens.</div>
-            </div>}
+            {!isMobile && (
+              <div style={s.featureCard}>
+                <div style={s.featureTitle}>Human-Like Bots</div>
+                <div style={s.featureText}>Bots bluff, pass, and challenge with difficulty-based mistakes instead of perfect play.</div>
+              </div>
+            )}
+            {!isMobile && (
+              <div style={s.featureCard}>
+                <div style={s.featureTitle}>Same Live Board</div>
+                <div style={s.featureText}>AI matches use the same real-time game board, turn windows, and reveal flow as multiplayer games.</div>
+              </div>
+            )}
           </div>
         </motion.section>
 
         <motion.section style={s.actionColumn} variants={fadeInVariants} initial="hidden" animate="visible">
           <div style={s.actionShell}>
             <div style={s.actionHeader}>
-              <div style={s.actionTitle}>Enter the table</div>
-              <div style={s.actionSubtitle}>Pick a name once, then create a room or join an existing code.</div>
+              <div style={s.actionTitle}>Choose your table</div>
+              <div style={s.actionSubtitle}>Set your name once, then pick friends or AI and jump into the matching flow.</div>
             </div>
 
             <input
               style={s.input}
               placeholder="Your name"
               value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
+              onChange={(event) => setPlayerName(event.target.value)}
               maxLength={20}
             />
 
             {isMobile && mobileFlow === 'home' && (
-              <button style={s.mobilePlayButton} onClick={() => setMobileFlow('choose')}>
+              <button style={s.mobilePlayButton} onClick={() => setMobileFlow('mode')}>
                 Play
               </button>
             )}
 
-            {(!isMobile || mobileFlow === 'choose') && (
+            {!isMobile && (
               <>
-                {isMobile && (
-                  <div style={s.mobileChoiceGrid}>
-                    <button style={s.mobileChoiceButton} onClick={() => setMobileFlow('create')}>Create</button>
-                    <button style={s.mobileChoiceButton} onClick={() => setMobileFlow('join')}>Join</button>
-                  </div>
-                )}
-
-                {!isMobile && (
-                  <>
-                    <motion.div style={s.card} variants={slideUpVariants} initial="hidden" animate="visible">
-                      <div style={s.cardTitle}>Create Room</div>
-                      <input
-                        style={s.input}
-                        placeholder="Room name (optional)"
-                        value={lobbyName}
-                        onChange={(e) => setLobbyName(e.target.value)}
-                        maxLength={30}
-                      />
-                      <motion.button
-                        style={{
-                          ...s.createBtn,
-                          opacity: !playerName.trim() ? 0.5 : 1,
-                          cursor: !playerName.trim() ? 'not-allowed' : 'pointer',
-                        }}
-                        variants={scalePopVariants}
-                        whileHover={playerName.trim() ? interactiveHoverMotion : undefined}
-                        whileTap={playerName.trim() ? interactiveTapMotion : undefined}
-                        onClick={handleCreate}
-                        disabled={createLobby.isPending || !playerName.trim()}
-                      >
-                        {createLobby.isPending ? 'Creating...' : 'Create Room'}
-                      </motion.button>
-                    </motion.div>
-
-                    <div style={s.divider}>
-                      <div style={s.dividerLine} />
-                      <div style={s.dividerText}>or</div>
-                      <div style={s.dividerLine} />
-                    </div>
-
-                    <motion.div style={s.card} variants={slideUpVariants} initial="hidden" animate="visible">
-                      <div style={s.cardTitle}>Join Room</div>
-                      <input
-                        style={s.input}
-                        placeholder="Room code"
-                        value={roomCode}
-                        onChange={(e) => {
-                          setRoomCode(e.target.value);
-                          setJoinError('');
-                        }}
-                        maxLength={8}
-                      />
-                      {joinError && <div style={s.error}>{joinError}</div>}
-                      <motion.button
-                        style={{
-                          ...s.joinBtn,
-                          opacity: !playerName.trim() || !roomCode.trim() ? 0.5 : 1,
-                          cursor: !playerName.trim() || !roomCode.trim() ? 'not-allowed' : 'pointer',
-                        }}
-                        variants={scalePopVariants}
-                        whileHover={playerName.trim() && roomCode.trim() ? interactiveHoverMotion : undefined}
-                        whileTap={playerName.trim() && roomCode.trim() ? interactiveTapMotion : undefined}
-                        onClick={handleJoin}
-                        disabled={joinLobby.isPending || !playerName.trim() || !roomCode.trim()}
-                      >
-                        {joinLobby.isPending ? 'Joining...' : 'Join Room'}
-                      </motion.button>
-                    </motion.div>
-                  </>
+                {modeCards}
+                {playMode === 'friends' ? friendsCards : (
+                  <motion.div style={s.card} variants={slideUpVariants} initial="hidden" animate="visible">
+                    {aiContent}
+                  </motion.div>
                 )}
               </>
             )}
 
+            {isMobile && mobileFlow === 'mode' && (
+              <>
+                {modeCards}
+              </>
+            )}
+
+            {isMobile && mobileFlow === 'friends' && (
+              <motion.div style={s.card} variants={slideUpVariants} initial="hidden" animate="visible">
+                <button style={s.mobileBackButton} onClick={() => setMobileFlow('mode')}>Back</button>
+                <div style={s.cardTitle}>Play With Friends</div>
+                <div style={s.helperText}>Keep the existing room flow: create a private lobby or join one by code.</div>
+                <div style={{ ...s.modeGrid, gridTemplateColumns: '1fr 1fr' }}>
+                  <button style={s.modeCard} onClick={() => setMobileFlow('create')}>Create Room</button>
+                  <button style={s.modeCard} onClick={() => setMobileFlow('join')}>Join Room</button>
+                </div>
+              </motion.div>
+            )}
+
             {isMobile && mobileFlow === 'create' && (
               <motion.div style={s.card} variants={slideUpVariants} initial="hidden" animate="visible">
-                <button style={s.mobileBackButton} onClick={() => setMobileFlow('choose')}>Back</button>
+                <button style={s.mobileBackButton} onClick={() => setMobileFlow('friends')}>Back</button>
                 <div style={s.cardTitle}>Create Room</div>
                 <input
                   style={s.input}
                   placeholder="Room name (optional)"
                   value={lobbyName}
-                  onChange={(e) => setLobbyName(e.target.value)}
+                  onChange={(event) => setLobbyName(event.target.value)}
                   maxLength={30}
                 />
                 <motion.button
@@ -530,14 +729,14 @@ export default function HomePage() {
 
             {isMobile && mobileFlow === 'join' && (
               <motion.div style={s.card} variants={slideUpVariants} initial="hidden" animate="visible">
-                <button style={s.mobileBackButton} onClick={() => setMobileFlow('choose')}>Back</button>
+                <button style={s.mobileBackButton} onClick={() => setMobileFlow('friends')}>Back</button>
                 <div style={s.cardTitle}>Join Room</div>
                 <input
                   style={s.input}
                   placeholder="Room code"
                   value={roomCode}
-                  onChange={(e) => {
-                    setRoomCode(e.target.value);
+                  onChange={(event) => {
+                    setRoomCode(event.target.value);
                     setJoinError('');
                   }}
                   maxLength={8}
@@ -557,6 +756,13 @@ export default function HomePage() {
                 >
                   {joinLobby.isPending ? 'Joining...' : 'Join Room'}
                 </motion.button>
+              </motion.div>
+            )}
+
+            {isMobile && mobileFlow === 'ai' && (
+              <motion.div style={s.card} variants={slideUpVariants} initial="hidden" animate="visible">
+                <button style={s.mobileBackButton} onClick={() => setMobileFlow('mode')}>Back</button>
+                {aiContent}
               </motion.div>
             )}
           </div>

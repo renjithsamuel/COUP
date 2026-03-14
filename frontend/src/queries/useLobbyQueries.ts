@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { lobbyService } from '@/services/lobbyService';
-import { GameConfig, LobbyCreate, LobbyJoin } from '@/models/lobby';
+import { AiMatchCreate, GameConfig, LobbyCreate, LobbyJoin } from '@/models/lobby';
 
 export const lobbyKeys = {
   all: ['lobbies'] as const,
@@ -39,6 +39,12 @@ export function useCreateLobby() {
   return useMutation({
     mutationFn: (data: LobbyCreate) => lobbyService.create(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: lobbyKeys.list() }),
+  });
+}
+
+export function useCreateAiMatch() {
+  return useMutation({
+    mutationFn: (data: AiMatchCreate) => lobbyService.createAiMatch(data),
   });
 }
 

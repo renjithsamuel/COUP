@@ -55,6 +55,8 @@ class PlayerRepository:
             is_alive=player.is_alive,
             session_token=player.session_token,
             connected=player.connected,
+            is_bot=player.is_bot,
+            bot_difficulty=player.bot_difficulty,
             influences=json.dumps([c.model_dump() for c in player.influences]),
             created_at=datetime.now(timezone.utc).isoformat(),
         )
@@ -78,6 +80,8 @@ class PlayerRepository:
         entity.seat_index = player.seat_index
         entity.is_alive = player.is_alive
         entity.connected = player.connected
+        entity.is_bot = player.is_bot
+        entity.bot_difficulty = player.bot_difficulty
         entity.influences = json.dumps([c.model_dump() for c in player.influences])
         return player
 
@@ -99,4 +103,6 @@ class PlayerRepository:
             session_token=entity.session_token,
             connected=entity.connected,
             seat_index=entity.seat_index,
+            is_bot=entity.is_bot,
+            bot_difficulty=entity.bot_difficulty,
         )
