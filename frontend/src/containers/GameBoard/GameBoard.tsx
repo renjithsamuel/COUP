@@ -89,6 +89,7 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
   const [showGuide, setShowGuide] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [actionHint, setActionHint] = useState<string | null>(null);
   const [timelinePreferenceTouched, setTimelinePreferenceTouched] = useState(false);
   const isMobile = useIsMobile();
   const s = gameBoardStyles(isMobile);
@@ -100,6 +101,26 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
     }
     setShowTimeline(!isMobile);
   }, [isMobile, timelinePreferenceTouched]);
+
+  useEffect(() => {
+    if (!actionHint) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setActionHint(null);
+    }, 1400);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [actionHint]);
+
+  useEffect(() => {
+    if (isMyTurn || isGameOver) {
+      setActionHint(null);
+    }
+  }, [isMyTurn, isGameOver]);
 
   if (!gameState) {
     return (
@@ -114,19 +135,6 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
   const myPlayer = gameState.players.find((p) => p.id === playerId);
   const selectedTargetAction = actionPanel.selectedAction ? ACTION_RULES[actionPanel.selectedAction] : null;
   const commandTone = selectedTargetAction ? 'info' : (responseStatus?.tone ?? (isMyTurn ? 'warn' : 'info'));
-  const commandEyebrow = selectedTargetAction
-    ? 'Target mode'
-    : isGameOver
-      ? 'Table closed'
-      : `Turn ${gameState.turnNumber}`;
-  const commandTitle = selectedTargetAction
-    ? `Choose a target for ${selectedTargetAction.label}`
-    : responseStatus?.title ?? (isMyTurn ? 'Your Move' : `${currentPlayerName}'s Turn`);
-  const commandMetaLabel = isGameOver
-    ? `${winnerName || 'Winner'} won`
-    : isMyTurn
-      ? 'You are active'
-      : `${currentPlayerName} active`;
   const compactCommandTitle = selectedTargetAction
     ? `${selectedTargetAction.label} target selection`
     : isGameOver
@@ -136,6 +144,17 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
         : responseStatus?.title === 'Waiting For Turn'
           ? `${currentPlayerName} acting`
           : responseStatus?.title ?? (isMyTurn ? 'Your turn' : `${currentPlayerName} acting`);
+  const mobileNavTitle = selectedTargetAction
+    ? `${selectedTargetAction.label} target`
+    : isGameOver
+      ? isWinner
+        ? 'You won the table'
+        : `${winnerName || 'Winner'} won`
+      : responseStatus?.title === 'Your Move'
+        ? 'Your turn'
+        : responseStatus?.title === 'Waiting For Turn'
+          ? `${currentPlayerName} acting`
+          : compactCommandTitle;
   const navTitle = selectedTargetAction
     ? `Pick a target for ${selectedTargetAction.label}`
     : isGameOver
@@ -150,7 +169,6 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
     : isGameOver
       ? 'Game over'
       : `Turn ${gameState.turnNumber}`;
-  const showCommandRail = isMobile;
 
   const toggleTimeline = () => {
     setTimelinePreferenceTouched(true);
@@ -160,6 +178,15 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
   const closeTimeline = () => {
     setTimelinePreferenceTouched(true);
     setShowTimeline(false);
+  };
+
+  const handleInactiveActionAttempt = () => {
+    if (isGameOver) {
+      setActionHint('The round is over.');
+      return;
+    }
+
+    setActionHint(isMyTurn ? 'Your turn.' : `${currentPlayerName || 'Another player'} is acting.`);
   };
 
   const renderUtilityButtons = () => (
@@ -226,9 +253,15 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
       <div style={s.topBar}>
         <div style={s.topBarLeft}>
           {isMobile ? (
-            <div style={s.connectionBadge(status)} title={`WebSocket: ${status}`}>
-              <span style={s.connectionDot(status)} />
-              <span style={s.connectionText}>{status === 'connected' ? 'Live table' : status === 'connecting' ? 'Reconnecting' : 'Disconnected'}</span>
+            <div style={s.mobileStatusPill(commandTone)} title={`WebSocket: ${status}`}>
+              <span style={s.mobileConnectionDot(status)} />
+              <div style={s.mobileStatusCopy}>
+                <span style={s.mobileStatusEyebrow}>{navEyebrow}</span>
+                <span style={s.mobileStatusTitle}>{mobileNavTitle}</span>
+              </div>
+              {!isGameOver && timerRemaining > 0 && (
+                <span style={s.mobileTimerChip(commandTone)}>{timerRemaining}s</span>
+              )}
             </div>
           ) : (
             <div style={s.topStatusGroup}>
@@ -270,32 +303,6 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
       </div>
 
       <div style={s.center}>
-        {showCommandRail && (
-          <motion.div
-            key={compactCommandTitle}
-            style={s.commandRail(commandTone)}
-            initial={{ opacity: 0, y: -8, scale: 0.99 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-          >
-            <div style={s.commandMain}>
-              <span style={s.commandEyebrow}>{commandEyebrow}</span>
-              <span style={s.commandTitle}>{compactCommandTitle}</span>
-            </div>
-            <div style={s.commandAside}>
-              <div style={s.commandMetaRow}>
-                <span style={s.commandMeta(commandTone)}>{isMobile ? commandMetaLabel.replace(' are active', '').replace(' active', '') : commandMetaLabel}</span>
-                {selectedTargetAction && (
-                  <span style={s.commandMeta('warn')}>{selectedTargetAction.label}</span>
-                )}
-              </div>
-              {isMobile && timerRemaining > 0 && (
-                <Timer remaining={timerRemaining} progress={timerProgress} />
-              )}
-            </div>
-          </motion.div>
-        )}
-
         <div style={s.contentGrid(showTimeline && !isMobile)}>
           <div style={s.mainColumn}>
             <div style={s.boardArea}>
@@ -309,6 +316,21 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
             </div>
 
             <div style={s.bottomArea}>
+              <AnimatePresence>
+                {actionHint && (
+                  <motion.div
+                    key={actionHint}
+                    style={s.actionHintToast}
+                    initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                  >
+                    {actionHint}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <div style={s.playerCardArea}>
                 <div style={s.playerInfoInline}>
                   <span style={s.playerNameLarge}>{myPlayer?.name ?? 'You'}</span>
@@ -318,7 +340,7 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
                 </div>
                 <PlayerHand send={send} isMobile={isMobile} activeCardEffect={activeCardEffect} />
               </div>
-              <ActionPanel {...actionPanel} isMobile={isMobile} />
+              <ActionPanel {...actionPanel} isMobile={isMobile} onInactiveActionAttempt={handleInactiveActionAttempt} />
             </div>
           </div>
 
@@ -504,6 +526,7 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
       <GameOverModal
         isOpen={isGameOver}
         winnerName={winnerName}
+        isWinner={isWinner}
         onPlayAgain={onPlayAgain}
         onExit={() => {
           if (onExit) {

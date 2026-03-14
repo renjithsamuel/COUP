@@ -51,12 +51,12 @@ export function ActionButton({
       title={`${hint}${isBluff ? ' (Bluff - you do not have this character)' : ''}`}
       aria-label={`${rule.label}${rule.cost > 0 ? ` (${rule.cost} coins)` : ''}${isBluff ? ' (bluff)' : ''}`}
     >
-      <div style={actionButtonStyles.header}>
-        <div style={actionButtonStyles.identityRow}>
+      <div style={actionButtonStyles.header(compact)}>
+        <div style={actionButtonStyles.identityRow(compact)}>
           <span style={actionButtonStyles.iconShell(isDisabled, selected, presentation)}>
-            <ActionGlyph name={presentation.icon} size={compact ? 14 : 16} />
+            <ActionGlyph name={presentation.icon} size={compact ? 12 : 16} />
           </span>
-          <span style={actionButtonStyles.title(isDisabled, presentation)}>{rule.label}</span>
+          <span style={actionButtonStyles.title(isDisabled, presentation, compact)}>{rule.label}</span>
         </div>
         <div style={actionButtonStyles.metaRow}>
           {rule.cost > 0 && (

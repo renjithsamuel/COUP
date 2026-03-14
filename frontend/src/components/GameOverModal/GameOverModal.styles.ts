@@ -59,17 +59,19 @@ export const gameOverModalStyles = {
     filter: 'drop-shadow(0 18px 36px rgba(246,196,69,0.18))',
   } satisfies CSSProperties,
 
-  title: {
+  title: (isWinner: boolean): CSSProperties => ({
     fontSize: 16,
     fontWeight: 900,
-    background: 'linear-gradient(135deg, #FFC107 0%, #FFD54F 40%, #FF8F00 100%)',
+    background: isWinner
+      ? 'linear-gradient(135deg, #FFC107 0%, #FFD54F 40%, #FF8F00 100%)'
+      : 'linear-gradient(135deg, #9CC8FF 0%, #E2E8F0 45%, #7DD3FC 100%)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
     backgroundClip: 'text',
     marginBottom: 8,
     letterSpacing: 2.4,
     textTransform: 'uppercase',
-  } satisfies CSSProperties,
+  }),
 
   winnerName: {
     fontSize: 34,

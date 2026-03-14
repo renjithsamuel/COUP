@@ -8,6 +8,7 @@ import { gameOverModalStyles } from './GameOverModal.styles';
 export interface GameOverModalProps {
   isOpen: boolean;
   winnerName: string;
+  isWinner: boolean;
   onPlayAgain: () => void;
   onExit: () => void;
 }
@@ -28,8 +29,12 @@ function CrownMark() {
   );
 }
 
-export function GameOverModal({ isOpen, winnerName, onPlayAgain, onExit }: GameOverModalProps) {
+export function GameOverModal({ isOpen, winnerName, isWinner, onPlayAgain, onExit }: GameOverModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const outcomeTitle = isWinner ? 'Victory' : 'Defeat';
+  const subtitle = isWinner
+    ? 'You own the table. Return to the room for another round or leave now.'
+    : `${winnerName || 'Another player'} took the table. Return to the room for another round or leave now.`;
 
   useEffect(() => {
     if (isOpen && modalRef.current) {
@@ -53,9 +58,9 @@ export function GameOverModal({ isOpen, winnerName, onPlayAgain, onExit }: GameO
             <div style={gameOverModalStyles.markWrap}>
               <CrownMark />
             </div>
-            <div style={gameOverModalStyles.title}>Victory</div>
+            <div style={gameOverModalStyles.title(isWinner)}>{outcomeTitle}</div>
             <div style={gameOverModalStyles.winnerName}>{winnerName}</div>
-            <div style={gameOverModalStyles.subtitle}>owns the table. Return to the room for another round or leave now.</div>
+            <div style={gameOverModalStyles.subtitle}>{subtitle}</div>
             <div style={gameOverModalStyles.buttonRow}>
               <button style={gameOverModalStyles.secondaryButton} onClick={onExit}>
                 Exit

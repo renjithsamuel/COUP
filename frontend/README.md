@@ -37,16 +37,16 @@ src/
 │   ├── ActionButton/       # Compact action button with shared action icons, cleaner labels, and minimal metadata
 │   ├── ActionGlyph/        # Shared action and timeline glyphs
 │   ├── Timer/              # Countdown progress bar
-│   ├── GameOverModal/      # Premium victory modal with replay and exit actions
+│   ├── GameOverModal/      # Premium end-of-round modal with winner/loser messaging, replay, and exit actions
 │   ├── GuideModal/         # Game rules/help modal
 │   ├── CoupBackgroundSVG/  # Subtle abstract ambient background motif
 │   ├── PreGameConfig/      # Pre-game configuration with timer controls + Peaceful Mode toggle
 │   └── TurnIndicator/      # Active turn display
 ├── containers/             # Stateful composite containers
-│   ├── GameBoard/          # Main game board (desktop nav status, smaller mobile rail, quieter event overlays, mobile utility dock, winner confetti, default-open desktop timeline)
+│   ├── GameBoard/          # Main game board (top-bar turn status on every breakpoint, compact mobile connection dot, quieter event overlays, mobile utility dock, winner confetti, default-open desktop timeline)
 │   ├── PlayerHand/         # Current player's compact card hand
-│   ├── ActionPanel/        # Compact action ribbon with minimal off-turn chrome
-│   ├── OpponentArea/       # Compact opponent seats with target highlighting
+│   ├── ActionPanel/        # Compact action ribbon with dense 3-column mobile layout and minimal off-turn chrome
+│   ├── OpponentArea/       # Responsive opponent carousel with centered small-table seats, fixed-width cards, and subtle edge fades
 │   ├── ChallengeBlockOverlay/ # Direct-response dock for challenge/block/allow decisions
 │   ├── GameDashboard/      # Game statistics dashboard (standings, revealed cards)
 │   ├── GameLog/            # Real-time editorial timeline feed with numbered event rows, action highlights, and newest-first ordering
@@ -155,14 +155,16 @@ Add the export to `src/components/index.ts`.
 - **Action-specific event effects**: `src/containers/GameBoard/GameBoard.tsx` and `GameBoard.styles.ts` render coins, shield, slash, impact, reveal, and victory effects over the event overlay
 - **Live timeline panel**: `src/containers/GameBoard/GameBoard.tsx` and `src/containers/GameLog/GameLog.tsx` render a closable timeline panel on demand, with a right-side desktop layout that opens by default, reverse-chronological numbered feed, shared action icons/accents, and auto-pin-to-top behavior until the user scrolls away
 - **Card-local highlights**: `src/containers/OpponentArea/OpponentArea.tsx` and `src/containers/PlayerHand/PlayerHand.tsx` show actor/target/blocker emphasis directly on card zones
-- **Unified command rail**: `src/containers/GameBoard/GameBoard.tsx` moves normal turn status into the desktop top bar and keeps only a smaller mobile/special-state rail on the board so opponent seats remain visible
+- **Opponent carousel**: `src/containers/OpponentArea/OpponentArea.tsx` keeps opponents in a fixed-height horizontal rail on both desktop and mobile, centers one- and two-opponent tables without changing order, auto-centers the active seat, and uses subtle edge fades so the strip stays readable when many players join
+- **Static app icon**: `public/icon.svg` serves the browser icon directly so local navigation and multi-tab dev sessions do not depend on the app icon route
+- **Unified turn status**: `src/containers/GameBoard/GameBoard.tsx` keeps turn and response context in the top bar on both desktop and mobile, with only a compact mobile status pill plus a connection dot so more of the board stays playable on small screens
 - **Mobile landing flow**: `src/app/page.tsx` uses a play-first entry flow on mobile before exposing create/join forms, while desktop keeps the split create/join layout
-- **Branding**: `src/app/page.tsx` renders a custom Coup logo and `src/app/icon.svg` provides the browser tab icon
+- **Branding**: `src/app/page.tsx` renders a custom Coup logo and `public/icon.svg` provides the browser tab icon
 - **Target mode flow**: `src/containers/ActionPanel/ActionPanel.hooks.ts`, `ActionPanel.tsx`, and `src/containers/OpponentArea/OpponentArea.tsx` keep Coup, Assassinate, and Steal available, then highlight valid opponents on the board
 - **Response rules**: `src/utils/responseWindows.ts`, `src/containers/GameBoard/GameBoard.hooks.ts`, and `src/containers/ChallengeBlockOverlay/ChallengeBlockOverlay.tsx` mirror backend one-on-one response windows for targeted actions and full-table allow windows for untargeted actions
 - **Response clarity**: `src/containers/ChallengeBlockOverlay/ChallengeBlockOverlay.tsx` renders the bottom decision dock only for the player who can currently respond
 - **Timeline narration**: `src/containers/GameBoard/GameBoard.hooks.ts` records richer action, challenge, block, reveal, elimination, and turn messages for the timeline feed
-- **Mobile utility dock**: `src/containers/GameBoard/GameBoard.tsx` moves leaderboard, timeline, and rules controls to a bottom dock on mobile while keeping Exit in the top bar
+- **Mobile utility dock**: `src/containers/GameBoard/GameBoard.tsx` keeps leaderboard, timeline, and rules controls in a compact bottom dock on mobile while leaving turn status and Exit in the top bar
 - **Ambient background motif**: `src/components/CoupBackgroundSVG/CoupBackgroundSVG.tsx` provides subtle abstract Coup symbolism, used as full-page ambient art in lobby and as low-opacity atmosphere in-game
 - **Exit controls**: `src/containers/LobbyRoom/LobbyRoom.tsx` exposes room leave action and `src/containers/GameBoard/GameBoard.tsx` includes an explicit top-bar Exit button
 - **Replay flow**: `src/app/lobby/[id]/page.tsx` now carries `lobbyId` into the game route, and `src/app/game/[id]/GamePageContent.tsx` resets that lobby before sending `Play Again` back to the same room with the same player id so the room can continue together

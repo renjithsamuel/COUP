@@ -5,7 +5,7 @@ import { tokens } from '@/theme/tokens';
 export const actionButtonStyles = {
   button: (disabled: boolean, isBluff = false, compact = false, selected = false): CSSProperties => ({
     padding: compact
-      ? '9px 10px 8px'
+      ? '7px 7px 8px'
       : '10px 12px 9px',
     borderRadius: compact ? 10 : 12,
     border: disabled
@@ -16,7 +16,7 @@ export const actionButtonStyles = {
         ? '1px solid rgba(239,83,80,0.16)'
         : '1px solid rgba(255,255,255,0.12)',
     fontWeight: 700,
-    fontSize: compact ? 10 : 11,
+    fontSize: compact ? 9 : 11,
     cursor: disabled ? 'not-allowed' : 'pointer',
     background: disabled
       ? 'linear-gradient(180deg, rgba(20, 28, 45, 0.92) 0%, rgba(12, 18, 30, 0.95) 100%)'
@@ -32,32 +32,35 @@ export const actionButtonStyles = {
     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
     userSelect: 'none',
     display: 'flex',
-    alignItems: 'center',
+    alignItems: compact ? 'stretch' : 'center',
     justifyContent: 'space-between',
-    gap: compact ? 6 : 8,
+    gap: compact ? 4 : 8,
     position: 'relative',
     minWidth: 0,
-    minHeight: compact ? 42 : 46,
-    textAlign: 'left',
+    minHeight: compact ? 52 : 46,
+    textAlign: compact ? 'center' : 'left',
     overflow: 'hidden',
   }),
 
-  header: {
+  header: (compact: boolean): CSSProperties => ({
     display: 'flex',
-    alignItems: 'center',
+    alignItems: compact ? 'flex-start' : 'center',
     justifyContent: 'space-between',
-    gap: tokens.spacing.xs,
+    flexDirection: compact ? 'column' : 'row',
+    gap: compact ? 3 : tokens.spacing.xs,
     minWidth: 0,
     flex: 1,
-  } satisfies CSSProperties,
+  }),
 
-  identityRow: {
+  identityRow: (compact: boolean): CSSProperties => ({
     display: 'flex',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: compact ? 'center' : 'flex-start',
+    gap: compact ? 5 : 8,
     minWidth: 0,
     flex: 1,
-  } satisfies CSSProperties,
+    width: '100%',
+  }),
 
   iconShell: (disabled: boolean, selected: boolean, presentation: ActionPresentation): CSSProperties => ({
     width: 22,
@@ -76,16 +79,17 @@ export const actionButtonStyles = {
     border: `1px solid ${disabled ? 'rgba(255,255,255,0.08)' : selected ? presentation.accent : 'rgba(255,255,255,0.08)'}`,
   }),
 
-  title: (disabled: boolean, presentation: ActionPresentation): CSSProperties => ({
+  title: (disabled: boolean, presentation: ActionPresentation, compact = false): CSSProperties => ({
     fontWeight: 800,
-    fontSize: 12,
-    letterSpacing: 0.1,
+    fontSize: compact ? 10 : 12,
+    letterSpacing: compact ? 0 : 0.1,
     textTransform: 'uppercase',
-    whiteSpace: 'nowrap',
+    whiteSpace: compact ? 'normal' : 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     color: disabled ? tokens.text.muted : tokens.text.primary,
-    lineHeight: 1.1,
+    lineHeight: compact ? 1 : 1.1,
+    textAlign: compact ? 'left' : 'inherit',
   }),
 
   metaRow: {
@@ -111,7 +115,7 @@ export const actionButtonStyles = {
     position: 'absolute',
     right: 6,
     bottom: 4,
-    fontSize: 7,
+    fontSize: 6,
     fontWeight: 800,
     color: 'rgba(96, 165, 250, 0.72)',
     letterSpacing: 0.7,
@@ -122,7 +126,7 @@ export const actionButtonStyles = {
     position: 'absolute',
     right: 6,
     top: 4,
-    fontSize: 7,
+    fontSize: 6,
     fontWeight: 800,
     color: 'rgba(239, 83, 80, 0.84)',
     letterSpacing: 0.7,

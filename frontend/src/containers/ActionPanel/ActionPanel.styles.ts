@@ -6,9 +6,11 @@ export function getActionPanelStyles(mobile: boolean) {
     dock: {
       width: '100%',
       maxWidth: mobile ? '100%' : 1080,
+      minWidth: 0,
       display: 'flex',
       flexDirection: 'column',
-      gap: mobile ? 6 : 8,
+      gap: mobile ? 5 : 8,
+      boxSizing: 'border-box',
     } satisfies CSSProperties,
 
     bar: (tone: 'info' | 'warn' | 'danger' | 'ok'): CSSProperties => ({
@@ -92,18 +94,37 @@ export function getActionPanelStyles(mobile: boolean) {
       whiteSpace: 'nowrap',
     } satisfies CSSProperties,
 
+    wrapperShell: {
+      position: 'relative',
+      width: '100%',
+      minWidth: 0,
+    } satisfies CSSProperties,
+
     wrapper: {
       display: 'grid',
-      gridTemplateColumns: mobile ? '1fr 1fr' : 'repeat(7, minmax(122px, 1fr))',
-      gap: mobile ? 6 : 8,
+      gridTemplateColumns: mobile ? 'repeat(3, minmax(0, 1fr))' : 'repeat(7, minmax(122px, 1fr))',
+      gap: mobile ? 5 : 8,
       justifyContent: 'stretch',
-      padding: mobile ? '6px' : '8px',
+      padding: mobile ? '5px' : '8px',
       background: 'linear-gradient(180deg, rgba(14, 21, 38, 0.98) 0%, rgba(8, 13, 24, 0.98) 100%)',
       borderRadius: mobile ? 14 : 16,
       border: '1px solid rgba(255,255,255,0.08)',
       boxShadow: '0 12px 24px rgba(0,0,0,0.18)',
       maxWidth: mobile ? '100%' : 980,
       margin: '0 auto',
+      minWidth: 0,
+      boxSizing: 'border-box',
+    } satisfies CSSProperties,
+
+    inactiveOverlay: {
+      position: 'absolute',
+      inset: 0,
+      border: 'none',
+      borderRadius: mobile ? 14 : 16,
+      background: 'transparent',
+      cursor: 'not-allowed',
+      zIndex: 2,
+      padding: 0,
     } satisfies CSSProperties,
   };
 }

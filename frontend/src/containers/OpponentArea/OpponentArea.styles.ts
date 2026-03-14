@@ -2,31 +2,59 @@ import { CSSProperties } from 'react';
 import { tokens } from '@/theme/tokens';
 
 export function getOpponentAreaStyles(mobile: boolean, count: number) {
-  const isMany = count > 3;
-  const gap = mobile
-    ? tokens.spacing.xs + 6
-    : (isMany ? tokens.spacing.xs + 2 : tokens.spacing.xs + 6);
+  const gap = mobile ? tokens.spacing.xs + 6 : tokens.spacing.xs + 6;
+  const seatWidth = mobile ? 164 : 208;
+  const fadeWidth = mobile ? 14 : 20;
+  const isCompactTable = count <= 2;
 
   return {
-    wrapper: mobile
-      ? {
-          display: 'flex',
-          gap,
-          overflowX: 'auto',
-          overflowY: 'hidden',
-          WebkitOverflowScrolling: 'touch',
-          scrollSnapType: 'x mandatory',
-          padding: `${tokens.spacing.xs}px ${tokens.spacing.xs}px`,
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-        } satisfies CSSProperties
-      : {
-          display: 'flex',
-          justifyContent: 'center',
-          gap,
-          flexWrap: 'wrap' as const,
-          padding: `${tokens.spacing.xs + 4}px 0 ${tokens.spacing.sm + 4}px`,
-        } satisfies CSSProperties,
+    shell: {
+      position: 'relative',
+      width: '100%',
+      minHeight: mobile ? 208 : 264,
+      paddingBottom: mobile ? 2 : 4,
+      minWidth: 0,
+    } satisfies CSSProperties,
+
+    viewport: {
+      width: '100%',
+      maxWidth: '100%',
+      overflowX: 'auto',
+      overflowY: 'hidden',
+      WebkitOverflowScrolling: 'touch',
+      scrollbarWidth: 'none',
+      msOverflowStyle: 'none',
+      scrollSnapType: 'x proximity',
+      padding: `${tokens.spacing.xs}px ${fadeWidth}px ${mobile ? tokens.spacing.xs + 2 : tokens.spacing.sm + 4}px`,
+      boxSizing: 'border-box',
+    } satisfies CSSProperties,
+
+    track: {
+      display: 'flex',
+      alignItems: 'stretch',
+      justifyContent: isCompactTable ? 'center' : 'flex-start',
+      gap,
+      width: isCompactTable ? '100%' : 'max-content',
+      minWidth: '100%',
+      maxWidth: '100%',
+      boxSizing: 'border-box',
+    } satisfies CSSProperties,
+
+    edgeFade: (side: 'left' | 'right', visible: boolean): CSSProperties => ({
+      position: 'absolute',
+      top: 0,
+      bottom: mobile ? 2 : 4,
+      [side]: 0,
+      width: fadeWidth,
+      zIndex: 3,
+      pointerEvents: 'none',
+      opacity: visible ? 1 : 0,
+      transition: 'opacity 0.22s ease',
+      background: side === 'left'
+        ? 'linear-gradient(90deg, rgba(8, 14, 28, 0.34) 0%, rgba(8, 14, 28, 0.16) 36%, rgba(8, 14, 28, 0.04) 68%, rgba(8, 14, 28, 0) 100%)'
+        : 'linear-gradient(270deg, rgba(8, 14, 28, 0.34) 0%, rgba(8, 14, 28, 0.16) 36%, rgba(8, 14, 28, 0.04) 68%, rgba(8, 14, 28, 0) 100%)',
+      backdropFilter: 'blur(2px)',
+    }),
 
     opponentSlot: (isActive: boolean, isAlive: boolean, isSelectable: boolean, isTargetMode: boolean): CSSProperties => ({
       display: 'flex',
@@ -55,17 +83,11 @@ export function getOpponentAreaStyles(mobile: boolean, count: number) {
           ? '0 18px 36px rgba(0,0,0,0.28), 0 0 30px rgba(96,165,250,0.12)'
           : '0 16px 30px rgba(0,0,0,0.22)',
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-      ...(mobile
-        ? {
-            flex: '0 0 auto',
-            minWidth: 144,
-            scrollSnapAlign: 'center' as const,
-          }
-        : {
-            minWidth: isMany ? 150 : 176,
-            maxWidth: 208,
-            flex: isMany ? '1 1 auto' : '0 0 auto',
-          }),
+      width: seatWidth,
+      minWidth: seatWidth,
+      maxWidth: seatWidth,
+      flex: `0 0 ${seatWidth}px`,
+      scrollSnapAlign: 'center',
       opacity: isAlive ? 1 : 0.4,
       filter: isAlive ? 'none' : 'grayscale(80%)',
       cursor: isSelectable ? 'pointer' : 'default',

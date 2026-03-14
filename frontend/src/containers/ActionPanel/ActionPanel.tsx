@@ -9,6 +9,7 @@ import { ActionPanelController } from './ActionPanel.hooks';
 
 export interface ActionPanelProps extends ActionPanelController {
   isMobile?: boolean;
+  onInactiveActionAttempt?: () => void;
 }
 
 export function ActionPanel({
@@ -23,6 +24,7 @@ export function ActionPanel({
   myCoins,
   mustCoup,
   isMobile = false,
+  onInactiveActionAttempt,
 }: ActionPanelProps) {
   const s = getActionPanelStyles(isMobile);
   const selectedRule = selectedAction ? ACTION_RULES[selectedAction] : null;
@@ -60,16 +62,9 @@ export function ActionPanel({
         chip: 'Exchange',
       };
     }
-    if (!canAct) {
-      return {
-        tone: 'info' as const,
-        eyebrow: 'Stand by',
-        title: 'Not your turn',
-        chip: null,
-      };
-    }
     return null;
   })();
+  const shouldCaptureInactiveTap = !canAct && !isWaitingForResponse && !isExchangePhase && !isWaitingForInfluenceLoss && !selectedRule;
   const showPanelBar =
     mustCoup ||
     selectedRule != null ||
@@ -101,7 +96,16 @@ export function ActionPanel({
         </div>
       )}
 
-      <div style={s.wrapper}>
+      <div style={s.wrapperShell}>
+        {shouldCaptureInactiveTap && onInactiveActionAttempt && (
+          <button
+            type="button"
+            style={s.inactiveOverlay}
+            onClick={onInactiveActionAttempt}
+            aria-label="Not your turn"
+          />
+        )}
+        <div style={s.wrapper}>
         <AnimatePresence>
           {availableActions.map((rule) => (
             <ActionButton
@@ -117,6 +121,7 @@ export function ActionPanel({
             />
           ))}
         </AnimatePresence>
+        </div>
       </div>
     </div>
   );
