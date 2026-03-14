@@ -1,9 +1,9 @@
-import { Character } from '../card/card';
-import { Player, PlayerPublic } from './player';
+import { Character } from "../card/card";
+import { Player, PlayerPublic } from "./player";
 
 export const mockPlayer1: Player = {
-  id: 'player-1',
-  name: 'Alice',
+  id: "player-1",
+  name: "Alice",
   coins: 2,
   influences: [
     { character: Character.DUKE, isRevealed: false },
@@ -13,8 +13,8 @@ export const mockPlayer1: Player = {
 };
 
 export const mockPlayer2: Player = {
-  id: 'player-2',
-  name: 'Bob',
+  id: "player-2",
+  name: "Bob",
   coins: 2,
   influences: [
     { character: Character.ASSASSIN, isRevealed: false },
@@ -24,8 +24,8 @@ export const mockPlayer2: Player = {
 };
 
 export const mockPlayer3: Player = {
-  id: 'player-3',
-  name: 'Charlie',
+  id: "player-3",
+  name: "Charlie",
   coins: 5,
   influences: [
     { character: Character.AMBASSADOR, isRevealed: false },
@@ -35,8 +35,8 @@ export const mockPlayer3: Player = {
 };
 
 export const mockDeadPlayer: Player = {
-  id: 'player-4',
-  name: 'Diana',
+  id: "player-4",
+  name: "Diana",
   coins: 0,
   influences: [
     { character: Character.ASSASSIN, isRevealed: true },
@@ -46,8 +46,8 @@ export const mockDeadPlayer: Player = {
 };
 
 export const mockPlayerPublic1: PlayerPublic = {
-  id: 'player-1',
-  name: 'Alice',
+  id: "player-1",
+  name: "Alice",
   coins: 2,
   influenceCount: 2,
   revealedCards: [],
@@ -55,8 +55,8 @@ export const mockPlayerPublic1: PlayerPublic = {
 };
 
 export const mockPlayerPublic2: PlayerPublic = {
-  id: 'player-2',
-  name: 'Bob',
+  id: "player-2",
+  name: "Bob",
   coins: 2,
   influenceCount: 2,
   revealedCards: [],
@@ -64,8 +64,8 @@ export const mockPlayerPublic2: PlayerPublic = {
 };
 
 export const mockDeadPlayerPublic: PlayerPublic = {
-  id: 'player-4',
-  name: 'Diana',
+  id: "player-4",
+  name: "Diana",
   coins: 0,
   influenceCount: 0,
   revealedCards: [
@@ -76,4 +76,8 @@ export const mockDeadPlayerPublic: PlayerPublic = {
 };
 
 export const mockPlayers: Player[] = [mockPlayer1, mockPlayer2, mockPlayer3];
-export const mockPlayersPublic: PlayerPublic[] = [mockPlayerPublic1, mockPlayerPublic2, mockDeadPlayerPublic];
+export const mockPlayersPublic: PlayerPublic[] = [
+  mockPlayerPublic1,
+  mockPlayerPublic2,
+  mockDeadPlayerPublic,
+];

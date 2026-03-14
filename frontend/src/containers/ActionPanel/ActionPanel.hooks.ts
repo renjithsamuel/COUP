@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef, useMemo, useState } from 'react';
-import { useGameContext } from '@/context/GameContext';
-import { ActionType, ACTION_RULES, ActionRule } from '@/models/action';
-import { GamePhase } from '@/models/game';
-import { ClientMessage, ClientMessageType } from '@/models/websocket-message';
-import { GAME_CONSTANTS } from '@/utils/constants';
+import { useCallback, useEffect, useRef, useMemo, useState } from "react";
+import { useGameContext } from "@/context/GameContext";
+import { ActionType, ACTION_RULES, ActionRule } from "@/models/action";
+import { GamePhase } from "@/models/game";
+import { ClientMessage, ClientMessageType } from "@/models/websocket-message";
+import { GAME_CONSTANTS } from "@/utils/constants";
 
 export interface ActionWithBluff extends ActionRule {
   isBluff: boolean;
@@ -23,7 +23,10 @@ export interface ActionPanelController {
   selectedAction: ActionType | null;
   beginAction: (actionType: ActionType) => void;
   cancelTargeting: () => void;
-  performAction: (actionType: ActionType, explicitTargetId?: string | null) => void;
+  performAction: (
+    actionType: ActionType,
+    explicitTargetId?: string | null,
+  ) => void;
   selectTarget: (targetId: string) => void;
   myCoins: number;
   mustCoup: boolean;
@@ -34,7 +37,9 @@ export function useActionPanel(send: (msg: ClientMessage) => boolean) {
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
   const [selectedAction, setSelectedAction] = useState<ActionType | null>(null);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
-  const submitResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const submitResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const pendingAction = state.gameState?.pendingAction;
 
   const myCoins =
@@ -49,12 +54,16 @@ export function useActionPanel(send: (msg: ClientMessage) => boolean) {
   const availableActions: ActionWithBluff[] = useMemo(() => {
     if (mustCoup) {
       const coupRule = ACTION_RULES[ActionType.COUP];
-      return [{ ...coupRule, isBluff: false, canAfford: myCoins >= coupRule.cost }];
+      return [
+        { ...coupRule, isBluff: false, canAfford: myCoins >= coupRule.cost },
+      ];
     }
     return Object.values(ACTION_RULES).map((rule) => {
       const canAfford = rule.cost === 0 || myCoins >= rule.cost;
       // An action is a bluff if it requires a character the player doesn't have
-      const isBluff = rule.characterRequired != null && !myCards.includes(rule.characterRequired);
+      const isBluff =
+        rule.characterRequired != null &&
+        !myCards.includes(rule.characterRequired);
       return { ...rule, isBluff, canAfford };
     });
   }, [mustCoup, myCoins, myCards]);
@@ -87,14 +96,21 @@ export function useActionPanel(send: (msg: ClientMessage) => boolean) {
     state.gameState?.awaitingInfluenceLossFrom != null &&
     state.gameState.awaitingInfluenceLossFrom !== state.myPlayerId;
 
-  useEffect(() => () => {
-    if (submitResetTimerRef.current) {
-      clearTimeout(submitResetTimerRef.current);
-    }
-  }, []);
+  useEffect(
+    () => () => {
+      if (submitResetTimerRef.current) {
+        clearTimeout(submitResetTimerRef.current);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
-    if (currentPhase !== GamePhase.TURN_START || pendingAction != null || !isMyTurn) {
+    if (
+      currentPhase !== GamePhase.TURN_START ||
+      pendingAction != null ||
+      !isMyTurn
+    ) {
       setIsSubmittingAction(false);
       if (submitResetTimerRef.current) {
         clearTimeout(submitResetTimerRef.current);
@@ -136,7 +152,9 @@ export function useActionPanel(send: (msg: ClientMessage) => boolean) {
       return;
     }
 
-    const selectedTargetIsAlive = targetablePlayers.some((player) => player.id === selectedTarget);
+    const selectedTargetIsAlive = targetablePlayers.some(
+      (player) => player.id === selectedTarget,
+    );
     if (!selectedTargetIsAlive) {
       setSelectedTarget(null);
     }
@@ -170,7 +188,9 @@ export function useActionPanel(send: (msg: ClientMessage) => boolean) {
         type: ClientMessageType.ACTION,
         payload: {
           actionType,
-          ...(rule.requiresTarget && resolvedTarget ? { targetId: resolvedTarget } : {}),
+          ...(rule.requiresTarget && resolvedTarget
+            ? { targetId: resolvedTarget }
+            : {}),
         },
       });
       if (sent) {

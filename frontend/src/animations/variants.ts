@@ -1,10 +1,16 @@
-import { Variants } from 'framer-motion';
-import { ANIM, EASING } from './constants';
+import { Variants } from "framer-motion";
+import { ANIM, EASING } from "./constants";
 
 /** Card flip (front ↔ back) */
 export const cardFlipVariants: Variants = {
-  faceDown: { rotateY: 180, transition: { duration: ANIM.CARD_FLIP, ease: EASING.smooth } },
-  faceUp: { rotateY: 0, transition: { duration: ANIM.CARD_FLIP, ease: EASING.smooth } },
+  faceDown: {
+    rotateY: 180,
+    transition: { duration: ANIM.CARD_FLIP, ease: EASING.smooth },
+  },
+  faceUp: {
+    rotateY: 0,
+    transition: { duration: ANIM.CARD_FLIP, ease: EASING.smooth },
+  },
 };
 
 /** Card deal — slide in from deck position with stagger */
@@ -25,7 +31,11 @@ export const cardDealVariants: Variants = {
 /** Card hover lift */
 export const cardHoverVariants: Variants = {
   rest: { y: 0, scale: 1 },
-  hover: { y: -12, scale: 1.05, transition: { duration: ANIM.CARD_HOVER_LIFT, ease: EASING.smooth } },
+  hover: {
+    y: -12,
+    scale: 1.05,
+    transition: { duration: ANIM.CARD_HOVER_LIFT, ease: EASING.smooth },
+  },
 };
 
 /** Coin transfer — arc path */
@@ -51,10 +61,10 @@ export const coinBounceVariants: Variants = {
 
 /** Player elimination — fade + desaturate */
 export const eliminateVariants: Variants = {
-  alive: { opacity: 1, filter: 'grayscale(0%)' },
+  alive: { opacity: 1, filter: "grayscale(0%)" },
   eliminated: {
     opacity: 0.5,
-    filter: 'grayscale(100%)',
+    filter: "grayscale(100%)",
     transition: { duration: ANIM.PLAYER_ELIMINATE, ease: EASING.smooth },
   },
 };
@@ -68,48 +78,56 @@ export const fadeInVariants: Variants = {
 /** Slide in from bottom */
 export const slideUpVariants: Variants = {
   hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: ANIM.SLIDE_IN, ease: EASING.snappy } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: ANIM.SLIDE_IN, ease: EASING.snappy },
+  },
 };
 
 /** Scale pop — for action buttons, notifications */
 export const scalePopVariants: Variants = {
   hidden: { scale: 0.6, opacity: 0 },
-  visible: { scale: 1, opacity: 1, transition: { duration: ANIM.SCALE_POP, ease: EASING.bounce } },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    transition: { duration: ANIM.SCALE_POP, ease: EASING.bounce },
+  },
   exit: { scale: 0.6, opacity: 0, transition: { duration: ANIM.FADE_OUT } },
 };
 
 export const interactiveHoverMotion = {
   scale: 1.03,
   y: -2,
-  filter: 'brightness(1.04) saturate(1.04)',
+  filter: "brightness(1.04) saturate(1.04)",
   transition: { duration: 0.18, ease: EASING.smooth },
 };
 
 export const interactiveTapMotion = {
   scale: 0.965,
   y: 1,
-  filter: 'brightness(1.12) saturate(1.08)',
+  filter: "brightness(1.12) saturate(1.08)",
   transition: { duration: 0.12, ease: EASING.snappy },
 };
 
 export const cardTapMotion = {
   scale: 0.96,
   y: 3,
-  filter: 'brightness(1.08) saturate(1.06)',
+  filter: "brightness(1.08) saturate(1.06)",
   transition: { duration: 0.12, ease: EASING.snappy },
 };
 
 export const targetSlotHoverMotion = {
   scale: 1.015,
   y: -3,
-  filter: 'brightness(1.05) saturate(1.04)',
+  filter: "brightness(1.05) saturate(1.04)",
   transition: { duration: 0.18, ease: EASING.smooth },
 };
 
 export const targetSlotTapMotion = {
   scale: 0.982,
   y: 2,
-  filter: 'brightness(1.12) saturate(1.1)',
+  filter: "brightness(1.12) saturate(1.1)",
   transition: { duration: 0.12, ease: EASING.snappy },
 };
 
@@ -124,12 +142,12 @@ export const shakeVariants: Variants = {
 
 /** Glow pulse — for active turn indicator */
 export const glowPulseVariants: Variants = {
-  idle: { boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)' },
+  idle: { boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)" },
   glow: {
     boxShadow: [
-      '0 0 16px rgba(255,193,7,0.35), 0 0 32px rgba(255,193,7,0.2), 0 2px 8px rgba(0,0,0,0.3)',
-      '0 0 36px rgba(255,193,7,0.65), 0 0 72px rgba(255,193,7,0.4), 0 2px 8px rgba(0,0,0,0.3)',
-      '0 0 16px rgba(255,193,7,0.35), 0 0 32px rgba(255,193,7,0.2), 0 2px 8px rgba(0,0,0,0.3)',
+      "0 0 16px rgba(255,193,7,0.35), 0 0 32px rgba(255,193,7,0.2), 0 2px 8px rgba(0,0,0,0.3)",
+      "0 0 36px rgba(255,193,7,0.65), 0 0 72px rgba(255,193,7,0.4), 0 2px 8px rgba(0,0,0,0.3)",
+      "0 0 16px rgba(255,193,7,0.35), 0 0 32px rgba(255,193,7,0.2), 0 2px 8px rgba(0,0,0,0.3)",
     ],
     transition: { duration: ANIM.GLOW_PULSE, repeat: Infinity },
   },

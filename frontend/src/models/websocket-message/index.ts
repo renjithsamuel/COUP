@@ -1,7 +1,4 @@
-export {
-  ClientMessageType,
-  ServerMessageType,
-} from './websocket-message';
+export { ClientMessageType, ServerMessageType } from "./websocket-message";
 
 export type {
   ClientMessage,
@@ -11,4 +8,4 @@ export type {
   ClientChooseInfluencePayload,
   ClientExchangeReturnPayload,
   ServerMessage,
-} from './websocket-message';
+} from "./websocket-message";

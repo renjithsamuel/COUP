@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Abstract COUP background symbolism
@@ -8,13 +8,13 @@ export function CoupBackgroundSVG() {
   return (
     <svg
       style={{
-        position: 'absolute',
+        position: "absolute",
         inset: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
         zIndex: 0,
-        filter: 'blur(1px)',
+        filter: "blur(1px)",
         opacity: 0.08,
       }}
       viewBox="0 0 1000 1000"
@@ -103,7 +103,10 @@ export function CoupBackgroundSVG() {
         {/* Bottom left */}
         <path d="M 50 950 L 120 950 M 50 950 L 50 880" strokeLinecap="round" />
         {/* Bottom right */}
-        <path d="M 950 950 L 880 950 M 950 950 L 950 880" strokeLinecap="round" />
+        <path
+          d="M 950 950 L 880 950 M 950 950 L 950 880"
+          strokeLinecap="round"
+        />
       </g>
     </svg>
   );

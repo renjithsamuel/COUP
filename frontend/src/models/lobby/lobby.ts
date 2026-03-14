@@ -32,12 +32,13 @@ export interface LobbyResponse {
   sessionToken: string | null;
 }
 
-export type AiDifficulty = 'easy' | 'medium' | 'hard';
+export type AiDifficulty = "easy" | "medium" | "hard";
 
 export interface AiMatchCreate {
   playerName: string;
   botCount: number;
   difficulty: AiDifficulty;
+  config?: GameConfig;
 }
 
 export interface AiMatchResponse {

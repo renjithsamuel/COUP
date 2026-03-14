@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useCountdown } from '@/hooks/useCountdown';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { renderHook, act } from "@testing-library/react";
+import { useCountdown } from "@/hooks/useCountdown";
 
-describe('useCountdown', () => {
+describe("useCountdown", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -10,13 +10,13 @@ describe('useCountdown', () => {
     vi.useRealTimers();
   });
 
-  it('starts with full time', () => {
+  it("starts with full time", () => {
     const { result } = renderHook(() => useCountdown(10));
     expect(result.current.remaining).toBe(10);
     expect(result.current.isRunning).toBe(false);
   });
 
-  it('counts down when started', () => {
+  it("counts down when started", () => {
     const { result } = renderHook(() => useCountdown(5));
 
     act(() => result.current.start());
@@ -26,7 +26,7 @@ describe('useCountdown', () => {
     expect(result.current.remaining).toBe(2);
   });
 
-  it('stops at zero', () => {
+  it("stops at zero", () => {
     const { result } = renderHook(() => useCountdown(3));
 
     act(() => result.current.start());
@@ -36,7 +36,7 @@ describe('useCountdown', () => {
     expect(result.current.isRunning).toBe(false);
   });
 
-  it('resets correctly', () => {
+  it("resets correctly", () => {
     const { result } = renderHook(() => useCountdown(10));
 
     act(() => result.current.start());
@@ -48,7 +48,7 @@ describe('useCountdown', () => {
     expect(result.current.isRunning).toBe(false);
   });
 
-  it('calculates progress correctly', () => {
+  it("calculates progress correctly", () => {
     const { result } = renderHook(() => useCountdown(10));
     expect(result.current.progress).toBe(1);
 

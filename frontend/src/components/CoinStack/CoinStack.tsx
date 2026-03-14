@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { coinBounceVariants } from '@/animations';
-import { coinStackStyles } from './CoinStack.styles';
+import React from "react";
+import { motion } from "framer-motion";
+import { coinBounceVariants } from "@/animations";
+import { coinStackStyles } from "./CoinStack.styles";
 
 export interface CoinStackProps {
   count: number;
@@ -11,7 +11,11 @@ export interface CoinStackProps {
   animate?: boolean;
 }
 
-export function CoinStack({ count, maxVisible = 5, animate = true }: CoinStackProps) {
+export function CoinStack({
+  count,
+  maxVisible = 5,
+  animate = true,
+}: CoinStackProps) {
   const visible = Math.min(count, maxVisible);
 
   return (
@@ -20,8 +24,8 @@ export function CoinStack({ count, maxVisible = 5, animate = true }: CoinStackPr
         <motion.div
           key={i}
           variants={animate ? coinBounceVariants : undefined}
-          initial={animate ? 'hidden' : undefined}
-          animate={animate ? 'visible' : undefined}
+          initial={animate ? "hidden" : undefined}
+          animate={animate ? "visible" : undefined}
           style={coinStackStyles.coin}
         >
           ¢

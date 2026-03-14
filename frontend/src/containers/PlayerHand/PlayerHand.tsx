@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card } from '@/components/Card';
-import { cardDealVariants } from '@/animations';
-import { tokens } from '@/theme/tokens';
-import { getPlayerHandStyles } from './PlayerHand.styles';
-import { usePlayerHand } from './PlayerHand.hooks';
-import { useGameContext } from '@/context/GameContext';
+import React, { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card } from "@/components/Card";
+import { cardDealVariants } from "@/animations";
+import { tokens } from "@/theme/tokens";
+import { getPlayerHandStyles } from "./PlayerHand.styles";
+import { usePlayerHand } from "./PlayerHand.hooks";
+import { useGameContext } from "@/context/GameContext";
 
-import { ClientMessage } from '@/models/websocket-message';
+import { ClientMessage } from "@/models/websocket-message";
 
 export interface PlayerHandProps {
   send: (msg: ClientMessage) => boolean;
@@ -24,9 +24,20 @@ export interface PlayerHandProps {
   } | null;
 }
 
-export function PlayerHand({ send, isMobile = false, activeCardEffect = null }: PlayerHandProps) {
+export function PlayerHand({
+  send,
+  isMobile = false,
+  activeCardEffect = null,
+}: PlayerHandProps) {
   const { state } = useGameContext();
-  const { myCards, exchangeCards, needsInfluenceChoice, needsExchangeReturn, onChooseInfluence, onExchangeReturn } = usePlayerHand(send);
+  const {
+    myCards,
+    exchangeCards,
+    needsInfluenceChoice,
+    needsExchangeReturn,
+    onChooseInfluence,
+    onExchangeReturn,
+  } = usePlayerHand(send);
   const s = getPlayerHandStyles(isMobile);
   const [selectedKeep, setSelectedKeep] = useState<Set<number>>(new Set());
 
@@ -34,17 +45,20 @@ export function PlayerHand({ send, isMobile = false, activeCardEffect = null }: 
   const aliveCards = myCards.filter((c) => !c.isRevealed);
   const allCards = [...aliveCards, ...exchangeCards];
 
-  const toggleKeep = useCallback((idx: number) => {
-    setSelectedKeep((prev) => {
-      const next = new Set(prev);
-      if (next.has(idx)) {
-        next.delete(idx);
-      } else if (next.size < aliveCount) {
-        next.add(idx);
-      }
-      return next;
-    });
-  }, [aliveCount]);
+  const toggleKeep = useCallback(
+    (idx: number) => {
+      setSelectedKeep((prev) => {
+        const next = new Set(prev);
+        if (next.has(idx)) {
+          next.delete(idx);
+        } else if (next.size < aliveCount) {
+          next.add(idx);
+        }
+        return next;
+      });
+    },
+    [aliveCount],
+  );
 
   const confirmExchange = useCallback(() => {
     if (selectedKeep.size === aliveCount) {
@@ -53,47 +67,64 @@ export function PlayerHand({ send, isMobile = false, activeCardEffect = null }: 
     }
   }, [selectedKeep, aliveCount, onExchangeReturn]);
 
-  const getAliveCardChoiceIndex = useCallback((cardIndex: number) => {
-    let aliveIndex = -1;
-    for (let index = 0; index <= cardIndex; index += 1) {
-      if (!myCards[index].isRevealed) {
-        aliveIndex += 1;
+  const getAliveCardChoiceIndex = useCallback(
+    (cardIndex: number) => {
+      let aliveIndex = -1;
+      for (let index = 0; index <= cardIndex; index += 1) {
+        if (!myCards[index].isRevealed) {
+          aliveIndex += 1;
+        }
       }
-    }
-    return aliveIndex;
-  }, [myCards]);
+      return aliveIndex;
+    },
+    [myCards],
+  );
 
   if (needsExchangeReturn && allCards.length > 0) {
-    const cardSize = isMobile ? 'sm' : 'md';
+    const cardSize = isMobile ? "sm" : "md";
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isMobile ? 8 : 12 }}>
-        <div style={{
-          fontSize: isMobile ? 12 : 14,
-          fontWeight: 700,
-          color: tokens.text.accent,
-          textAlign: 'center',
-          letterSpacing: 0.5,
-        }}>
-          Exchange — pick {aliveCount} card{aliveCount !== 1 ? 's' : ''} to keep
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: isMobile ? 8 : 12,
+        }}
+      >
+        <div
+          style={{
+            fontSize: isMobile ? 12 : 14,
+            fontWeight: 700,
+            color: tokens.text.accent,
+            textAlign: "center",
+            letterSpacing: 0.5,
+          }}
+        >
+          Exchange — pick {aliveCount} card{aliveCount !== 1 ? "s" : ""} to keep
         </div>
-        <div style={{
-          display: 'flex',
-          gap: isMobile ? 6 : 10,
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-        }}>
+        <div
+          style={{
+            display: "flex",
+            gap: isMobile ? 6 : 10,
+            flexWrap: "wrap",
+            justifyContent: "center",
+          }}
+        >
           {allCards.map((card, i) => (
             <div
               key={`exchange-${i}`}
               style={{
-                cursor: 'pointer',
+                cursor: "pointer",
                 borderRadius: 10,
                 outline: selectedKeep.has(i)
                   ? `3px solid ${tokens.text.accent}`
-                  : '3px solid transparent',
+                  : "3px solid transparent",
                 outlineOffset: 2,
-                opacity: selectedKeep.size === aliveCount && !selectedKeep.has(i) ? 0.4 : 1,
-                transition: 'all 0.15s ease',
+                opacity:
+                  selectedKeep.size === aliveCount && !selectedKeep.has(i)
+                    ? 0.4
+                    : 1,
+                transition: "all 0.15s ease",
               }}
               onClick={() => toggleKeep(i)}
             >
@@ -105,18 +136,23 @@ export function PlayerHand({ send, isMobile = false, activeCardEffect = null }: 
           disabled={selectedKeep.size !== aliveCount}
           onClick={confirmExchange}
           style={{
-            padding: isMobile ? '6px 16px' : '8px 24px',
+            padding: isMobile ? "6px 16px" : "8px 24px",
             borderRadius: 8,
             border: `1px solid ${tokens.surface.borderLight}`,
-            background: selectedKeep.size === aliveCount
-              ? `linear-gradient(135deg, ${tokens.surface.elevated}, ${tokens.surface.card})`
-              : tokens.surface.card,
-            color: selectedKeep.size === aliveCount ? tokens.text.accent : tokens.text.muted,
+            background:
+              selectedKeep.size === aliveCount
+                ? `linear-gradient(135deg, ${tokens.surface.elevated}, ${tokens.surface.card})`
+                : tokens.surface.card,
+            color:
+              selectedKeep.size === aliveCount
+                ? tokens.text.accent
+                : tokens.text.muted,
             fontWeight: 700,
             fontSize: isMobile ? 11 : 13,
-            cursor: selectedKeep.size === aliveCount ? 'pointer' : 'not-allowed',
+            cursor:
+              selectedKeep.size === aliveCount ? "pointer" : "not-allowed",
             letterSpacing: 1,
-            textTransform: 'uppercase',
+            textTransform: "uppercase",
           }}
         >
           Confirm
@@ -126,15 +162,16 @@ export function PlayerHand({ send, isMobile = false, activeCardEffect = null }: 
   }
 
   const myPlayerId = state.myPlayerId;
-  const myRole = activeCardEffect && myPlayerId
-    ? (activeCardEffect.targetId === myPlayerId
-      ? 'target'
-      : activeCardEffect.blockerId === myPlayerId
-        ? 'blocker'
-        : activeCardEffect.actorId === myPlayerId
-          ? 'actor'
-          : null)
-    : null;
+  const myRole =
+    activeCardEffect && myPlayerId
+      ? activeCardEffect.targetId === myPlayerId
+        ? "target"
+        : activeCardEffect.blockerId === myPlayerId
+          ? "blocker"
+          : activeCardEffect.actorId === myPlayerId
+            ? "actor"
+            : null
+      : null;
 
   return (
     <div style={s.wrapper}>
@@ -147,7 +184,7 @@ export function PlayerHand({ send, isMobile = false, activeCardEffect = null }: 
               initial={{ opacity: 0, scale: 0.94 }}
               animate={{ opacity: [0, 1, 0.7], scale: [0.94, 1.03, 1] }}
               exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.55, ease: 'easeOut' }}
+              transition={{ duration: 0.55, ease: "easeOut" }}
             />
             <motion.div
               key={`my-label-${activeCardEffect.eventId}`}
@@ -157,7 +194,11 @@ export function PlayerHand({ send, isMobile = false, activeCardEffect = null }: 
               exit={{ opacity: 0, y: -3 }}
               transition={{ duration: 0.22 }}
             >
-              {myRole === 'target' ? 'You are targeted' : myRole === 'blocker' ? 'Your block' : 'Your move'}
+              {myRole === "target"
+                ? "You are targeted"
+                : myRole === "blocker"
+                  ? "Your block"
+                  : "Your move"}
             </motion.div>
           </>
         )}
@@ -170,25 +211,26 @@ export function PlayerHand({ send, isMobile = false, activeCardEffect = null }: 
             opacity: 1,
             scale: 1,
             boxShadow: [
-              '0 0 12px rgba(255, 112, 67, 0.2), 0 0 0 2px rgba(255,112,67,0.3)',
-              '0 0 28px rgba(255, 112, 67, 0.55), 0 0 0 2px rgba(255,112,67,0.7)',
-              '0 0 12px rgba(255, 112, 67, 0.2), 0 0 0 2px rgba(255,112,67,0.3)',
+              "0 0 12px rgba(255, 112, 67, 0.2), 0 0 0 2px rgba(255,112,67,0.3)",
+              "0 0 28px rgba(255, 112, 67, 0.55), 0 0 0 2px rgba(255,112,67,0.7)",
+              "0 0 12px rgba(255, 112, 67, 0.2), 0 0 0 2px rgba(255,112,67,0.3)",
             ],
           }}
-          transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
           style={{
             marginBottom: isMobile ? 8 : 10,
-            padding: isMobile ? '10px 16px' : '12px 20px',
+            padding: isMobile ? "10px 16px" : "12px 20px",
             borderRadius: 14,
-            border: '1.5px solid rgba(255, 112, 67, 0.6)',
-            background: 'linear-gradient(135deg, rgba(80, 22, 14, 0.97) 0%, rgba(40, 10, 8, 0.95) 100%)',
-            color: '#FFAB91',
+            border: "1.5px solid rgba(255, 112, 67, 0.6)",
+            background:
+              "linear-gradient(135deg, rgba(80, 22, 14, 0.97) 0%, rgba(40, 10, 8, 0.95) 100%)",
+            color: "#FFAB91",
             fontSize: isMobile ? 13 : 15,
             fontWeight: 800,
             letterSpacing: 0.8,
-            textTransform: 'uppercase',
-            textAlign: 'center',
-            width: '100%',
+            textTransform: "uppercase",
+            textAlign: "center",
+            width: "100%",
           }}
         >
           ⚠ Choose an influence to lose
@@ -201,30 +243,42 @@ export function PlayerHand({ send, isMobile = false, activeCardEffect = null }: 
             custom={i}
             variants={cardDealVariants}
             initial="hidden"
-            animate={needsInfluenceChoice && !card.isRevealed
-              ? {
-                  opacity: 1,
-                  y: 0,
-                  scale: 1,
-                  boxShadow: [
-                    '0 0 0px rgba(255,112,67,0)',
-                    '0 0 20px rgba(255,112,67,0.5)',
-                    '0 0 0px rgba(255,112,67,0)',
-                  ],
-                }
-              : 'visible'}
-            transition={needsInfluenceChoice && !card.isRevealed
-              ? { duration: 1.3, repeat: Infinity, ease: 'easeInOut' }
-              : undefined}
+            animate={
+              needsInfluenceChoice && !card.isRevealed
+                ? {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    boxShadow: [
+                      "0 0 0px rgba(255,112,67,0)",
+                      "0 0 20px rgba(255,112,67,0.5)",
+                      "0 0 0px rgba(255,112,67,0)",
+                    ],
+                  }
+                : "visible"
+            }
+            transition={
+              needsInfluenceChoice && !card.isRevealed
+                ? { duration: 1.3, repeat: Infinity, ease: "easeInOut" }
+                : undefined
+            }
             exit="hidden"
-            style={{ borderRadius: 14, cursor: needsInfluenceChoice && !card.isRevealed ? 'pointer' : undefined }}
+            style={{
+              borderRadius: 14,
+              cursor:
+                needsInfluenceChoice && !card.isRevealed
+                  ? "pointer"
+                  : undefined,
+            }}
           >
             <Card
               character={card.character}
               isRevealed={card.isRevealed}
-              onClick={needsInfluenceChoice && !card.isRevealed
-                ? () => onChooseInfluence(getAliveCardChoiceIndex(i))
-                : undefined}
+              onClick={
+                needsInfluenceChoice && !card.isRevealed
+                  ? () => onChooseInfluence(getAliveCardChoiceIndex(i))
+                  : undefined
+              }
               disabled={card.isRevealed}
               size="sm"
             />

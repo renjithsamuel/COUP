@@ -31,8 +31,9 @@ Pages (App Router) → Containers (logic + layout) → Components (presentationa
 - Server state: TanStack React Query
 - Models: `frontend/src/models/` — TypeScript interfaces mirroring backend Pydantic models
 - Service layer: `frontend/src/services/` — API calls with snake_case → camelCase mapping and browser-stable player identity for lobby, replay, and solo AI match flows
-- Home entry: `frontend/src/app/page.tsx` splits the landing flow into Play with Friends and Play with AI while keeping the existing room create/join path inside the friends branch
+- Home entry: `frontend/src/app/page.tsx` splits the landing flow into Play with Friends and Play with AI while keeping the existing room create/join path inside the friends branch, and solo AI setup uses the shared pre-game config modal before match creation
 - Overlays and utility controls: full-screen overlays render through portals, and the shared game utility controls host leaderboard, log, rules, and mute actions across desktop and mobile
+- Solo replay flow: AI `Play Again` should reuse the same bot count, difficulty, and timer config rather than returning to a lobby
 
 ## Conventions
 

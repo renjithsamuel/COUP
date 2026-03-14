@@ -1,4 +1,4 @@
-export { ANIM, EASING } from './constants';
+export { ANIM, EASING } from "./constants";
 export {
   interactiveHoverMotion,
   interactiveTapMotion,
@@ -16,10 +16,10 @@ export {
   scalePopVariants,
   shakeVariants,
   glowPulseVariants,
-} from './variants';
+} from "./variants";
 export {
   createDealTimeline,
   createCoinTransferTimeline,
   createEliminationTimeline,
   createVictoryTimeline,
-} from './gsapTimelines';
+} from "./gsapTimelines";

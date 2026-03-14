@@ -1,11 +1,16 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { lobbyService } from '@/services/lobbyService';
-import { AiMatchCreate, GameConfig, LobbyCreate, LobbyJoin } from '@/models/lobby';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { lobbyService } from "@/services/lobbyService";
+import {
+  AiMatchCreate,
+  GameConfig,
+  LobbyCreate,
+  LobbyJoin,
+} from "@/models/lobby";
 
 export const lobbyKeys = {
-  all: ['lobbies'] as const,
-  list: () => [...lobbyKeys.all, 'list'] as const,
-  detail: (id: string) => [...lobbyKeys.all, 'detail', id] as const,
+  all: ["lobbies"] as const,
+  list: () => [...lobbyKeys.all, "list"] as const,
+  detail: (id: string) => [...lobbyKeys.all, "detail", id] as const,
 };
 
 export function useLobbies() {
@@ -18,7 +23,7 @@ export function useLobbies() {
 
 export function useLobby(lobbyId: string, sessionToken?: string | null) {
   return useQuery({
-    queryKey: [...lobbyKeys.detail(lobbyId), sessionToken ?? 'anonymous'],
+    queryKey: [...lobbyKeys.detail(lobbyId), sessionToken ?? "anonymous"],
     queryFn: () => lobbyService.get(lobbyId, sessionToken),
     enabled: !!lobbyId,
     refetchInterval: 3000,
@@ -27,7 +32,7 @@ export function useLobby(lobbyId: string, sessionToken?: string | null) {
 
 export function useLobbyLeaderboard(lobbyId: string, limit = 6) {
   return useQuery({
-    queryKey: [...lobbyKeys.detail(lobbyId), 'leaderboard', limit],
+    queryKey: [...lobbyKeys.detail(lobbyId), "leaderboard", limit],
     queryFn: () => lobbyService.leaderboard(lobbyId, limit),
     enabled: !!lobbyId,
     refetchInterval: 15000,
@@ -60,7 +65,12 @@ export function useJoinLobby() {
 
 export function useStartGame() {
   return useMutation({
-    mutationFn: ({ lobbyId, config }: { lobbyId: string; config?: GameConfig }) =>
-      lobbyService.start(lobbyId, config),
+    mutationFn: ({
+      lobbyId,
+      config,
+    }: {
+      lobbyId: string;
+      config?: GameConfig;
+    }) => lobbyService.start(lobbyId, config),
   });
 }

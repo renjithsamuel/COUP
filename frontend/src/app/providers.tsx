@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { MantineProvider, ColorSchemeScript } from '@mantine/core';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { theme } from '@/theme/theme';
-import { LobbyProvider } from '@/context/LobbyContext';
+import React from "react";
+import { MantineProvider } from "@mantine/core";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { theme } from "@/theme/theme";
+import { LobbyProvider } from "@/context/LobbyContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {

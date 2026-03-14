@@ -1,4 +1,8 @@
-import { GamePhase, type GameStatePrivate, type GameStatePublic } from '@/models/game';
+import {
+  GamePhase,
+  type GameStatePrivate,
+  type GameStatePublic,
+} from "@/models/game";
 
 type GameStateLike = GameStatePublic | GameStatePrivate | null | undefined;
 
@@ -7,7 +11,11 @@ export function getEligibleResponderIds(gameState: GameStateLike): string[] {
     return [];
   }
 
-  const aliveIds = new Set(gameState.players.filter((player) => player.isAlive).map((player) => player.id));
+  const aliveIds = new Set(
+    gameState.players
+      .filter((player) => player.isAlive)
+      .map((player) => player.id),
+  );
   const { actorId, blockerId, targetId } = gameState.pendingAction;
 
   if (gameState.phase === GamePhase.CHALLENGE_WINDOW) {
@@ -29,12 +37,17 @@ export function getEligibleResponderIds(gameState: GameStateLike): string[] {
   }
 
   if (gameState.phase === GamePhase.BLOCK_CHALLENGE_WINDOW) {
-    return actorId && aliveIds.has(actorId) && blockerId !== actorId ? [actorId] : [];
+    return actorId && aliveIds.has(actorId) && blockerId !== actorId
+      ? [actorId]
+      : [];
   }
 
   return [];
 }
 
-export function isPlayerEligibleForCurrentResponse(gameState: GameStateLike, playerId: string): boolean {
+export function isPlayerEligibleForCurrentResponse(
+  gameState: GameStateLike,
+  playerId: string,
+): boolean {
   return getEligibleResponderIds(gameState).includes(playerId);
 }

@@ -1,12 +1,7 @@
-import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
-import {
-  GameStatePublic,
-  GameStatePrivate,
-  GamePhase,
-  GameStatus,
-} from '@/models/game';
-import { Card } from '@/models/card';
-import { ActionType } from '@/models/action';
+import React, { createContext, useContext, useReducer, useMemo } from "react";
+import { GameStatePublic, GamePhase } from "@/models/game";
+import { Card } from "@/models/card";
+import { ActionType } from "@/models/action";
 
 // ─── State ───────────────────────────────────────────────────────────
 export interface GameContextState {
@@ -21,7 +16,14 @@ export interface GameLogEntry {
   id: string;
   message: string;
   timestamp: number;
-  type: 'action' | 'challenge' | 'block' | 'reveal' | 'elimination' | 'system' | 'turn';
+  type:
+    | "action"
+    | "challenge"
+    | "block"
+    | "reveal"
+    | "elimination"
+    | "system"
+    | "turn";
   actionType?: ActionType;
 }
 
@@ -35,28 +37,37 @@ const initialState: GameContextState = {
 
 // ─── Actions ─────────────────────────────────────────────────────────
 type GameAction =
-  | { type: 'SET_GAME_STATE'; payload: GameStatePublic }
-  | { type: 'SET_PRIVATE_STATE'; payload: { myCards: Card[]; exchangeCards: Card[] } }
-  | { type: 'SET_MY_PLAYER_ID'; payload: string }
-  | { type: 'UPDATE_TURN'; payload: { currentPlayerId: string; turnNumber: number } }
-  | { type: 'ADD_LOG'; payload: Omit<GameLogEntry, 'id' | 'timestamp'> }
-  | { type: 'CLEAR_LOG' }
-  | { type: 'RESET' };
+  | { type: "SET_GAME_STATE"; payload: GameStatePublic }
+  | {
+      type: "SET_PRIVATE_STATE";
+      payload: { myCards: Card[]; exchangeCards: Card[] };
+    }
+  | { type: "SET_MY_PLAYER_ID"; payload: string }
+  | {
+      type: "UPDATE_TURN";
+      payload: { currentPlayerId: string; turnNumber: number };
+    }
+  | { type: "ADD_LOG"; payload: Omit<GameLogEntry, "id" | "timestamp"> }
+  | { type: "CLEAR_LOG" }
+  | { type: "RESET" };
 
 // ─── Reducer ─────────────────────────────────────────────────────────
-function gameReducer(state: GameContextState, action: GameAction): GameContextState {
+function gameReducer(
+  state: GameContextState,
+  action: GameAction,
+): GameContextState {
   switch (action.type) {
-    case 'SET_GAME_STATE':
+    case "SET_GAME_STATE":
       return { ...state, gameState: action.payload };
-    case 'SET_PRIVATE_STATE':
+    case "SET_PRIVATE_STATE":
       return {
         ...state,
         myCards: action.payload.myCards,
         exchangeCards: action.payload.exchangeCards,
       };
-    case 'SET_MY_PLAYER_ID':
+    case "SET_MY_PLAYER_ID":
       return { ...state, myPlayerId: action.payload };
-    case 'UPDATE_TURN':
+    case "UPDATE_TURN":
       if (state.gameState == null) {
         return state;
       }
@@ -71,7 +82,7 @@ function gameReducer(state: GameContextState, action: GameAction): GameContextSt
           awaitingInfluenceLossFrom: null,
         },
       };
-    case 'ADD_LOG':
+    case "ADD_LOG":
       return {
         ...state,
         gameLog: [
@@ -83,9 +94,9 @@ function gameReducer(state: GameContextState, action: GameAction): GameContextSt
           },
         ],
       };
-    case 'CLEAR_LOG':
+    case "CLEAR_LOG":
       return { ...state, gameLog: [] };
-    case 'RESET':
+    case "RESET":
       return initialState;
     default:
       return state;
@@ -134,6 +145,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 // ─── Hook ────────────────────────────────────────────────────────────
 export function useGameContext() {
   const ctx = useContext(GameContext);
-  if (!ctx) throw new Error('useGameContext must be used within <GameProvider>');
+  if (!ctx)
+    throw new Error("useGameContext must be used within <GameProvider>");
   return ctx;
 }

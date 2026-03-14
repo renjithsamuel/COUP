@@ -1,5 +1,5 @@
-import { Character } from '../card/card';
-import { ActionType } from '../action/action';
+import { Character } from "../card/card";
+import { ActionType } from "../action/action";
 import {
   GameConfigState,
   GamePhase,
@@ -7,7 +7,7 @@ import {
   GameStatePublic,
   GameStatePrivate,
   PendingAction,
-} from './game';
+} from "./game";
 
 const mockConfig: GameConfigState = {
   turnTimerSeconds: 30,
@@ -17,7 +17,7 @@ const mockConfig: GameConfigState = {
 };
 
 export const mockPendingAction: PendingAction = {
-  actorId: 'player-1',
+  actorId: "player-1",
   actionType: ActionType.TAX,
   targetId: null,
   blockerId: null,
@@ -26,22 +26,36 @@ export const mockPendingAction: PendingAction = {
 };
 
 export const mockPendingAssassinate: PendingAction = {
-  actorId: 'player-1',
+  actorId: "player-1",
   actionType: ActionType.ASSASSINATE,
-  targetId: 'player-2',
+  targetId: "player-2",
   blockerId: null,
   blockerCharacter: null,
   acceptedBy: [],
 };
 
 export const mockGameStateWaiting: GameStatePublic = {
-  gameId: 'game-abc123',
+  gameId: "game-abc123",
   status: GameStatus.WAITING,
   phase: GamePhase.WAITING_FOR_PLAYERS,
   config: mockConfig,
   players: [
-    { id: 'player-1', name: 'Alice', coins: 2, influenceCount: 2, revealedCards: [], isAlive: true },
-    { id: 'player-2', name: 'Bob', coins: 2, influenceCount: 2, revealedCards: [], isAlive: true },
+    {
+      id: "player-1",
+      name: "Alice",
+      coins: 2,
+      influenceCount: 2,
+      revealedCards: [],
+      isAlive: true,
+    },
+    {
+      id: "player-2",
+      name: "Bob",
+      coins: 2,
+      influenceCount: 2,
+      revealedCards: [],
+      isAlive: true,
+    },
   ],
   currentPlayerId: null,
   pendingAction: null,
@@ -54,19 +68,40 @@ export const mockGameStateWaiting: GameStatePublic = {
 };
 
 export const mockGameStatePlaying: GameStatePublic = {
-  gameId: 'game-abc123',
+  gameId: "game-abc123",
   status: GameStatus.IN_PROGRESS,
   phase: GamePhase.TURN_START,
   config: mockConfig,
   players: [
-    { id: 'player-1', name: 'Alice', coins: 2, influenceCount: 2, revealedCards: [], isAlive: true },
-    { id: 'player-2', name: 'Bob', coins: 2, influenceCount: 2, revealedCards: [], isAlive: true },
-    { id: 'player-3', name: 'Charlie', coins: 5, influenceCount: 2, revealedCards: [], isAlive: true },
+    {
+      id: "player-1",
+      name: "Alice",
+      coins: 2,
+      influenceCount: 2,
+      revealedCards: [],
+      isAlive: true,
+    },
+    {
+      id: "player-2",
+      name: "Bob",
+      coins: 2,
+      influenceCount: 2,
+      revealedCards: [],
+      isAlive: true,
+    },
+    {
+      id: "player-3",
+      name: "Charlie",
+      coins: 5,
+      influenceCount: 2,
+      revealedCards: [],
+      isAlive: true,
+    },
   ],
-  currentPlayerId: 'player-1',
+  currentPlayerId: "player-1",
   pendingAction: null,
-  phaseStartedAt: '2026-03-14T10:00:00+00:00',
-  phaseDeadlineAt: '2026-03-14T10:00:30+00:00',
+  phaseStartedAt: "2026-03-14T10:00:00+00:00",
+  phaseDeadlineAt: "2026-03-14T10:00:30+00:00",
   awaitingInfluenceLossFrom: null,
   turnNumber: 1,
   winnerId: null,
@@ -80,13 +115,30 @@ export const mockGameStateChallengeWindow: GameStatePublic = {
 };
 
 export const mockGameStateOver: GameStatePublic = {
-  gameId: 'game-abc123',
+  gameId: "game-abc123",
   status: GameStatus.FINISHED,
   phase: GamePhase.GAME_OVER,
   config: mockConfig,
   players: [
-    { id: 'player-1', name: 'Alice', coins: 8, influenceCount: 1, revealedCards: [{ character: Character.DUKE, isRevealed: true }], isAlive: true },
-    { id: 'player-2', name: 'Bob', coins: 0, influenceCount: 0, revealedCards: [{ character: Character.ASSASSIN, isRevealed: true }, { character: Character.CONTESSA, isRevealed: true }], isAlive: false },
+    {
+      id: "player-1",
+      name: "Alice",
+      coins: 8,
+      influenceCount: 1,
+      revealedCards: [{ character: Character.DUKE, isRevealed: true }],
+      isAlive: true,
+    },
+    {
+      id: "player-2",
+      name: "Bob",
+      coins: 0,
+      influenceCount: 0,
+      revealedCards: [
+        { character: Character.ASSASSIN, isRevealed: true },
+        { character: Character.CONTESSA, isRevealed: true },
+      ],
+      isAlive: false,
+    },
   ],
   currentPlayerId: null,
   pendingAction: null,
@@ -94,7 +146,7 @@ export const mockGameStateOver: GameStatePublic = {
   phaseDeadlineAt: null,
   awaitingInfluenceLossFrom: null,
   turnNumber: 12,
-  winnerId: 'player-1',
+  winnerId: "player-1",
   deckSize: 11,
 };
 

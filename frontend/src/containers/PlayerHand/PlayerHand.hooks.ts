@@ -1,7 +1,7 @@
-import { useCallback } from 'react';
-import { useGameContext } from '@/context/GameContext';
-import { GamePhase } from '@/models/game';
-import { ClientMessage, ClientMessageType } from '@/models/websocket-message';
+import { useCallback } from "react";
+import { useGameContext } from "@/context/GameContext";
+import { GamePhase } from "@/models/game";
+import { ClientMessage, ClientMessageType } from "@/models/websocket-message";
 
 export function usePlayerHand(send: (msg: ClientMessage) => boolean) {
   const { state, currentPhase } = useGameContext();
@@ -18,17 +18,30 @@ export function usePlayerHand(send: (msg: ClientMessage) => boolean) {
 
   const onChooseInfluence = useCallback(
     (cardIndex: number) => {
-      send({ type: ClientMessageType.CHOOSE_INFLUENCE, payload: { cardIndex } });
+      send({
+        type: ClientMessageType.CHOOSE_INFLUENCE,
+        payload: { cardIndex },
+      });
     },
     [send],
   );
 
   const onExchangeReturn = useCallback(
     (keepIndices: number[]) => {
-      send({ type: ClientMessageType.EXCHANGE_RETURN, payload: { keepIndices } });
+      send({
+        type: ClientMessageType.EXCHANGE_RETURN,
+        payload: { keepIndices },
+      });
     },
     [send],
   );
 
-  return { myCards: state.myCards, exchangeCards, needsInfluenceChoice, needsExchangeReturn, onChooseInfluence, onExchangeReturn };
+  return {
+    myCards: state.myCards,
+    exchangeCards,
+    needsInfluenceChoice,
+    needsExchangeReturn,
+    onChooseInfluence,
+    onExchangeReturn,
+  };
 }

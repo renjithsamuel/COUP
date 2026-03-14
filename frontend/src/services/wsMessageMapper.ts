@@ -3,10 +3,15 @@
  * Follows the same pattern as lobbyService.ts for REST response mapping.
  */
 
-import { ServerMessage, ServerMessageType } from '@/models/websocket-message';
-import { GameStatePublic, GameStatePrivate, GameConfigState, PendingAction } from '@/models/game';
-import { PlayerPublic } from '@/models/player';
-import { Card, Character } from '@/models/card';
+import { ServerMessage, ServerMessageType } from "@/models/websocket-message";
+import {
+  GameStatePublic,
+  GameStatePrivate,
+  GameConfigState,
+  PendingAction,
+} from "@/models/game";
+import { PlayerPublic } from "@/models/player";
+import { Card, Character } from "@/models/card";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -48,8 +53,11 @@ function toPlayerPublic(raw: any): PlayerPublic {
     name: raw.name,
     coins: raw.coins,
     influenceCount: raw.influence_count ?? raw.influenceCount ?? 0,
-    revealedCards: (raw.revealed_characters ?? raw.revealedCards ?? []).map((c: any) =>
-      typeof c === 'string' ? { character: c as Character, isRevealed: true } : toCard(c),
+    revealedCards: (raw.revealed_characters ?? raw.revealedCards ?? []).map(
+      (c: any) =>
+        typeof c === "string"
+          ? { character: c as Character, isRevealed: true }
+          : toCard(c),
     ),
     isAlive: raw.is_alive ?? raw.isAlive ?? true,
     connected: raw.connected ?? true,
@@ -59,8 +67,8 @@ function toPlayerPublic(raw: any): PlayerPublic {
 function toPendingAction(raw: any): PendingAction | null {
   if (!raw) return null;
   return {
-    actorId: raw.player_id ?? raw.actorId ?? '',
-    actionType: raw.action_type ?? raw.actionType ?? '',
+    actorId: raw.player_id ?? raw.actorId ?? "",
+    actionType: raw.action_type ?? raw.actionType ?? "",
     targetId: raw.target_id ?? raw.targetId ?? null,
     blockerId: raw.blocked_by ?? raw.blockerId ?? null,
     blockerCharacter: raw.blocking_character ?? raw.blockerCharacter ?? null,
@@ -71,24 +79,27 @@ function toPendingAction(raw: any): PendingAction | null {
 function toGameConfigState(raw: any): GameConfigState {
   return {
     turnTimerSeconds: raw?.turn_timer_seconds ?? raw?.turnTimerSeconds ?? 30,
-    challengeWindowSeconds: raw?.challenge_window_seconds ?? raw?.challengeWindowSeconds ?? 10,
-    blockWindowSeconds: raw?.block_window_seconds ?? raw?.blockWindowSeconds ?? 10,
+    challengeWindowSeconds:
+      raw?.challenge_window_seconds ?? raw?.challengeWindowSeconds ?? 10,
+    blockWindowSeconds:
+      raw?.block_window_seconds ?? raw?.blockWindowSeconds ?? 10,
     startingCoins: raw?.starting_coins ?? raw?.startingCoins ?? 2,
   };
 }
 
 function toGameStatePublic(raw: any): GameStatePublic {
   return {
-    gameId: raw.id ?? raw.gameId ?? raw.game_id ?? '',
+    gameId: raw.id ?? raw.gameId ?? raw.game_id ?? "",
     status: raw.status,
-    phase: raw.phase ?? raw.state_phase ?? '',
+    phase: raw.phase ?? raw.state_phase ?? "",
     config: toGameConfigState(raw.config),
     players: (raw.players ?? []).map(toPlayerPublic),
     currentPlayerId: raw.current_turn_player_id ?? raw.currentPlayerId ?? null,
     pendingAction: toPendingAction(raw.pending_action ?? raw.pendingAction),
     phaseStartedAt: raw.phase_started_at ?? raw.phaseStartedAt ?? null,
     phaseDeadlineAt: raw.phase_deadline_at ?? raw.phaseDeadlineAt ?? null,
-    awaitingInfluenceLossFrom: raw.awaiting_influence_loss_from ?? raw.awaitingInfluenceLossFrom ?? null,
+    awaitingInfluenceLossFrom:
+      raw.awaiting_influence_loss_from ?? raw.awaitingInfluenceLossFrom ?? null,
     turnNumber: raw.turn_number ?? raw.turnNumber ?? 0,
     winnerId: raw.winner_id ?? raw.winnerId ?? null,
     deckSize: raw.deck_count ?? raw.deckSize ?? 0,
@@ -106,15 +117,21 @@ function toGameStatePrivate(raw: any): GameStatePrivate {
 
 /** Convert a raw JSON WebSocket message from the backend into a typed ServerMessage. */
 export function mapServerMessage(raw: any): ServerMessage {
-  const backendType: string = raw.type ?? '';
-  const type = MESSAGE_TYPE_MAP[backendType] ?? (backendType.toLowerCase() as ServerMessageType);
+  const backendType: string = raw.type ?? "";
+  const type =
+    MESSAGE_TYPE_MAP[backendType] ??
+    (backendType.toLowerCase() as ServerMessageType);
   const payload = raw.payload ?? {};
 
   // For GAME_STATE messages the payload IS the game state
   let gameState: GameStatePublic | undefined;
   let privateState: GameStatePrivate | undefined;
 
-  if (backendType === 'GAME_STATE' || backendType === 'CHALLENGE_WINDOW_OPEN' || backendType === 'BLOCK_WINDOW_OPEN') {
+  if (
+    backendType === "GAME_STATE" ||
+    backendType === "CHALLENGE_WINDOW_OPEN" ||
+    backendType === "BLOCK_WINDOW_OPEN"
+  ) {
     // The payload contains the game state with your_cards → treat as private
     if (payload.your_cards || payload.myCards) {
       privateState = toGameStatePrivate(payload);

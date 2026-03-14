@@ -1,2 +1,2 @@
-export { ActionGlyph } from './ActionGlyph';
-export type { ActionGlyphName } from './ActionGlyph';
+export { ActionGlyph } from "./ActionGlyph";
+export type { ActionGlyphName } from "./ActionGlyph";

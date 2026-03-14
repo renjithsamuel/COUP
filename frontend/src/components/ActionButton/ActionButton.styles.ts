@@ -1,6 +1,6 @@
-import { CSSProperties } from 'react';
-import { ActionPresentation } from '@/models/action';
-import { tokens } from '@/theme/tokens';
+import { CSSProperties } from "react";
+import { ActionPresentation } from "@/models/action";
+import { tokens } from "@/theme/tokens";
 
 interface ActionButtonRippleStyle {
   left: number;
@@ -17,168 +17,189 @@ export const actionButtonStyles = {
     pressed = false,
     presentation?: ActionPresentation,
   ): CSSProperties => ({
-    padding: compact
-      ? '7px 7px 8px'
-      : '10px 12px 9px',
+    padding: compact ? "8px 10px" : "10px 12px",
     borderRadius: compact ? 10 : 12,
     border: disabled
       ? `1px solid ${tokens.surface.border}`
       : pressed && presentation
         ? `1px solid ${presentation.accent}`
-      : selected
-        ? '1px solid rgba(246, 196, 69, 0.5)'
-      : isBluff
-        ? '1px solid rgba(239,83,80,0.16)'
-        : '1px solid rgba(255,255,255,0.12)',
+        : selected
+          ? "1px solid rgba(246, 196, 69, 0.5)"
+          : isBluff
+            ? "1px solid rgba(239,83,80,0.28)"
+            : "1px solid rgba(255,255,255,0.12)",
     fontWeight: 700,
     fontSize: compact ? 9 : 11,
-    cursor: disabled ? 'not-allowed' : 'pointer',
+    cursor: disabled ? "not-allowed" : "pointer",
     background: disabled
-      ? 'linear-gradient(180deg, rgba(20, 28, 45, 0.92) 0%, rgba(12, 18, 30, 0.95) 100%)'
+      ? "linear-gradient(180deg, rgba(20, 28, 45, 0.92) 0%, rgba(12, 18, 30, 0.95) 100%)"
       : selected
-        ? 'linear-gradient(180deg, rgba(56, 40, 10, 0.98) 0%, rgba(25, 19, 8, 0.98) 100%)'
-        : 'linear-gradient(180deg, rgba(18, 28, 48, 0.98) 0%, rgba(10, 16, 30, 0.98) 100%)',
+        ? "linear-gradient(180deg, rgba(56, 40, 10, 0.98) 0%, rgba(25, 19, 8, 0.98) 100%)"
+        : isBluff
+          ? "linear-gradient(180deg, rgba(28, 21, 34, 0.98) 0%, rgba(18, 14, 26, 0.98) 100%)"
+          : "linear-gradient(180deg, rgba(18, 28, 48, 0.98) 0%, rgba(10, 16, 30, 0.98) 100%)",
     color: disabled ? tokens.text.muted : tokens.text.primary,
     boxShadow: disabled
-      ? 'none'
+      ? "none"
       : pressed && presentation
         ? `0 0 0 1px ${presentation.accent}66, 0 12px 24px rgba(0,0,0,0.24), 0 0 24px ${presentation.accent}3d, inset 0 0 0 1px ${presentation.accent}40`
-      : selected
-        ? '0 10px 18px rgba(0,0,0,0.24), 0 0 0 1px rgba(246,196,69,0.16), 0 0 18px rgba(246,196,69,0.1)'
-        : '0 8px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
-    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-    userSelect: 'none',
-    display: 'flex',
-    alignItems: compact ? 'stretch' : 'center',
-    justifyContent: 'space-between',
-    gap: compact ? 4 : 8,
-    position: 'relative',
+        : selected
+          ? "0 10px 18px rgba(0,0,0,0.24), 0 0 0 1px rgba(246,196,69,0.16), 0 0 18px rgba(246,196,69,0.1)"
+          : isBluff
+            ? "0 10px 18px rgba(0,0,0,0.22), 0 0 0 1px rgba(239,83,80,0.1), inset 0 1px 0 rgba(255,255,255,0.05)"
+            : "0 8px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)",
+    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+    userSelect: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 0,
+    position: "relative",
     minWidth: 0,
-    minHeight: compact ? 52 : 46,
-    textAlign: compact ? 'center' : 'left',
-    overflow: 'hidden',
-    isolation: 'isolate',
+    minHeight: compact ? 52 : 56,
+    textAlign: "left",
+    overflow: "hidden",
+    isolation: "isolate",
   }),
 
   rippleLayer: {
-    position: 'absolute',
+    position: "absolute",
     inset: 0,
-    pointerEvents: 'none',
-    overflow: 'hidden',
-    borderRadius: 'inherit',
+    pointerEvents: "none",
+    overflow: "hidden",
+    borderRadius: "inherit",
     zIndex: 1,
   } satisfies CSSProperties,
 
-  ripple: (ripple: ActionButtonRippleStyle, innerColor: string, midColor: string, outerColor: string): CSSProperties => ({
-    position: 'absolute',
+  ripple: (
+    ripple: ActionButtonRippleStyle,
+    innerColor: string,
+    midColor: string,
+    outerColor: string,
+  ): CSSProperties => ({
+    position: "absolute",
     left: ripple.left,
     top: ripple.top,
     width: ripple.size,
     height: ripple.size,
-    borderRadius: '50%',
+    borderRadius: "50%",
     background: `radial-gradient(circle, ${innerColor} 0%, ${midColor} 34%, ${outerColor} 72%)`,
     boxShadow: `0 0 42px ${midColor}`,
-    filter: 'blur(0.5px)',
+    filter: "blur(0.5px)",
     opacity: 0.95,
   }),
 
   content: {
-    position: 'relative',
+    position: "relative",
     zIndex: 2,
-    display: 'flex',
+    display: "flex",
     flex: 1,
     minWidth: 0,
+    alignItems: "center",
+    width: "100%",
   } satisfies CSSProperties,
 
-  header: (compact: boolean): CSSProperties => ({
-    display: 'flex',
-    alignItems: compact ? 'flex-start' : 'center',
-    justifyContent: 'space-between',
-    flexDirection: compact ? 'column' : 'row',
-    gap: compact ? 3 : tokens.spacing.xs,
+  row: (compact: boolean): CSSProperties => ({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: compact ? 8 : 10,
     minWidth: 0,
     flex: 1,
-    width: '100%',
+    width: "100%",
   }),
 
-  identityRow: (compact: boolean): CSSProperties => ({
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: compact ? 'center' : 'flex-start',
-    gap: compact ? 5 : 8,
+  leadingGroup: (compact: boolean): CSSProperties => ({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: compact ? 8 : 10,
     minWidth: 0,
     flex: 1,
-    width: '100%',
   }),
 
-  iconShell: (disabled: boolean, selected: boolean, presentation: ActionPresentation): CSSProperties => ({
-    width: 22,
-    height: 22,
-    minWidth: 22,
-    borderRadius: 8,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+  trailingGroup: (compact = false): CSSProperties => ({
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: compact ? 6 : 7,
+    flexShrink: 0,
+    minWidth: 0,
+  }),
+
+  iconShell: (
+    disabled: boolean,
+    selected: boolean,
+    presentation: ActionPresentation,
+  ): CSSProperties => ({
+    width: 26,
+    height: 26,
+    minWidth: 26,
+    borderRadius: 9,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     color: disabled ? tokens.text.muted : presentation.accent,
     background: disabled
-      ? 'rgba(255,255,255,0.05)'
+      ? "rgba(255,255,255,0.05)"
       : selected
         ? presentation.tint
-        : 'rgba(255,255,255,0.04)',
-    border: `1px solid ${disabled ? 'rgba(255,255,255,0.08)' : selected ? presentation.accent : 'rgba(255,255,255,0.08)'}`,
+        : "rgba(255,255,255,0.04)",
+    border: `1px solid ${disabled ? "rgba(255,255,255,0.08)" : selected ? presentation.accent : "rgba(255,255,255,0.08)"}`,
   }),
 
-  title: (disabled: boolean, presentation: ActionPresentation, compact = false): CSSProperties => ({
+  title: (
+    disabled: boolean,
+    presentation: ActionPresentation,
+    compact = false,
+  ): CSSProperties => ({
     fontWeight: 800,
     fontSize: compact ? 10 : 12,
     letterSpacing: compact ? 0 : 0.1,
-    textTransform: 'uppercase',
-    whiteSpace: compact ? 'normal' : 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
+    textTransform: "none",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
     color: disabled ? tokens.text.muted : tokens.text.primary,
-    lineHeight: compact ? 1 : 1.1,
-    textAlign: compact ? 'left' : 'inherit',
+    lineHeight: 1.15,
+    textAlign: "left",
+    paddingRight: compact ? 2 : 4,
+    display: "block",
   }),
 
-  metaRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 4,
-    flexWrap: 'wrap',
-    flexShrink: 0,
-  } satisfies CSSProperties,
-
-  costBadge: (compact = false, presentation: ActionPresentation): CSSProperties => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    fontSize: compact ? 8 : 9,
+  costBadge: (
+    compact = false,
+    presentation: ActionPresentation,
+  ): CSSProperties => ({
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: compact ? "2px 0" : "3px 0",
+    minWidth: compact ? 22 : 24,
+    fontSize: compact ? 9 : 10,
     color: presentation.accent,
     fontWeight: 800,
-    letterSpacing: 0.3,
-    fontVariantNumeric: 'tabular-nums',
+    letterSpacing: 0.15,
+    fontVariantNumeric: "tabular-nums",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
+    textAlign: "right",
   }),
 
-  targetHint: {
-    position: 'absolute',
-    right: 6,
-    bottom: 4,
-    fontSize: 6,
-    fontWeight: 800,
-    color: 'rgba(96, 165, 250, 0.72)',
-    letterSpacing: 0.7,
-    textTransform: 'uppercase',
-  } satisfies CSSProperties,
-
-  bluffHint: {
-    position: 'absolute',
-    right: 6,
-    top: 4,
-    fontSize: 6,
-    fontWeight: 800,
-    color: 'rgba(239, 83, 80, 0.84)',
-    letterSpacing: 0.7,
-    textTransform: 'uppercase',
-  } satisfies CSSProperties,
+  bluffIcon: (compact = false): CSSProperties => ({
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: compact ? 16 : 18,
+    height: compact ? 16 : 18,
+    borderRadius: 999,
+    border: "1px solid rgba(239, 83, 80, 0.32)",
+    background: "rgba(239, 83, 80, 0.12)",
+    fontSize: compact ? 9 : 10,
+    fontWeight: 900,
+    color: "rgba(255, 210, 208, 0.95)",
+    lineHeight: 1,
+    boxShadow: "0 0 10px rgba(239,83,80,0.14)",
+    flexShrink: 0,
+  }),
 };

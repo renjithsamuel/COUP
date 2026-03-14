@@ -13,11 +13,11 @@ html {
 
 button,
 a,
-[role='button'],
-[tabindex='0'],
-input[type='button'],
-input[type='submit'],
-input[type='reset'] {
+[role="button"],
+[tabindex="0"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
   transition:
     transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
     filter 160ms ease,
@@ -31,7 +31,7 @@ input[type='reset'] {
   button:not(:disabled):hover,
   a:hover,
   input:not(:disabled):hover,
-  [tabindex='0']:hover {
+  [tabindex="0"]:hover {
     transform: translateY(-1px) scale(1.01);
     filter: brightness(1.03) saturate(1.03);
   }
@@ -39,17 +39,17 @@ input[type='reset'] {
 
 button:active,
 a:active,
-[role='button']:active,
-[tabindex='0']:active,
-input[type='button']:active,
-input[type='submit']:active,
-input[type='reset']:active {
+[role="button"]:active,
+[tabindex="0"]:active,
+input[type="button"]:active,
+input[type="submit"]:active,
+input[type="reset"]:active {
   transform: translateY(1px) scale(0.968);
   filter: brightness(1.12) saturate(1.08);
 }
 
 button:disabled:active,
-[role='button'][aria-disabled='true']:active,
+[role="button"][aria-disabled="true"]:active,
 input:disabled:active {
   transform: none;
   filter: none;
@@ -58,11 +58,11 @@ input:disabled:active {
 @media (hover: none) and (pointer: coarse) {
   button,
   a,
-  [role='button'],
-  [tabindex='0'],
-  input[type='button'],
-  input[type='submit'],
-  input[type='reset'] {
+  [role="button"],
+  [tabindex="0"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"] {
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -72,11 +72,11 @@ input:disabled:active {
 
   button:active,
   a:active,
-  [role='button']:active,
-  [tabindex='0']:active,
-  input[type='button']:active,
-  input[type='submit']:active,
-  input[type='reset']:active {
+  [role="button"]:active,
+  [tabindex="0"]:active,
+  input[type="button"]:active,
+  input[type="submit"]:active,
+  input[type="reset"]:active {
     transform: translateY(1px) scale(0.962);
     filter: brightness(1.15) saturate(1.12);
   }

@@ -1,1 +1,1 @@
-export { CoupBackgroundSVG } from './CoupBackgroundSVG';
+export { CoupBackgroundSVG } from "./CoupBackgroundSVG";

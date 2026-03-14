@@ -126,7 +126,7 @@ python -m pytest -v
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/api/health` | Health check |
-| `POST` | `/api/games/ai-match` | Start an immediate solo match against 1-5 bots (`{ player_name, bot_count, difficulty, profile_id? }`) |
+| `POST` | `/api/games/ai-match` | Start an immediate solo match against 1-5 bots (`{ player_name, bot_count, difficulty, profile_id?, config? }`) |
 | `POST` | `/api/lobbies` | Create lobby (`{ host_name, max_players, profile_id? }`) — returns 6-char room code |
 | `GET` | `/api/lobbies` | List open lobbies |
 | `GET` | `/api/lobbies/{id}` | Get lobby details (case-insensitive code). Optional `?session_token=...` refreshes presence and returns the caller's `player_id` |
@@ -147,6 +147,8 @@ AI match difficulty values:
 - `easy` — looser bluffing and weaker responses
 - `medium` — balanced play with some mistakes
 - `hard` — stronger targeting and challenge logic without perfect play
+
+AI matches also accept the same optional `config` object used by lobby starts, so solo games can launch with custom turn timer, challenge window, block window, and starting-coin settings.
 
 ### WebSocket
 

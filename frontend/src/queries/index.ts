@@ -5,4 +5,4 @@ export {
   useCreateLobby,
   useJoinLobby,
   useStartGame,
-} from './useLobbyQueries';
+} from "./useLobbyQueries";

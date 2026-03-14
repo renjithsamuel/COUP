@@ -1,2 +1,2 @@
-export { ChallengeBlockOverlay } from './ChallengeBlockOverlay';
-export type { ChallengeBlockOverlayProps } from './ChallengeBlockOverlay';
+export { ChallengeBlockOverlay } from "./ChallengeBlockOverlay";
+export type { ChallengeBlockOverlayProps } from "./ChallengeBlockOverlay";

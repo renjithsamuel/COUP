@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { WS_URL } from '@/utils/constants';
-import { ClientMessage, ServerMessage } from '@/models/websocket-message';
-import { mapServerMessage } from '@/services/wsMessageMapper';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { WS_URL } from "@/utils/constants";
+import { ClientMessage, ServerMessage } from "@/models/websocket-message";
+import { mapServerMessage } from "@/services/wsMessageMapper";
 
-export type WebSocketStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
+export type WebSocketStatus =
+  | "connecting"
+  | "connected"
+  | "disconnected"
+  | "error";
 
 interface UseWebSocketOptions {
   gameId: string;
@@ -20,7 +24,7 @@ export function useWebSocket({
   autoReconnect = true,
   maxRetries = 5,
 }: UseWebSocketOptions) {
-  const [status, setStatus] = useState<WebSocketStatus>('disconnected');
+  const [status, setStatus] = useState<WebSocketStatus>("disconnected");
   const wsRef = useRef<WebSocket | null>(null);
   const retriesRef = useRef(0);
   const onMessageRef = useRef(onMessage);
@@ -30,12 +34,14 @@ export function useWebSocket({
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
     const encodedPlayerId = encodeURIComponent(playerId);
-    const ws = new WebSocket(`${WS_URL}/ws/game/${gameId}?player_id=${encodedPlayerId}`);
+    const ws = new WebSocket(
+      `${WS_URL}/ws/game/${gameId}?player_id=${encodedPlayerId}`,
+    );
     wsRef.current = ws;
-    setStatus('connecting');
+    setStatus("connecting");
 
     ws.onopen = () => {
-      setStatus('connected');
+      setStatus("connected");
       retriesRef.current = 0;
     };
 
@@ -45,16 +51,16 @@ export function useWebSocket({
         const msg: ServerMessage = mapServerMessage(raw);
         onMessageRef.current(msg);
       } catch {
-        console.error('Failed to parse WS message');
+        console.error("Failed to parse WS message");
       }
     };
 
     ws.onerror = () => {
-      setStatus('error');
+      setStatus("error");
     };
 
     ws.onclose = () => {
-      setStatus('disconnected');
+      setStatus("disconnected");
       wsRef.current = null;
       if (autoReconnect && retriesRef.current < maxRetries) {
         retriesRef.current += 1;
@@ -75,7 +81,7 @@ export function useWebSocket({
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       const payload = { ...msg.payload } as Record<string, unknown>;
       // Map frontend field names to backend expectations
-      if ('actionType' in payload) {
+      if ("actionType" in payload) {
         payload.action = payload.actionType;
         delete payload.actionType;
       }
@@ -83,7 +89,10 @@ export function useWebSocket({
       wsRef.current.send(JSON.stringify(outgoing));
       return true;
     }
-    console.warn('[WS] Cannot send — not connected. Message dropped:', msg.type);
+    console.warn(
+      "[WS] Cannot send — not connected. Message dropped:",
+      msg.type,
+    );
     return false;
   }, []);
 

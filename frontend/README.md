@@ -4,16 +4,17 @@ Next.js 14 (App Router) frontend for the multiplayer Coup card game with real-ti
 
 ## Tech Stack
 
-| Layer | Tech |
-|---|---|
-| Framework | Next.js 14 (App Router) |
-| Language | TypeScript (strict) |
-| UI Kit | Mantine v7 |
-| State | Context + Reducer |
-| Server State | TanStack React Query v5 |
-| Real-time | Native WebSocket |
-| Animations | Framer Motion + GSAP |
-| Testing | Vitest + React Testing Library |
+| Layer        | Tech                                 |
+| ------------ | ------------------------------------ |
+| Framework    | Next.js 14 (App Router)              |
+| Language     | TypeScript (strict)                  |
+| UI Kit       | Mantine v7                           |
+| State        | Context + Reducer                    |
+| Server State | TanStack React Query v5              |
+| Real-time    | Native WebSocket                     |
+| Animations   | Framer Motion + GSAP                 |
+| Testing      | Vitest + React Testing Library       |
+| Tooling      | ESLint + Prettier + Yarn resolutions |
 
 ## Project Structure
 
@@ -21,7 +22,7 @@ Next.js 14 (App Router) frontend for the multiplayer Coup card game with real-ti
 src/
 ├── app/                    # Next.js App Router pages
 │   ├── layout.tsx          # Root layout + providers + metadata icons
-│   ├── page.tsx            # Home page with Play with Friends / Play with AI entry modes, desktop mode cards, and mobile play-first flow
+│   ├── page.tsx            # Home page with Play with Friends / Play with AI entry modes, AI bot+difficulty setup, and shared pre-game timer config modal
 │   ├── providers.tsx       # Client-side providers
 │   ├── global-error.tsx    # Error boundary
 │   ├── lobby/[id]/page.tsx # Lobby detail page
@@ -34,16 +35,16 @@ src/
 │   ├── Card/               # Character card with flip, art-backed face, glow, shadows
 │   ├── CoinStack/          # Coin display with bounce animation
 │   ├── PlayerAvatar/       # Compact player avatar with glow pulse
-│   ├── ActionButton/       # Compact action button with shared action icons, cleaner labels, and minimal metadata
+│   ├── ActionButton/       # Compact action button with clearer action-title hierarchy and stacked bluff/cost metadata
 │   ├── ActionGlyph/        # Shared action and timeline glyphs
 │   ├── Timer/              # Countdown progress bar
 │   ├── GameOverModal/      # Full-screen portal end-of-round modal with winner/loser messaging, replay, and exit actions
-│   ├── GuideModal/         # Game rules/help modal
+│   ├── GuideModal/         # Game rules/help modal with optional desktop pin-to-board shortcut for character actions
 │   ├── CoupBackgroundSVG/  # Subtle abstract ambient background motif
 │   ├── PreGameConfig/      # Pre-game configuration with timer controls + Peaceful Mode toggle
 │   └── TurnIndicator/      # Active turn display
 ├── containers/             # Stateful composite containers
-│   ├── GameBoard/          # Main game board (top-bar turn status on every breakpoint, compact mobile connection dot, quieter event overlays, mobile utility dock, winner confetti, default-open desktop timeline)
+│   ├── GameBoard/          # Main game board (top-bar turn status on every breakpoint, compact mobile connection dot, readable desktop top-bar event toasts, mobile utility dock, winner confetti, default-open desktop timeline, turn-highlighted player tray, and a pinnable desktop character-action reference)
 │   ├── PlayerHand/         # Current player's compact card hand
 │   ├── ActionPanel/        # Compact action ribbon with dense 3-column mobile layout, slimmer mobile standby strip, and minimal off-turn chrome
 │   ├── OpponentArea/       # Responsive opponent carousel with centered small-table seats, fixed-width cards, and subtle edge fades
@@ -55,7 +56,7 @@ src/
 │   ├── GameContext/        # Game state management
 │   └── LobbyContext/       # Lobby state management
 ├── hooks/                  # Global hooks
-│   ├── useGameAudio.ts     # Mild action-button audio + persistent mute preference
+│   ├── useGameAudio.ts     # Mild action-button audio, a soft turn chime, and persistent mute preference
 │   ├── useWebSocket.ts     # WebSocket connection + reconnect
 │   ├── useCountdown.ts     # Countdown timer
 │   └── useAnimationQueue.ts # Sequential animation queue
@@ -85,13 +86,13 @@ src/
 
 Each component/container directory contains:
 
-| File | Purpose |
-|---|---|
-| `Name.tsx` | Component implementation |
-| `Name.styles.ts` | Style objects (CSS-in-JS) |
-| `Name.hooks.ts` | Custom hooks for the component |
-| `Name.spec.tsx` | Tests (Vitest + RTL) |
-| `index.ts` | Barrel export |
+| File             | Purpose                        |
+| ---------------- | ------------------------------ |
+| `Name.tsx`       | Component implementation       |
+| `Name.styles.ts` | Style objects (CSS-in-JS)      |
+| `Name.hooks.ts`  | Custom hooks for the component |
+| `Name.spec.tsx`  | Tests (Vitest + RTL)           |
+| `index.ts`       | Barrel export                  |
 
 ## Getting Started
 
@@ -115,6 +116,15 @@ Open [http://localhost:3000](http://localhost:3000).
 ```bash
 yarn test          # single run
 yarn test:watch    # watch mode
+```
+
+### Lint and Format
+
+```bash
+yarn lint
+yarn lint:fix
+yarn format
+yarn format:check
 ```
 
 ## How to Modify
@@ -159,7 +169,7 @@ Add the export to `src/components/index.ts`.
 - **Opponent carousel**: `src/containers/OpponentArea/OpponentArea.tsx` keeps opponents in a fixed-height horizontal rail on both desktop and mobile, centers one- and two-opponent tables without changing order, auto-centers the active seat, and uses subtle edge fades so the strip stays readable when many players join
 - **Static app icon**: `public/icon.svg` serves the browser icon directly so local navigation and multi-tab dev sessions do not depend on the app icon route
 - **Unified turn status**: `src/containers/GameBoard/GameBoard.tsx` keeps turn and response context in the top bar on both desktop and mobile, with only a compact mobile status pill plus a connection dot so more of the board stays playable on small screens
-- **Mode-based landing flow**: `src/app/page.tsx` separates Play with Friends and Play with AI, keeps create/join inside the friends branch, and lets mobile users choose between friends and AI after the play-first step
+- **Mode-based landing flow**: `src/app/page.tsx` separates Play with Friends and Play with AI, keeps create/join inside the friends branch, lets mobile users choose between friends and AI after the play-first step, and opens the shared pre-game config modal before an AI table starts
 - **Branding**: `src/app/page.tsx` renders a custom Coup logo and `public/icon.svg` provides the browser tab icon
 - **Target mode flow**: `src/containers/ActionPanel/ActionPanel.hooks.ts`, `ActionPanel.tsx`, and `src/containers/OpponentArea/OpponentArea.tsx` keep Coup, Assassinate, and Steal available, then highlight valid opponents on the board
 - **Press feedback**: `src/animations/variants.ts`, `src/app/globals.css`, `src/components/ActionButton/ActionButton.tsx`, `src/components/Card/Card.tsx`, and `src/containers/OpponentArea/OpponentArea.tsx` share a stronger hover/tap response, and the shared action buttons now include an inkwell-style ripple so taps read clearly on both mobile and desktop
@@ -175,22 +185,24 @@ Add the export to `src/components/index.ts`.
 - **Lobby continuity**: `src/services/lobbyService.ts` stores the per-lobby session token and a browser-stable player profile id in local storage, and `src/app/lobby/[id]/page.tsx` uses them to survive refreshes, reuse the same waiting-room seat, and keep room leaderboard identity stable across games
 - **Session-based rejoin**: `src/services/lobbyService.ts` now sends the saved lobby session token on join so refresh/rejoin continuity is tied to the lobby session rather than collapsing separate deliberate players that happen to share a profile id
 - **Room-only scores**: `src/queries/useLobbyQueries.ts` and `src/services/lobbyService.ts` fetch cross-game leaderboard data per room code, so lobby and in-game score views only show players who have played in that room
-- **Action audio**: `src/hooks/useGameAudio.ts` synthesizes very light, low-pass-filtered action-button cues with the Web Audio API, and `src/containers/GameBoard/GameBoard.tsx` exposes a persistent mute toggle alongside the utility buttons
+- **Action audio**: `src/hooks/useGameAudio.ts` synthesizes very light, low-pass-filtered action-button cues plus a soft turn chime with the Web Audio API, and `src/containers/GameBoard/GameBoard.tsx` exposes a persistent mute toggle alongside the utility buttons
+- **Pinned character reference**: `src/components/GuideModal/GuideModal.tsx` can pin a concise character-action panel into the desktop game board, where it can be dragged and dismissed without reopening the full rules modal
+- **AI replay flow**: `src/app/game/[id]/GamePageContent.tsx` reuses the same AI bot count, difficulty, and timer config when `Play Again` is pressed after a solo match
 - **In-game leaderboard tabs**: `src/containers/GameBoard/GameBoard.tsx` presents a full-screen modal with tabs for the live table and the room's cross-game scores
 - **Fullscreen overlays**: `src/containers/LobbyRoom/LobbyRoom.tsx`, `src/components/GuideModal/GuideModal.tsx`, and `src/components/GameOverModal/GameOverModal.tsx` render overlays through portals so they cover the full viewport instead of being clipped by the surrounding layout
 - **Replay flow**: `src/app/lobby/[id]/page.tsx` now carries `lobbyId` into the game route, and `src/app/game/[id]/GamePageContent.tsx` resets that lobby before sending `Play Again` back to the same room so the room can continue together
 
 ## Routes
 
-| Route | Page | Description |
-|---|---|---|
-| `/` | Home | Choose Play with Friends or Play with AI; create/join rooms or start an AI table |
-| `/lobby/[id]` | Lobby | Waiting room before game |
-| `/game/[id]` | Game | Live game board |
+| Route         | Page  | Description                                                                                    |
+| ------------- | ----- | ---------------------------------------------------------------------------------------------- |
+| `/`           | Home  | Choose Play with Friends or Play with AI; create/join rooms or configure and start an AI table |
+| `/lobby/[id]` | Lobby | Waiting room before game                                                                       |
+| `/game/[id]`  | Game  | Live game board                                                                                |
 
 ## Environment Variables
 
-| Variable | Default | Description |
-|---|---|---|
-| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | Backend REST API |
-| `NEXT_PUBLIC_WS_URL` | `ws://localhost:8000` | Backend WebSocket |
+| Variable              | Default                 | Description       |
+| --------------------- | ----------------------- | ----------------- |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | Backend REST API  |
+| `NEXT_PUBLIC_WS_URL`  | `ws://localhost:8000`   | Backend WebSocket |

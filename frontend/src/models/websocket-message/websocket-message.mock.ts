@@ -1,12 +1,12 @@
-import { ActionType } from '../action/action';
-import { Character } from '../card/card';
-import { mockGameStatePlaying, mockGameStatePrivate } from '../game/game.mock';
+import { ActionType } from "../action/action";
+import { Character } from "../card/card";
+import { mockGameStatePlaying, mockGameStatePrivate } from "../game/game.mock";
 import {
   ClientMessage,
   ClientMessageType,
   ServerMessage,
   ServerMessageType,
-} from './websocket-message';
+} from "./websocket-message";
 
 export const mockClientActionMessage: ClientMessage = {
   type: ClientMessageType.ACTION,
@@ -15,7 +15,7 @@ export const mockClientActionMessage: ClientMessage = {
 
 export const mockClientChallengeMessage: ClientMessage = {
   type: ClientMessageType.CHALLENGE,
-  payload: { targetPlayerId: 'player-1' },
+  payload: { targetPlayerId: "player-1" },
 };
 
 export const mockClientBlockMessage: ClientMessage = {
@@ -57,8 +57,8 @@ export const mockServerPrivateStateMessage: ServerMessage = {
 export const mockServerActionDeclaredMessage: ServerMessage = {
   type: ServerMessageType.ACTION_DECLARED,
   payload: {
-    actorId: 'player-1',
-    actorName: 'Alice',
+    actorId: "player-1",
+    actorName: "Alice",
     actionType: ActionType.TAX,
   },
   gameState: mockGameStatePlaying,
@@ -67,12 +67,12 @@ export const mockServerActionDeclaredMessage: ServerMessage = {
 
 export const mockServerErrorMessage: ServerMessage = {
   type: ServerMessageType.ERROR,
-  payload: { message: 'Not your turn' },
+  payload: { message: "Not your turn" },
   timestamp: now,
 };
 
 export const mockServerGameOverMessage: ServerMessage = {
   type: ServerMessageType.GAME_OVER,
-  payload: { winnerId: 'player-1', winnerName: 'Alice' },
+  payload: { winnerId: "player-1", winnerName: "Alice" },
   timestamp: now,
 };

@@ -1,1 +1,1 @@
-export type { Player, PlayerPublic } from './player';
+export type { Player, PlayerPublic } from "./player";

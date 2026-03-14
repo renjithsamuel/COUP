@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { timerStyles } from './Timer.styles';
+import React from "react";
+import { timerStyles } from "./Timer.styles";
 
 export interface TimerProps {
   remaining: number;
@@ -10,7 +10,11 @@ export interface TimerProps {
 
 export function Timer({ remaining, progress }: TimerProps) {
   return (
-    <div style={timerStyles.wrapper} role="timer" aria-label={`${remaining} seconds remaining`}>
+    <div
+      style={timerStyles.wrapper}
+      role="timer"
+      aria-label={`${remaining} seconds remaining`}
+    >
       <div style={timerStyles.bar}>
         <div style={timerStyles.fill(progress)} />
       </div>

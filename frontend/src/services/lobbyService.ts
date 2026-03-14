@@ -1,5 +1,15 @@
-import { api } from './api';
-import { AiMatchCreate, AiMatchResponse, GameConfig, LeaderboardEntry, Lobby, LobbyCreate, LobbyJoin, LobbyPlayer, LobbyResponse } from '@/models/lobby';
+import { api } from "./api";
+import {
+  AiMatchCreate,
+  AiMatchResponse,
+  GameConfig,
+  LeaderboardEntry,
+  Lobby,
+  LobbyCreate,
+  LobbyJoin,
+  LobbyPlayer,
+  LobbyResponse,
+} from "@/models/lobby";
 
 export interface StoredLobbySession {
   lobbyId: string;
@@ -11,11 +21,54 @@ export interface StoredPlayerIdentity {
   profileId: string;
 }
 
-const lobbySessionKey = (lobbyId: string) => `coup:lobby-session:${lobbyId.toUpperCase()}`;
-const playerIdentityKey = 'coup:player-identity';
+interface LobbyPlayerApi {
+  id: string;
+  name: string;
+  is_host: boolean;
+  is_ready: boolean;
+}
+
+interface LobbyApi {
+  id: string;
+  name?: string | null;
+  players: LobbyPlayerApi[];
+  max_players: number;
+  status: Lobby["status"];
+  game_id?: string | null;
+  player_count: number;
+  player_id?: string | null;
+  playerId?: string | null;
+  session_token?: string | null;
+  sessionToken?: string | null;
+}
+
+interface LeaderboardEntryApi {
+  player_name?: string;
+  playerName?: string;
+  player_key?: string;
+  playerKey?: string;
+  wins?: number;
+  games_played?: number;
+  gamesPlayed?: number;
+  win_rate?: number;
+  winRate?: number;
+  score?: number;
+}
+
+interface AiMatchResponseApi {
+  ok?: boolean;
+  game_id?: string;
+  gameId?: string;
+  player_id?: string;
+  playerId?: string;
+}
+
+const lobbySessionKey = (lobbyId: string) =>
+  `coup:lobby-session:${lobbyId.toUpperCase()}`;
+const playerIdentityKey = "coup:player-identity";
 
 const createProfileId = () => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
   }
 
@@ -24,8 +77,8 @@ const createProfileId = () => {
 
 export const playerIdentityStore = {
   getOrCreate(): StoredPlayerIdentity {
-    if (typeof window === 'undefined') {
-      return { profileId: 'server-profile' };
+    if (typeof window === "undefined") {
+      return { profileId: "server-profile" };
     }
 
     const existing = window.localStorage.getItem(playerIdentityKey);
@@ -37,7 +90,9 @@ export const playerIdentityStore = {
       }
     }
 
-    const created = { profileId: createProfileId() } satisfies StoredPlayerIdentity;
+    const created = {
+      profileId: createProfileId(),
+    } satisfies StoredPlayerIdentity;
     window.localStorage.setItem(playerIdentityKey, JSON.stringify(created));
     return created;
   },
@@ -45,7 +100,7 @@ export const playerIdentityStore = {
 
 export const lobbySessionStore = {
   read(lobbyId: string): StoredLobbySession | null {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return null;
     }
 
@@ -63,19 +118,22 @@ export const lobbySessionStore = {
   },
 
   save(lobbyId: string, playerId: string, sessionToken: string) {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
 
-    window.localStorage.setItem(lobbySessionKey(lobbyId), JSON.stringify({
-      lobbyId: lobbyId.toUpperCase(),
-      playerId,
-      sessionToken,
-    } satisfies StoredLobbySession));
+    window.localStorage.setItem(
+      lobbySessionKey(lobbyId),
+      JSON.stringify({
+        lobbyId: lobbyId.toUpperCase(),
+        playerId,
+        sessionToken,
+      } satisfies StoredLobbySession),
+    );
   },
 
   clear(lobbyId: string) {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
 
@@ -83,8 +141,7 @@ export const lobbySessionStore = {
   },
 };
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-function toLobbyPlayer(raw: any): LobbyPlayer {
+function toLobbyPlayer(raw: LobbyPlayerApi): LobbyPlayer {
   return {
     id: raw.id,
     name: raw.name,
@@ -93,10 +150,10 @@ function toLobbyPlayer(raw: any): LobbyPlayer {
   };
 }
 
-function toLobby(raw: any): Lobby {
+function toLobby(raw: LobbyApi): Lobby {
   return {
     id: raw.id,
-    name: raw.name ?? '',
+    name: raw.name ?? "",
     players: raw.players.map(toLobbyPlayer),
     maxPlayers: raw.max_players,
     status: raw.status,
@@ -105,7 +162,10 @@ function toLobby(raw: any): Lobby {
   };
 }
 
-function toLobbyResponse(raw: any, fallbackPlayerId: string | null = null): LobbyResponse {
+function toLobbyResponse(
+  raw: LobbyApi,
+  fallbackPlayerId: string | null = null,
+): LobbyResponse {
   return {
     lobby: toLobby(raw),
     playerId: raw.player_id ?? raw.playerId ?? fallbackPlayerId,
@@ -113,23 +173,23 @@ function toLobbyResponse(raw: any, fallbackPlayerId: string | null = null): Lobb
   };
 }
 
-function toCreateResponse(raw: any): LobbyResponse {
+function toCreateResponse(raw: LobbyApi): LobbyResponse {
   const lobby = toLobby(raw);
   const host = lobby.players.find((p) => p.isHost);
   return toLobbyResponse(raw, host?.id ?? lobby.players[0]?.id ?? null);
 }
 
-function toJoinResponse(raw: any): LobbyResponse {
+function toJoinResponse(raw: LobbyApi): LobbyResponse {
   const lobby = toLobby(raw);
   // The newly joined player is the last one in the list
   const playerId = lobby.players[lobby.players.length - 1]?.id ?? null;
   return toLobbyResponse(raw, playerId);
 }
 
-function toLeaderboardEntry(raw: any): LeaderboardEntry {
+function toLeaderboardEntry(raw: LeaderboardEntryApi): LeaderboardEntry {
   return {
-    playerName: raw.player_name ?? raw.playerName ?? '',
-    playerKey: raw.player_key ?? raw.playerKey ?? '',
+    playerName: raw.player_name ?? raw.playerName ?? "",
+    playerKey: raw.player_key ?? raw.playerKey ?? "",
     wins: raw.wins ?? 0,
     gamesPlayed: raw.games_played ?? raw.gamesPlayed ?? 0,
     winRate: raw.win_rate ?? raw.winRate ?? 0,
@@ -137,74 +197,116 @@ function toLeaderboardEntry(raw: any): LeaderboardEntry {
   };
 }
 
-function toAiMatchResponse(raw: any): AiMatchResponse {
+function toAiMatchResponse(raw: AiMatchResponseApi): AiMatchResponse {
   return {
     ok: raw.ok ?? true,
-    gameId: raw.game_id ?? raw.gameId ?? '',
-    playerId: raw.player_id ?? raw.playerId ?? '',
+    gameId: raw.game_id ?? raw.gameId ?? "",
+    playerId: raw.player_id ?? raw.playerId ?? "",
   };
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
-
 export const lobbyService = {
-  list: () => api.get<any[]>('/api/lobbies').then((arr) => arr.map(toLobby)),
+  list: () =>
+    api.get<LobbyApi[]>("/api/lobbies").then((arr) => arr.map(toLobby)),
 
   get: (lobbyId: string, sessionToken?: string | null) =>
-    api.get<any>(`/api/lobbies/${lobbyId}${sessionToken ? `?session_token=${encodeURIComponent(sessionToken)}` : ''}`)
+    api
+      .get<LobbyApi>(
+        `/api/lobbies/${lobbyId}${sessionToken ? `?session_token=${encodeURIComponent(sessionToken)}` : ""}`,
+      )
       .then((raw) => toLobbyResponse(raw)),
 
   create: (data: LobbyCreate) =>
-    api.post<any>('/api/lobbies', {
-      host_name: data.playerName,
-      name: data.name,
-      max_players: data.maxPlayers,
-      profile_id: playerIdentityStore.getOrCreate().profileId,
-    }).then(toCreateResponse),
+    api
+      .post<LobbyApi>("/api/lobbies", {
+        host_name: data.playerName,
+        name: data.name,
+        max_players: data.maxPlayers,
+        profile_id: playerIdentityStore.getOrCreate().profileId,
+      })
+      .then(toCreateResponse),
 
   createAiMatch: (data: AiMatchCreate) =>
-    api.post<any>('/api/games/ai-match', {
-      player_name: data.playerName,
-      bot_count: data.botCount,
-      difficulty: data.difficulty,
-      profile_id: playerIdentityStore.getOrCreate().profileId,
-    }).then(toAiMatchResponse),
+    api
+      .post<AiMatchResponseApi>("/api/games/ai-match", {
+        player_name: data.playerName,
+        bot_count: data.botCount,
+        difficulty: data.difficulty,
+        profile_id: playerIdentityStore.getOrCreate().profileId,
+        ...(data.config
+          ? {
+              config: {
+                turn_timer_seconds: data.config.turnTimerSeconds,
+                challenge_window_seconds: data.config.challengeWindowSeconds,
+                block_window_seconds: data.config.blockWindowSeconds,
+                starting_coins: data.config.startingCoins,
+              },
+            }
+          : {}),
+      })
+      .then(toAiMatchResponse),
 
   join: (lobbyId: string, data: LobbyJoin) =>
-    api.post<any>(`/api/lobbies/${lobbyId}/join`, {
-      player_name: data.playerName,
-      profile_id: playerIdentityStore.getOrCreate().profileId,
-      session_token: data.sessionToken ?? lobbySessionStore.read(lobbyId)?.sessionToken ?? '',
-    }).then(toJoinResponse),
+    api
+      .post<LobbyApi>(`/api/lobbies/${lobbyId}/join`, {
+        player_name: data.playerName,
+        profile_id: playerIdentityStore.getOrCreate().profileId,
+        session_token:
+          data.sessionToken ??
+          lobbySessionStore.read(lobbyId)?.sessionToken ??
+          "",
+      })
+      .then(toJoinResponse),
 
-  leave: (lobbyId: string, options: { playerId?: string | null; sessionToken?: string | null }) => {
+  leave: (
+    lobbyId: string,
+    options: { playerId?: string | null; sessionToken?: string | null },
+  ) => {
     const params = new URLSearchParams();
     if (options.playerId) {
-      params.set('player_id', options.playerId);
+      params.set("player_id", options.playerId);
     }
     if (options.sessionToken) {
-      params.set('session_token', options.sessionToken);
+      params.set("session_token", options.sessionToken);
     }
     return api.post<void>(`/api/lobbies/${lobbyId}/leave?${params.toString()}`);
   },
 
-  kick: (lobbyId: string, options: { targetPlayerId: string; actorPlayerId?: string | null; sessionToken?: string | null }) =>
-    api.post<any>(`/api/lobbies/${lobbyId}/kick`, {
-      target_player_id: options.targetPlayerId,
-      actor_player_id: options.actorPlayerId ?? '',
-      session_token: options.sessionToken ?? '',
-    }).then(toLobbyResponse),
+  kick: (
+    lobbyId: string,
+    options: {
+      targetPlayerId: string;
+      actorPlayerId?: string | null;
+      sessionToken?: string | null;
+    },
+  ) =>
+    api
+      .post<LobbyApi>(`/api/lobbies/${lobbyId}/kick`, {
+        target_player_id: options.targetPlayerId,
+        actor_player_id: options.actorPlayerId ?? "",
+        session_token: options.sessionToken ?? "",
+      })
+      .then(toLobbyResponse),
 
   reset: (lobbyId: string) =>
-    api.post<any>(`/api/lobbies/${lobbyId}/reset`).then(toLobby),
+    api.post<LobbyApi>(`/api/lobbies/${lobbyId}/reset`).then(toLobby),
 
   start: (lobbyId: string, config?: GameConfig) =>
-    api.post<{ game_id: string }>(`/api/lobbies/${lobbyId}/start`, config ? {
-      turn_timer_seconds: config.turnTimerSeconds,
-      challenge_window_seconds: config.challengeWindowSeconds,
-      block_window_seconds: config.blockWindowSeconds,
-      starting_coins: config.startingCoins,
-    } : undefined),
+    api.post<{ game_id: string }>(
+      `/api/lobbies/${lobbyId}/start`,
+      config
+        ? {
+            turn_timer_seconds: config.turnTimerSeconds,
+            challenge_window_seconds: config.challengeWindowSeconds,
+            block_window_seconds: config.blockWindowSeconds,
+            starting_coins: config.startingCoins,
+          }
+        : undefined,
+    ),
 
   leaderboard: (lobbyId: string, limit = 6) =>
-    api.get<any[]>(`/api/lobbies/${lobbyId}/leaderboard?limit=${limit}`).then((rows) => rows.map(toLeaderboardEntry)),
+    api
+      .get<
+        LeaderboardEntryApi[]
+      >(`/api/lobbies/${lobbyId}/leaderboard?limit=${limit}`)
+      .then((rows) => rows.map(toLeaderboardEntry)),
 };
