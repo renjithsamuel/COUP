@@ -680,7 +680,7 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit, roomLeaderboa
                 </div>
 
                 {dashboardTab === 'table' ? (
-                  <GameDashboard gameState={gameState} myPlayerId={playerId} />
+                  <GameDashboard gameState={gameState} myPlayerId={playerId} isMobile={isMobile} />
                 ) : roomLeaderboardRows.length > 0 ? (
                   <div style={s.roomScoreList}>
                     {roomLeaderboardRows.map((entry) => (
