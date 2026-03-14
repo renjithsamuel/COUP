@@ -25,10 +25,11 @@ export function useLobby(lobbyId: string, sessionToken?: string | null) {
   });
 }
 
-export function useLobbyLeaderboard(limit = 6) {
+export function useLobbyLeaderboard(lobbyId: string, limit = 6) {
   return useQuery({
-    queryKey: [...lobbyKeys.all, 'leaderboard', limit],
-    queryFn: () => lobbyService.leaderboard(limit),
+    queryKey: [...lobbyKeys.detail(lobbyId), 'leaderboard', limit],
+    queryFn: () => lobbyService.leaderboard(lobbyId, limit),
+    enabled: !!lobbyId,
     refetchInterval: 15000,
   });
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Character, CHARACTER_LABELS, CHARACTER_ABILITIES, CHARACTER_COLORS } from '@/models/card';
 import { guideModalStyles as s } from './GuideModal.styles';
@@ -28,7 +29,11 @@ const CHAR_TEXT_COLORS: Record<Character, string> = {
 };
 
 export function GuideModal({ isOpen, onClose }: GuideModalProps) {
-  return (
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -46,12 +51,17 @@ export function GuideModal({ isOpen, onClose }: GuideModalProps) {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={s.header}>
-              <span style={s.title}>How to Play Coup</span>
+              <div style={s.headerCopy}>
+                <span style={s.eyebrow}>Guide</span>
+                <span style={s.title}>How to Play Coup</span>
+                <span style={s.subtitle}>A clean summary of goals, actions, and responses at the table.</span>
+              </div>
               <button style={s.closeBtn} onClick={onClose} aria-label="Close">
                 ✕
               </button>
             </div>
 
+            <div style={s.sectionGrid}>
             <div style={s.section}>
               <div style={s.sectionTitle}>Goal</div>
               <p style={s.text}>
@@ -67,6 +77,7 @@ export function GuideModal({ isOpen, onClose }: GuideModalProps) {
                 <span style={{ color: '#4FC3F7', fontWeight: 700 }}>Foreign Aid</span> — Take 2 coins. Can be blocked by <span style={{ color: CHAR_TEXT_COLORS[Character.DUKE], fontWeight: 700 }}>Duke</span>.<br />
                 <span style={{ color: '#EF5350', fontWeight: 700 }}>Coup</span> — Pay 7 coins. Target loses an influence. Mandatory at 10+ coins.
               </p>
+            </div>
             </div>
 
             <div style={s.section}>
@@ -100,5 +111,6 @@ export function GuideModal({ isOpen, onClose }: GuideModalProps) {
         </motion.div>
       )}
     </AnimatePresence>
+    , document.body
   );
 }

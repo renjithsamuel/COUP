@@ -29,6 +29,9 @@ class GameService:
         self._engine = engine
         self._repo = game_repo
 
+    async def close(self) -> None:
+        await self._repo.close()
+
     async def create_game_from_lobby(
         self, lobby: Lobby, lobby_config: LobbyGameConfig | None = None,
     ) -> GameState:
@@ -43,6 +46,7 @@ class GameService:
             starting_coins=lc.starting_coins,
         )
         state = self._engine.create_game(game_id, config)
+        state.room_id = lobby.id
 
         # Add all lobby players (preserve their IDs)
         for lp in lobby.players:
@@ -278,8 +282,8 @@ class GameService:
         self._sync_phase_clock(state)
         return self._engine.to_public_state(state, player_id)
 
-    async def get_leaderboard(self, limit: int = 10) -> list[LeaderboardEntry]:
-        rows = await self._repo.get_leaderboard(limit=limit)
+    async def get_leaderboard(self, room_id: str, limit: int = 10) -> list[LeaderboardEntry]:
+        rows = await self._repo.get_leaderboard(room_id=room_id, limit=limit)
         return [LeaderboardEntry.model_validate(row) for row in rows]
 
     async def cleanup_finished_games(self, retention_minutes: int) -> int:

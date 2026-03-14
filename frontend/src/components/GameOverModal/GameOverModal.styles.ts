@@ -5,25 +5,30 @@ export const gameOverModalStyles = {
   overlay: {
     position: 'fixed',
     inset: 0,
-    background: 'radial-gradient(circle at 50% 30%, rgba(246,196,69,0.12) 0%, rgba(0,0,0,0.84) 42%, rgba(0,0,0,0.92) 100%)',
+    background: 'radial-gradient(circle at 50% 20%, rgba(246,196,69,0.12) 0%, rgba(5,10,20,0.82) 42%, rgba(2,6,14,0.94) 100%)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: tokens.zIndex.modal,
-    backdropFilter: 'blur(10px)',
+    backdropFilter: 'blur(12px)',
+    padding: `${tokens.spacing.lg}px`,
   } satisfies CSSProperties,
 
   modal: {
-    background: 'linear-gradient(160deg, rgba(24, 38, 67, 0.98) 0%, rgba(14, 23, 40, 0.99) 52%, rgba(7, 12, 22, 1) 100%)',
+    background: 'linear-gradient(160deg, rgba(19, 31, 54, 0.98) 0%, rgba(12, 20, 37, 0.99) 48%, rgba(6, 11, 22, 1) 100%)',
     borderRadius: 28,
-    padding: `${tokens.spacing.xl}px ${tokens.spacing.xl}px ${tokens.spacing.lg + 4}px`,
+    padding: `${tokens.spacing.xl}px ${tokens.spacing.xl}px ${tokens.spacing.lg + 6}px`,
     textAlign: 'center',
-    boxShadow: '0 0 0 1px rgba(255,193,7,0.18), 0 30px 80px rgba(0,0,0,0.68), 0 0 64px rgba(255,193,7,0.16)',
-    border: '1px solid rgba(255,193,7,0.28)',
-    maxWidth: 520,
-    width: 'min(92vw, 520px)',
+    boxShadow: '0 0 0 1px rgba(255,193,7,0.18), 0 30px 80px rgba(0,0,0,0.62), 0 0 64px rgba(255,193,7,0.12)',
+    border: '1px solid rgba(255,193,7,0.22)',
+    maxWidth: 640,
+    width: 'min(94vw, 640px)',
     position: 'relative',
     overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: tokens.spacing.md,
   } satisfies CSSProperties,
 
   aura: {
@@ -52,10 +57,17 @@ export const gameOverModalStyles = {
     marginBottom: tokens.spacing.md,
   } satisfies CSSProperties,
 
+  headerCopy: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 8,
+    maxWidth: 420,
+  } satisfies CSSProperties,
+
   markWrap: {
     display: 'flex',
     justifyContent: 'center',
-    marginBottom: tokens.spacing.md,
     filter: 'drop-shadow(0 18px 36px rgba(246,196,69,0.18))',
   } satisfies CSSProperties,
 
@@ -68,7 +80,6 @@ export const gameOverModalStyles = {
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
     backgroundClip: 'text',
-    marginBottom: 8,
     letterSpacing: 2.4,
     textTransform: 'uppercase',
   }),
@@ -77,7 +88,6 @@ export const gameOverModalStyles = {
     fontSize: 34,
     fontWeight: 900,
     color: tokens.text.primary,
-    marginBottom: 10,
     letterSpacing: 0.2,
   } satisfies CSSProperties,
 
@@ -86,8 +96,8 @@ export const gameOverModalStyles = {
     fontWeight: 600,
     color: tokens.text.secondary,
     lineHeight: 1.6,
-    margin: `0 auto ${tokens.spacing.lg}px`,
-    maxWidth: 340,
+    margin: '0 auto',
+    maxWidth: 420,
   } satisfies CSSProperties,
 
   buttonRow: {

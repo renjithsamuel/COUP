@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Timer } from '@/components/Timer';
@@ -14,7 +15,9 @@ import { GameLog } from '@/containers/GameLog';
 import { GameDashboard } from '@/containers/GameDashboard';
 import { GuideModal } from '@/components/GuideModal';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { useGameAudio } from '@/hooks/useGameAudio';
 import { ACTION_RULES } from '@/models/action';
+import { LeaderboardEntry } from '@/models/lobby';
 import { useActionPanel } from '@/containers/ActionPanel/ActionPanel.hooks';
 import { gameBoardStyles } from './GameBoard.styles';
 import { useGameBoard } from './GameBoard.hooks';
@@ -45,6 +48,31 @@ const HelpIcon = () => (
   </svg>
 );
 
+const AudioIcon = ({ muted }: { muted: boolean }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+    {muted ? (
+      <>
+        <line x1="23" y1="9" x2="17" y2="15" />
+        <line x1="17" y1="9" x2="23" y2="15" />
+      </>
+    ) : (
+      <>
+        <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+        <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+      </>
+    )}
+  </svg>
+);
+
+const ExitIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    <polyline points="16 17 21 12 16 7" />
+    <line x1="21" y1="12" x2="9" y2="12" />
+  </svg>
+);
+
 const CoinIcon = ({ size = 16 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <circle cx="12" cy="12" r="10" fill="#FFC107" opacity="0.2" stroke="#FFC107" strokeWidth="2" />
@@ -57,6 +85,7 @@ export interface GameBoardProps {
   playerId: string;
   onPlayAgain: () => void;
   onExit?: () => void;
+  roomLeaderboard?: LeaderboardEntry[];
 }
 
 const CONFETTI_COLORS = ['#F6C445', '#7DD3FC', '#34D399', '#FB7185', '#C084FC', '#F97316'];
@@ -69,7 +98,7 @@ const CONFETTI_PIECES = Array.from({ length: 44 }, (_, index) => ({
   color: CONFETTI_COLORS[index % CONFETTI_COLORS.length],
 }));
 
-export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardProps) {
+export function GameBoard({ gameId, playerId, onPlayAgain, onExit, roomLeaderboard = [] }: GameBoardProps) {
   const router = useRouter();
   const {
     status,
@@ -89,11 +118,14 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
   const [showGuide, setShowGuide] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [dashboardTab, setDashboardTab] = useState<'table' | 'room'>('table');
   const [actionHint, setActionHint] = useState<string | null>(null);
   const [timelinePreferenceTouched, setTimelinePreferenceTouched] = useState(false);
   const isMobile = useIsMobile();
   const s = gameBoardStyles(isMobile);
   const actionPanel = useActionPanel(send);
+  const { isMuted, playActionSound, toggleMute } = useGameAudio();
 
   useEffect(() => {
     if (timelinePreferenceTouched) {
@@ -133,6 +165,19 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
   }
 
   const myPlayer = gameState.players.find((p) => p.id === playerId);
+  const duplicateRoomNames = roomLeaderboard.reduce<Record<string, number>>((counts, entry) => {
+    counts[entry.playerName] = (counts[entry.playerName] ?? 0) + 1;
+    return counts;
+  }, {});
+  const roomLeaderboardRows = roomLeaderboard.map((entry, index) => ({
+    ...entry,
+    rank: index + 1,
+    participationCount: Math.max(entry.gamesPlayed - entry.wins, 0),
+    displayName:
+      (duplicateRoomNames[entry.playerName] ?? 0) > 1
+        ? `${entry.playerName} #${entry.playerKey.slice(-4).toUpperCase()}`
+        : entry.playerName,
+  }));
   const selectedTargetAction = actionPanel.selectedAction ? ACTION_RULES[actionPanel.selectedAction] : null;
   const commandTone = selectedTargetAction ? 'info' : (responseStatus?.tone ?? (isMyTurn ? 'warn' : 'info'));
   const compactCommandTitle = selectedTargetAction
@@ -215,6 +260,14 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
       >
         <HelpIcon />
       </button>
+      <button
+        style={s.utilBtn}
+        onClick={toggleMute}
+        title={isMuted ? 'Unmute game sounds' : 'Mute game sounds'}
+        aria-label={isMuted ? 'Unmute game sounds' : 'Mute game sounds'}
+      >
+        <AudioIcon muted={isMuted} />
+      </button>
     </>
   );
 
@@ -246,6 +299,15 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
       </div>
     </motion.aside>
   );
+
+  const handleExitConfirmed = () => {
+    setShowExitConfirm(false);
+    if (onExit) {
+      onExit();
+      return;
+    }
+    router.push('/');
+  };
 
   return (
     <div style={s.wrapper}>
@@ -287,17 +349,12 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
           {!isMobile && renderUtilityButtons()}
           <button
             style={s.exitBtn}
-            onClick={() => {
-              if (onExit) {
-                onExit();
-                return;
-              }
-              router.push('/');
-            }}
+            onClick={() => setShowExitConfirm(true)}
             title="Exit game"
             aria-label="Exit game"
           >
-            Exit
+            <ExitIcon />
+            <span>Exit</span>
           </button>
         </div>
       </div>
@@ -340,7 +397,12 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
                 </div>
                 <PlayerHand send={send} isMobile={isMobile} activeCardEffect={activeCardEffect} />
               </div>
-              <ActionPanel {...actionPanel} isMobile={isMobile} onInactiveActionAttempt={handleInactiveActionAttempt} />
+              <ActionPanel
+                {...actionPanel}
+                isMobile={isMobile}
+                onInactiveActionAttempt={handleInactiveActionAttempt}
+                onActionPress={playActionSound}
+              />
             </div>
           </div>
 
@@ -540,32 +602,113 @@ export function GameBoard({ gameId, playerId, onPlayAgain, onExit }: GameBoardPr
       {/* Guide modal */}
       <GuideModal isOpen={showGuide} onClose={() => setShowGuide(false)} />
 
-      {/* Leaderboard modal */}
-      <AnimatePresence>
-        {showDashboard && gameState && (
-          <motion.div
-            style={s.modalOverlay}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowDashboard(false)}
-          >
+      {/* Exit confirmation */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showExitConfirm && (
             <motion.div
-              style={s.modalContent}
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
+              style={s.modalOverlay}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowExitConfirm(false)}
             >
-              <div style={s.modalHeader}>
-                <span style={s.modalTitle}>Leaderboard</span>
-                <button style={s.modalCloseBtn} onClick={() => setShowDashboard(false)} aria-label="Close">✕</button>
-              </div>
-              <GameDashboard gameState={gameState} myPlayerId={playerId} />
+              <motion.div
+                style={s.confirmModalContent}
+                initial={{ scale: 0.96, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.96, opacity: 0 }}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div style={s.modalHeader}>
+                  <div style={s.modalHeaderCopy}>
+                    <span style={s.modalEyebrow}>Exit game</span>
+                    <span style={s.modalTitle}>Leave this match?</span>
+                    <span style={s.modalSubtitle}>You will leave the table and return to the home screen. The match will continue for anyone still connected.</span>
+                  </div>
+                  <button style={s.modalCloseBtn} onClick={() => setShowExitConfirm(false)} aria-label="Close">✕</button>
+                </div>
+                <div style={s.confirmModalActions}>
+                  <button style={s.confirmModalCancelBtn} onClick={() => setShowExitConfirm(false)}>
+                    Stay
+                  </button>
+                  <button style={s.confirmModalDangerBtn} onClick={handleExitConfirmed}>
+                    Exit game
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
+
+      {/* Leaderboard modal */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showDashboard && gameState && (
+            <motion.div
+              style={s.modalOverlay}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDashboard(false)}
+            >
+              <motion.div
+                style={s.modalContent}
+                initial={{ scale: 0.94, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.94, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={s.modalHeader}>
+                  <div style={s.modalHeaderCopy}>
+                    <span style={s.modalEyebrow}>Leaderboard</span>
+                    <span style={s.modalTitle}>Standings</span>
+                    <span style={s.modalSubtitle}>Switch between the live table and this room&apos;s cross-game scores.</span>
+                  </div>
+                  <button style={s.modalCloseBtn} onClick={() => setShowDashboard(false)} aria-label="Close">✕</button>
+                </div>
+
+                <div style={s.modalTabs}>
+                  <button style={s.modalTab(dashboardTab === 'table')} onClick={() => setDashboardTab('table')}>
+                    Current table
+                  </button>
+                  <button style={s.modalTab(dashboardTab === 'room')} onClick={() => setDashboardTab('room')}>
+                    Room scores
+                  </button>
+                </div>
+
+                {dashboardTab === 'table' ? (
+                  <GameDashboard gameState={gameState} myPlayerId={playerId} />
+                ) : roomLeaderboardRows.length > 0 ? (
+                  <div style={s.roomScoreList}>
+                    {roomLeaderboardRows.map((entry) => (
+                      <div key={`${entry.playerKey}-${entry.rank}`} style={s.roomScoreRow}>
+                        <div style={s.roomScoreMeta}>
+                          <span style={s.rankBadge}>{entry.rank}</span>
+                          <div style={s.roomScoreCopy}>
+                            <span style={s.roomScoreName}>{entry.displayName}</span>
+                            <span style={s.roomScoreSubline}>
+                              {entry.wins} wins + {entry.participationCount} participation · {entry.gamesPlayed} games · {(entry.winRate * 100).toFixed(0)}% win rate
+                            </span>
+                          </div>
+                        </div>
+                        <span style={s.roomScoreBadge}>{entry.score} pts</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={s.roomScoreEmpty}>
+                    No completed games for this room yet. Finish the first round and room-only cross-game scores will appear here.
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
 
       <AnimatePresence>
         {isMobile && showTimeline && (

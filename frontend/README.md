@@ -37,7 +37,7 @@ src/
 │   ├── ActionButton/       # Compact action button with shared action icons, cleaner labels, and minimal metadata
 │   ├── ActionGlyph/        # Shared action and timeline glyphs
 │   ├── Timer/              # Countdown progress bar
-│   ├── GameOverModal/      # Premium end-of-round modal with winner/loser messaging, replay, and exit actions
+│   ├── GameOverModal/      # Full-screen portal end-of-round modal with winner/loser messaging, replay, and exit actions
 │   ├── GuideModal/         # Game rules/help modal
 │   ├── CoupBackgroundSVG/  # Subtle abstract ambient background motif
 │   ├── PreGameConfig/      # Pre-game configuration with timer controls + Peaceful Mode toggle
@@ -48,13 +48,14 @@ src/
 │   ├── ActionPanel/        # Compact action ribbon with dense 3-column mobile layout, slimmer mobile standby strip, and minimal off-turn chrome
 │   ├── OpponentArea/       # Responsive opponent carousel with centered small-table seats, fixed-width cards, and subtle edge fades
 │   ├── ChallengeBlockOverlay/ # Direct-response dock for challenge/block/allow decisions
-│   ├── GameDashboard/      # Game statistics dashboard (standings, revealed cards)
+│   ├── GameDashboard/      # Compact live-table standings view used inside the in-game leaderboard modal
 │   ├── GameLog/            # Real-time editorial timeline feed with numbered event rows, action highlights, and newest-first ordering
-│   └── LobbyRoom/         # Lobby waiting room with a button-triggered leaderboard modal, score-based standings, and refresh-safe presence handling
+│   └── LobbyRoom/         # Lobby waiting room with a full-screen room leaderboard modal, score-based standings, and refresh-safe presence handling
 ├── context/                # React Context + Reducer
 │   ├── GameContext/        # Game state management
 │   └── LobbyContext/       # Lobby state management
 ├── hooks/                  # Global hooks
+│   ├── useGameAudio.ts     # Mild action-button audio + persistent mute preference
 │   ├── useWebSocket.ts     # WebSocket connection + reconnect
 │   ├── useCountdown.ts     # Countdown timer
 │   └── useAnimationQueue.ts # Sequential animation queue
@@ -165,10 +166,17 @@ Add the export to `src/components/index.ts`.
 - **Response clarity**: `src/containers/ChallengeBlockOverlay/ChallengeBlockOverlay.tsx` renders the bottom decision dock only for the player who can currently respond
 - **Server-authoritative timers**: `src/containers/GameBoard/GameBoard.hooks.ts` reads `phaseStartedAt` and `phaseDeadlineAt` from `GAME_STATE`, so countdowns stay aligned across reconnects and timeout consequences no longer depend on a single client tab
 - **Timeline narration**: `src/containers/GameBoard/GameBoard.hooks.ts` records richer action, challenge, block, reveal, elimination, and turn messages for the timeline feed
-- **Mobile utility dock**: `src/containers/GameBoard/GameBoard.tsx` keeps leaderboard, timeline, and rules controls in a compact bottom dock on mobile while leaving turn status and Exit in the top bar
+- **Mobile utility dock**: `src/containers/GameBoard/GameBoard.tsx` keeps leaderboard, timeline, rules, and mute controls in a compact bottom dock on mobile while leaving turn status and Exit in the top bar
 - **Ambient background motif**: `src/components/CoupBackgroundSVG/CoupBackgroundSVG.tsx` provides subtle abstract Coup symbolism, used as full-page ambient art in lobby and as low-opacity atmosphere in-game
 - **Exit controls**: `src/containers/LobbyRoom/LobbyRoom.tsx` exposes room leave action and `src/containers/GameBoard/GameBoard.tsx` includes an explicit top-bar Exit button
-- **Lobby continuity**: `src/services/lobbyService.ts` stores the per-lobby session token and a browser-stable player profile id in local storage, and `src/app/lobby/[id]/page.tsx` uses them to survive refreshes, reuse the same waiting-room seat, and keep leaderboard identity stable across games
+- **Lobby moderation**: `src/containers/LobbyRoom/LobbyRoom.tsx` lets any waiting-room player remove another player, but leave-room and kick actions now require a confirmation modal before the backend executes them
+- **Lobby layout**: `src/containers/LobbyRoom/LobbyRoom.tsx` keeps the hero and stat cards in the same desktop arrangement even when only one player is present, and hides the redundant host stat card on mobile for a cleaner top row
+- **Lobby continuity**: `src/services/lobbyService.ts` stores the per-lobby session token and a browser-stable player profile id in local storage, and `src/app/lobby/[id]/page.tsx` uses them to survive refreshes, reuse the same waiting-room seat, and keep room leaderboard identity stable across games
+- **Session-based rejoin**: `src/services/lobbyService.ts` now sends the saved lobby session token on join so refresh/rejoin continuity is tied to the lobby session rather than collapsing separate deliberate players that happen to share a profile id
+- **Room-only scores**: `src/queries/useLobbyQueries.ts` and `src/services/lobbyService.ts` fetch cross-game leaderboard data per room code, so lobby and in-game score views only show players who have played in that room
+- **Action audio**: `src/hooks/useGameAudio.ts` synthesizes very light, low-pass-filtered action-button cues with the Web Audio API, and `src/containers/GameBoard/GameBoard.tsx` exposes a persistent mute toggle alongside the utility buttons
+- **In-game leaderboard tabs**: `src/containers/GameBoard/GameBoard.tsx` presents a full-screen modal with tabs for the live table and the room's cross-game scores
+- **Fullscreen overlays**: `src/containers/LobbyRoom/LobbyRoom.tsx`, `src/components/GuideModal/GuideModal.tsx`, and `src/components/GameOverModal/GameOverModal.tsx` render overlays through portals so they cover the full viewport instead of being clipped by the surrounding layout
 - **Replay flow**: `src/app/lobby/[id]/page.tsx` now carries `lobbyId` into the game route, and `src/app/game/[id]/GamePageContent.tsx` resets that lobby before sending `Play Again` back to the same room so the room can continue together
 
 ## Routes

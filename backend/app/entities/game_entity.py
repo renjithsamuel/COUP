@@ -11,6 +11,7 @@ class GameEntity(Base):
     __tablename__ = "games"
 
     id = Column(String, primary_key=True)
+    room_id = Column(String, nullable=True, index=True)
     status = Column(String, nullable=False, default="waiting")
     config = Column(Text, nullable=False, default="{}")
     deck = Column(Text, nullable=False, default="[]")

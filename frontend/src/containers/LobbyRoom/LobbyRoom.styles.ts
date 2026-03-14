@@ -41,10 +41,9 @@ export const lobbyRoomStyles = {
   } satisfies CSSProperties,
 
   hero: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    display: 'flex',
+    flexDirection: 'column',
     gap: 14,
-    alignItems: 'stretch',
   } satisfies CSSProperties,
 
   heroCard: {
@@ -117,7 +116,7 @@ export const lobbyRoomStyles = {
 
   statsRow: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
     gap: 10,
   } satisfies CSSProperties,
 
@@ -163,6 +162,39 @@ export const lobbyRoomStyles = {
     fontSize: 18,
     fontWeight: 800,
     color: tokens.text.primary,
+  } satisfies CSSProperties,
+
+  modalRoomMeta: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  } satisfies CSSProperties,
+
+  modalRoomName: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '5px 10px',
+    borderRadius: 999,
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    color: tokens.text.primary,
+    fontSize: 12,
+    fontWeight: 700,
+  } satisfies CSSProperties,
+
+  modalRoomCode: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '5px 10px',
+    borderRadius: 999,
+    background: 'rgba(255,193,7,0.1)',
+    border: '1px solid rgba(255,193,7,0.18)',
+    color: tokens.text.accent,
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: 1.1,
+    fontFamily: 'monospace',
   } satisfies CSSProperties,
 
   leaderboardList: {
@@ -300,6 +332,31 @@ export const lobbyRoomStyles = {
     border: '1px solid rgba(255,193,7,0.2)',
   } satisfies CSSProperties,
 
+  playerActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
+  } satisfies CSSProperties,
+
+  kickButton: {
+    minWidth: 88,
+    padding: '8px 12px',
+    borderRadius: 999,
+    border: '1px solid rgba(239,83,80,0.26)',
+    background: 'rgba(239,83,80,0.1)',
+    color: '#FEB2B2',
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  } satisfies CSSProperties,
+
   startButton: {
     padding: `${tokens.spacing.md}px ${tokens.spacing.lg}px`,
     borderRadius: 14,
@@ -347,14 +404,27 @@ export const lobbyRoomStyles = {
     cursor: 'pointer',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  } satisfies CSSProperties,
+
+  buttonIcon: {
+    width: 16,
+    height: 16,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   } satisfies CSSProperties,
 
   modalOverlay: {
     position: 'fixed',
     inset: 0,
     zIndex: tokens.zIndex.modal,
-    background: 'rgba(6, 10, 18, 0.74)',
-    backdropFilter: 'blur(10px)',
+    background: 'radial-gradient(circle at 50% 24%, rgba(255,193,7,0.08) 0%, rgba(3,7,16,0.82) 30%, rgba(3,7,16,0.92) 100%)',
+    backdropFilter: 'blur(12px)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -362,31 +432,83 @@ export const lobbyRoomStyles = {
   } satisfies CSSProperties,
 
   modalCard: {
-    width: 'min(640px, 100%)',
-    maxHeight: 'min(80vh, 720px)',
+    width: 'min(760px, 100%)',
+    maxHeight: 'min(84vh, 760px)',
     overflowY: 'auto',
-    borderRadius: 24,
-    padding: '22px 20px',
-    background: 'linear-gradient(180deg, rgba(12, 19, 35, 0.98) 0%, rgba(17, 28, 48, 0.98) 100%)',
+    borderRadius: 28,
+    padding: '26px 24px',
+    background: 'linear-gradient(180deg, rgba(14, 22, 38, 0.99) 0%, rgba(18, 29, 49, 0.99) 100%)',
     border: '1px solid rgba(255,255,255,0.08)',
-    boxShadow: tokens.elevation.dp24,
+    boxShadow: '0 30px 80px rgba(0,0,0,0.42)',
     display: 'flex',
     flexDirection: 'column',
-    gap: 16,
+    gap: 18,
+  } satisfies CSSProperties,
+
+  confirmCard: {
+    width: 'min(440px, 100%)',
+    borderRadius: 24,
+    padding: '24px',
+    background: 'linear-gradient(180deg, rgba(14, 22, 38, 0.99) 0%, rgba(8, 13, 24, 1) 100%)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    boxShadow: '0 30px 80px rgba(0,0,0,0.42)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 20,
+  } satisfies CSSProperties,
+
+  confirmCopy: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+  } satisfies CSSProperties,
+
+  confirmActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: 10,
+    flexWrap: 'wrap',
+  } satisfies CSSProperties,
+
+  confirmDangerButton: {
+    padding: `${tokens.spacing.sm}px ${tokens.spacing.md}px`,
+    borderRadius: 12,
+    border: '1px solid rgba(239,83,80,0.3)',
+    background: 'rgba(239,83,80,0.12)',
+    color: '#FEB2B2',
+    fontWeight: 800,
+    fontSize: 12,
+    cursor: 'pointer',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
   } satisfies CSSProperties,
 
   modalHeader: {
     display: 'flex',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: 16,
+  } satisfies CSSProperties,
+
+  modalHeaderCopy: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+    minWidth: 0,
+  } satisfies CSSProperties,
+
+  modalSubtitle: {
+    fontSize: 13,
+    color: tokens.text.secondary,
+    lineHeight: 1.6,
+    maxWidth: 520,
   } satisfies CSSProperties,
 
   closeButton: {
     padding: '8px 12px',
     borderRadius: 999,
     border: '1px solid rgba(255,255,255,0.1)',
-    background: 'rgba(255,255,255,0.04)',
+    background: 'rgba(255,255,255,0.03)',
     color: tokens.text.secondary,
     fontSize: 12,
     fontWeight: 700,

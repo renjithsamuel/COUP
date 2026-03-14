@@ -3,6 +3,7 @@
 import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { ActionButton } from '@/components/ActionButton';
+import { ActionType } from '@/models/action';
 import { getActionPanelStyles } from './ActionPanel.styles';
 import { ACTION_RULES } from '@/models/action';
 import { ActionPanelController } from './ActionPanel.hooks';
@@ -10,6 +11,7 @@ import { ActionPanelController } from './ActionPanel.hooks';
 export interface ActionPanelProps extends ActionPanelController {
   isMobile?: boolean;
   onInactiveActionAttempt?: () => void;
+  onActionPress?: (actionType: ActionType) => void;
 }
 
 export function ActionPanel({
@@ -25,6 +27,7 @@ export function ActionPanel({
   mustCoup,
   isMobile = false,
   onInactiveActionAttempt,
+  onActionPress,
 }: ActionPanelProps) {
   const s = getActionPanelStyles(isMobile);
   const selectedRule = selectedAction ? ACTION_RULES[selectedAction] : null;
@@ -112,7 +115,10 @@ export function ActionPanel({
             <ActionButton
               key={rule.type}
               actionType={rule.type}
-              onClick={() => beginAction(rule.type)}
+              onClick={() => {
+                onActionPress?.(rule.type);
+                beginAction(rule.type);
+              }}
               selected={selectedAction === rule.type}
               disabled={!canAct}
               playerCoins={myCoins}

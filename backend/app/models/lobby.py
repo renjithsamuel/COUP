@@ -35,6 +35,17 @@ class LobbyJoin(BaseModel):
 
     player_name: str = Field(..., min_length=1, max_length=20)
     profile_id: str = Field(default="", max_length=64)
+    session_token: str = Field(default="", max_length=128)
+
+
+class LobbyKickRequest(BaseModel):
+    """Request body to remove another player from a waiting lobby."""
+
+    model_config = ConfigDict(strict=True)
+
+    target_player_id: str = Field(..., min_length=1, max_length=64)
+    actor_player_id: str = Field(default="", max_length=64)
+    session_token: str = Field(default="", max_length=128)
 
 
 class Lobby(BaseModel):

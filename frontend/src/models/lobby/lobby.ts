@@ -23,6 +23,7 @@ export interface LobbyCreate {
 
 export interface LobbyJoin {
   playerName: string;
+  sessionToken?: string | null;
 }
 
 export interface LobbyResponse {

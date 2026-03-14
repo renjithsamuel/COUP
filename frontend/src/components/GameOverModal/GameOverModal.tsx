@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { createVictoryTimeline } from '@/animations';
 import { gameOverModalStyles } from './GameOverModal.styles';
 
@@ -43,7 +44,11 @@ export function GameOverModal({ isOpen, winnerName, isWinner, onPlayAgain, onExi
     }
   }, [isOpen]);
 
-  return (
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -55,12 +60,14 @@ export function GameOverModal({ isOpen, winnerName, isWinner, onPlayAgain, onExi
           <div ref={modalRef} style={gameOverModalStyles.modal}>
             <div style={gameOverModalStyles.aura} />
             <div style={gameOverModalStyles.badge}>Final table</div>
+              <div style={gameOverModalStyles.headerCopy}>
+                <div style={gameOverModalStyles.title(isWinner)}>{outcomeTitle}</div>
+                <div style={gameOverModalStyles.subtitle}>{subtitle}</div>
+              </div>
             <div style={gameOverModalStyles.markWrap}>
               <CrownMark />
             </div>
-            <div style={gameOverModalStyles.title(isWinner)}>{outcomeTitle}</div>
             <div style={gameOverModalStyles.winnerName}>{winnerName}</div>
-            <div style={gameOverModalStyles.subtitle}>{subtitle}</div>
             <div style={gameOverModalStyles.buttonRow}>
               <button style={gameOverModalStyles.secondaryButton} onClick={onExit}>
                 Exit
@@ -72,6 +79,7 @@ export function GameOverModal({ isOpen, winnerName, isWinner, onPlayAgain, onExi
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

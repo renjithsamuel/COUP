@@ -479,32 +479,207 @@ function s(mobile: boolean) {
       overflow: 'auto',
     } satisfies CSSProperties,
 
+    confirmModalContent: {
+      background: `linear-gradient(160deg, ${tokens.surface.elevated} 0%, ${tokens.surface.card} 100%)`,
+      borderRadius: 20,
+      padding: tokens.spacing.xl,
+      boxShadow: tokens.elevation.dp24,
+      border: `1px solid ${tokens.surface.borderLight}`,
+      width: 'min(92vw, 480px)',
+      maxHeight: '88vh',
+      overflow: 'auto',
+    } satisfies CSSProperties,
+
     modalHeader: {
       display: 'flex',
       justifyContent: 'space-between',
-      alignItems: 'center',
+      alignItems: 'flex-start',
+      gap: 16,
       marginBottom: tokens.spacing.lg,
     } satisfies CSSProperties,
 
-    modalTitle: {
-      fontSize: 22,
-      fontWeight: 900,
+    modalHeaderCopy: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 6,
+      minWidth: 0,
+    } satisfies CSSProperties,
+
+    modalEyebrow: {
+      fontSize: 11,
+      fontWeight: 800,
+      letterSpacing: 1.6,
+      textTransform: 'uppercase',
       color: tokens.text.accent,
-      letterSpacing: 1,
+    } satisfies CSSProperties,
+
+    modalTitle: {
+      fontSize: 30,
+      fontWeight: 900,
+      color: tokens.text.primary,
+      letterSpacing: 0.2,
+    } satisfies CSSProperties,
+
+    modalSubtitle: {
+      fontSize: 13,
+      color: tokens.text.secondary,
+      lineHeight: 1.6,
+      maxWidth: 520,
     } satisfies CSSProperties,
 
     modalCloseBtn: {
-      width: 32,
-      height: 32,
+      width: 40,
+      height: 40,
       borderRadius: '50%',
       border: `1px solid ${tokens.surface.borderLight}`,
-      background: 'transparent',
+      background: 'rgba(255,255,255,0.03)',
       color: tokens.text.secondary,
       fontSize: 18,
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+    } satisfies CSSProperties,
+
+    confirmModalActions: {
+      display: 'flex',
+      justifyContent: 'flex-end',
+      gap: 10,
+      flexWrap: 'wrap',
+    } satisfies CSSProperties,
+
+    confirmModalCancelBtn: {
+      padding: '10px 14px',
+      borderRadius: 12,
+      border: `1px solid ${tokens.surface.borderLight}`,
+      background: 'rgba(255,255,255,0.03)',
+      color: tokens.text.primary,
+      fontSize: 12,
+      fontWeight: 800,
+      textTransform: 'uppercase',
+      letterSpacing: 0.7,
+      cursor: 'pointer',
+    } satisfies CSSProperties,
+
+    confirmModalDangerBtn: {
+      padding: '10px 14px',
+      borderRadius: 12,
+      border: '1px solid rgba(239,83,80,0.34)',
+      background: 'rgba(239,83,80,0.12)',
+      color: '#FEB2B2',
+      fontSize: 12,
+      fontWeight: 800,
+      textTransform: 'uppercase',
+      letterSpacing: 0.7,
+      cursor: 'pointer',
+    } satisfies CSSProperties,
+
+    modalTabs: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 8,
+      padding: 4,
+      borderRadius: 999,
+      background: 'rgba(255,255,255,0.03)',
+      border: `1px solid ${tokens.surface.border}`,
+      marginBottom: 18,
+    } satisfies CSSProperties,
+
+    modalTab: (active: boolean): CSSProperties => ({
+      border: 'none',
+      background: active
+        ? 'linear-gradient(135deg, rgba(255,193,7,0.2), rgba(255,143,0,0.12))'
+        : 'transparent',
+      color: active ? tokens.text.accent : tokens.text.secondary,
+      padding: '10px 16px',
+      borderRadius: 999,
+      cursor: 'pointer',
+      fontSize: 12,
+      fontWeight: 800,
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+    }),
+
+    roomScoreList: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10,
+    } satisfies CSSProperties,
+
+    roomScoreRow: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+      padding: '14px 16px',
+      borderRadius: 18,
+      background: 'linear-gradient(180deg, rgba(19, 27, 43, 0.92) 0%, rgba(12, 18, 30, 0.98) 100%)',
+      border: '1px solid rgba(255,255,255,0.06)',
+    } satisfies CSSProperties,
+
+    roomScoreMeta: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      minWidth: 0,
+    } satisfies CSSProperties,
+
+    rankBadge: {
+      width: 30,
+      height: 30,
+      borderRadius: 999,
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'rgba(255,193,7,0.12)',
+      border: '1px solid rgba(255,193,7,0.22)',
+      color: tokens.text.accent,
+      fontSize: 12,
+      fontWeight: 800,
+      flexShrink: 0,
+    } satisfies CSSProperties,
+
+    roomScoreCopy: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 4,
+      minWidth: 0,
+    } satisfies CSSProperties,
+
+    roomScoreName: {
+      fontSize: 15,
+      color: tokens.text.primary,
+      fontWeight: 800,
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+    } satisfies CSSProperties,
+
+    roomScoreSubline: {
+      fontSize: 12,
+      color: tokens.text.secondary,
+      lineHeight: 1.5,
+    } satisfies CSSProperties,
+
+    roomScoreBadge: {
+      padding: '8px 12px',
+      borderRadius: 999,
+      background: 'rgba(255,193,7,0.1)',
+      border: '1px solid rgba(255,193,7,0.16)',
+      color: tokens.text.accent,
+      fontSize: 12,
+      fontWeight: 900,
+      flexShrink: 0,
+    } satisfies CSSProperties,
+
+    roomScoreEmpty: {
+      padding: '18px 20px',
+      borderRadius: 18,
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(255,255,255,0.06)',
+      color: tokens.text.secondary,
+      fontSize: 13,
+      lineHeight: 1.7,
     } satisfies CSSProperties,
 
     bottomArea: {
@@ -624,6 +799,7 @@ function s(mobile: boolean) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      gap: 8,
       transition: 'all 0.15s ease',
       flexShrink: 0,
       padding: mobile ? '0 12px' : '0 18px',

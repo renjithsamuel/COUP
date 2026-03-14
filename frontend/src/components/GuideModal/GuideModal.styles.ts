@@ -5,78 +5,111 @@ export const guideModalStyles = {
   overlay: {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(0,0,0,0.75)',
+    background: 'radial-gradient(circle at 50% 24%, rgba(255,193,7,0.08) 0%, rgba(2,6,15,0.78) 28%, rgba(2,6,15,0.9) 100%)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: tokens.zIndex.modal,
-    backdropFilter: 'blur(8px)',
+    backdropFilter: 'blur(12px)',
+    padding: '24px 16px',
   } satisfies CSSProperties,
 
   modal: {
-    background: `linear-gradient(160deg, ${tokens.surface.elevated} 0%, ${tokens.surface.card} 100%)`,
-    borderRadius: 20,
-    padding: tokens.spacing.xl,
-    boxShadow: tokens.elevation.dp24,
+    background: 'linear-gradient(180deg, rgba(17, 27, 47, 0.98) 0%, rgba(13, 20, 36, 0.99) 100%)',
+    borderRadius: 28,
+    padding: '28px',
+    boxShadow: '0 30px 80px rgba(0,0,0,0.46)',
     border: `1px solid ${tokens.surface.borderLight}`,
-    maxWidth: 520,
-    width: '92%',
-    maxHeight: '85vh',
+    width: 'min(920px, 100%)',
+    maxHeight: 'min(88vh, 860px)',
     overflow: 'auto',
   } satisfies CSSProperties,
 
   header: {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: tokens.spacing.lg,
+    alignItems: 'flex-start',
+    gap: 16,
+    marginBottom: 20,
+  } satisfies CSSProperties,
+
+  headerCopy: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+    minWidth: 0,
+  } satisfies CSSProperties,
+
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+    color: tokens.text.accent,
   } satisfies CSSProperties,
 
   title: {
-    fontSize: 22,
+    fontSize: 34,
     fontWeight: 900,
     color: tokens.text.accent,
-    letterSpacing: 1,
+    letterSpacing: 0.2,
+  } satisfies CSSProperties,
+
+  subtitle: {
+    fontSize: 14,
+    color: tokens.text.secondary,
+    lineHeight: 1.6,
+    maxWidth: 520,
   } satisfies CSSProperties,
 
   closeBtn: {
-    width: 32,
-    height: 32,
+    width: 44,
+    height: 44,
     borderRadius: '50%',
     border: `1px solid ${tokens.surface.borderLight}`,
-    background: 'transparent',
+    background: 'rgba(255,255,255,0.03)',
     color: tokens.text.secondary,
-    fontSize: 18,
+    fontSize: 22,
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
   } satisfies CSSProperties,
 
+  sectionGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+    gap: 14,
+  } satisfies CSSProperties,
+
   section: {
-    marginBottom: tokens.spacing.lg,
+    marginBottom: 14,
+    padding: '16px 18px',
+    borderRadius: 18,
+    background: 'rgba(255,255,255,0.03)',
+    border: `1px solid ${tokens.surface.border}`,
   } satisfies CSSProperties,
 
   sectionTitle: {
     fontSize: 14,
-    fontWeight: 700,
+    fontWeight: 800,
     color: tokens.text.primary,
     textTransform: 'uppercase',
     letterSpacing: 1.5,
-    marginBottom: tokens.spacing.sm,
+    marginBottom: 10,
   } satisfies CSSProperties,
 
   text: {
-    fontSize: 13,
+    fontSize: 14,
     color: tokens.text.secondary,
-    lineHeight: 1.6,
+    lineHeight: 1.8,
   } satisfies CSSProperties,
 
   characterRow: {
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacing.sm,
-    padding: `${tokens.spacing.sm}px 0`,
+    padding: '10px 0',
     borderBottom: `1px solid ${tokens.surface.border}`,
   } satisfies CSSProperties,
 
@@ -90,14 +123,14 @@ export const guideModalStyles = {
   }),
 
   characterName: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 700,
-    minWidth: 90,
+    minWidth: 110,
   } satisfies CSSProperties,
 
   characterAbility: {
-    fontSize: 12,
+    fontSize: 13,
     color: tokens.text.secondary,
-    lineHeight: 1.4,
+    lineHeight: 1.6,
   } satisfies CSSProperties,
 };

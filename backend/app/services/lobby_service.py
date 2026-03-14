@@ -60,15 +60,6 @@ class LobbyService:
     def _normalize_profile_id(profile_id: str | None) -> str:
         return (profile_id or "").strip()
 
-    @staticmethod
-    def _find_player_by_profile_id(lobby: Lobby, profile_id: str) -> LobbyPlayer | None:
-        if not profile_id:
-            return None
-        for player in lobby.players:
-            if player.profile_id == profile_id:
-                return player
-        return None
-
     def _get_player_id_for_token(self, lobby_id: str, session_token: str | None) -> str | None:
         if not session_token:
             return None
@@ -164,7 +155,13 @@ class LobbyService:
             session_token=session_token,
         )
 
-    def join_lobby(self, lobby_id: str, player_name: str, profile_id: str = "") -> LobbyResponse:
+    def join_lobby(
+        self,
+        lobby_id: str,
+        player_name: str,
+        profile_id: str = "",
+        session_token: str | None = None,
+    ) -> LobbyResponse:
         self._prune_inactive_players(lobby_id)
         lobby = self._lobbies.get(lobby_id)
         if lobby is None:
@@ -173,19 +170,21 @@ class LobbyService:
             raise ValueError("Game already started")
 
         normalized_profile_id = self._normalize_profile_id(profile_id) or str(uuid.uuid4())
-        existing_player = self._find_player_by_profile_id(lobby, normalized_profile_id)
+        existing_player_id = self._get_player_id_for_token(lobby_id, session_token)
+        if existing_player_id is not None:
+            existing_player = next((player for player in lobby.players if player.id == existing_player_id), None)
+            if existing_player is not None:
+                existing_player.name = player_name
+                if normalized_profile_id:
+                    existing_player.profile_id = normalized_profile_id
+                self._touch_session(session_token)
+                return self._build_response(
+                    lobby,
+                    player_id=existing_player.id,
+                    session_token=session_token,
+                )
 
         session_token = str(uuid.uuid4())
-        if existing_player is not None:
-            existing_player.name = player_name
-            self._remove_player_tokens(lobby_id, existing_player.id)
-            self._player_tokens[session_token] = (lobby_id, existing_player.id)
-            self._touch_session(session_token)
-            return self._build_response(
-                lobby,
-                player_id=existing_player.id,
-                session_token=session_token,
-            )
 
         if lobby.is_full:
             raise ValueError("Lobby is full")
@@ -224,6 +223,36 @@ class LobbyService:
             return None
 
         return self._build_response(updated_lobby)
+
+    def kick_player(
+        self,
+        lobby_id: str,
+        target_player_id: str,
+        *,
+        actor_player_id: str | None = None,
+        session_token: str | None = None,
+    ) -> LobbyResponse | None:
+        lobby = self._lobbies.get(lobby_id)
+        if lobby is None:
+            raise ValueError("Lobby not found")
+        if lobby.status != "waiting":
+            raise ValueError("Cannot kick players after the game has started")
+
+        resolved_actor_id = actor_player_id or self._get_player_id_for_token(lobby_id, session_token)
+        if resolved_actor_id is None:
+            raise ValueError("Actor not found in lobby")
+        if not any(player.id == resolved_actor_id for player in lobby.players):
+            raise ValueError("Actor not found in lobby")
+        if resolved_actor_id == target_player_id:
+            raise ValueError("Players cannot kick themselves")
+        if not any(player.id == target_player_id for player in lobby.players):
+            raise ValueError("Target player not found in lobby")
+
+        updated_lobby = self._remove_player(lobby_id, target_player_id)
+        if updated_lobby is None:
+            return None
+
+        return self._build_response(updated_lobby, player_id=resolved_actor_id)
 
     def get_lobby(self, lobby_id: str, session_token: str | None = None) -> LobbyResponse | None:
         if session_token is not None and self._get_player_id_for_token(lobby_id, session_token) is not None:

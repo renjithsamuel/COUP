@@ -330,7 +330,10 @@ export default function HomePage() {
     try {
       const res = await joinLobby.mutateAsync({
         lobbyId: roomCode.trim(),
-        data: { playerName: playerName.trim() },
+        data: {
+          playerName: playerName.trim(),
+          sessionToken: lobbySessionStore.read(roomCode.trim())?.sessionToken ?? null,
+        },
       });
       if (res.playerId && res.sessionToken) {
         lobbySessionStore.save(res.lobby.id, res.playerId, res.sessionToken);

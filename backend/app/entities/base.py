@@ -41,6 +41,13 @@ async def init_db() -> None:
 
 def _run_dev_migrations(sync_conn) -> None:
     inspector = inspect(sync_conn)
+    if inspector.has_table("games"):
+        game_columns = {column["name"] for column in inspector.get_columns("games")}
+        if "room_id" not in game_columns:
+            sync_conn.exec_driver_sql(
+                "ALTER TABLE games ADD COLUMN room_id VARCHAR"
+            )
+
     if not inspector.has_table("players"):
         return
 

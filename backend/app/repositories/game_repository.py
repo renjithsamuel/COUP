@@ -25,6 +25,9 @@ class GameRepository(Repository[GameState]):
         self._session = session
         self._player_repo = PlayerRepository(session)
 
+    async def close(self) -> None:
+        await self._session.close()
+
     async def get_by_id(self, id: str) -> GameState | None:
         result = await self._session.execute(
             select(GameEntity).where(GameEntity.id == id)
@@ -59,6 +62,7 @@ class GameRepository(Repository[GameState]):
         now = datetime.now(timezone.utc).isoformat()
         entity = GameEntity(
             id=state.id,
+            room_id=state.room_id,
             status=state.status.value,
             config=state.config.model_dump_json(),
             deck=json.dumps([c.model_dump() for c in state.deck]),
@@ -94,6 +98,7 @@ class GameRepository(Repository[GameState]):
             raise ValueError(f"Game {state.id} not found")
 
         entity.status = state.status.value
+        entity.room_id = state.room_id
         entity.config = state.config.model_dump_json()
         entity.deck = json.dumps([c.model_dump() for c in state.deck])
         entity.current_turn_player_id = state.current_turn_player_id
@@ -135,10 +140,13 @@ class GameRepository(Repository[GameState]):
             raise
         return True
 
-    async def get_leaderboard(self, limit: int = 10) -> list[dict[str, Any]]:
+    async def get_leaderboard(self, room_id: str, limit: int = 10) -> list[dict[str, Any]]:
         result = await self._session.execute(
             select(GameEntity)
-            .where(GameEntity.status == GameStatus.FINISHED.value)
+            .where(
+                GameEntity.status == GameStatus.FINISHED.value,
+                GameEntity.room_id == room_id,
+            )
             .order_by(GameEntity.updated_at.desc())
         )
         finished_games = result.scalars().all()
@@ -233,6 +241,7 @@ class GameRepository(Repository[GameState]):
 
         return GameState(
             id=entity.id,
+            room_id=entity.room_id,
             status=GameStatus(entity.status),
             phase=GamePhase(entity.state_phase),
             config=config,

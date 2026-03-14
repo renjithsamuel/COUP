@@ -157,6 +157,7 @@ export const lobbyService = {
     api.post<any>(`/api/lobbies/${lobbyId}/join`, {
       player_name: data.playerName,
       profile_id: playerIdentityStore.getOrCreate().profileId,
+      session_token: data.sessionToken ?? lobbySessionStore.read(lobbyId)?.sessionToken ?? '',
     }).then(toJoinResponse),
 
   leave: (lobbyId: string, options: { playerId?: string | null; sessionToken?: string | null }) => {
@@ -170,6 +171,13 @@ export const lobbyService = {
     return api.post<void>(`/api/lobbies/${lobbyId}/leave?${params.toString()}`);
   },
 
+  kick: (lobbyId: string, options: { targetPlayerId: string; actorPlayerId?: string | null; sessionToken?: string | null }) =>
+    api.post<any>(`/api/lobbies/${lobbyId}/kick`, {
+      target_player_id: options.targetPlayerId,
+      actor_player_id: options.actorPlayerId ?? '',
+      session_token: options.sessionToken ?? '',
+    }).then(toLobbyResponse),
+
   reset: (lobbyId: string) =>
     api.post<any>(`/api/lobbies/${lobbyId}/reset`).then(toLobby),
 
@@ -181,6 +189,6 @@ export const lobbyService = {
       starting_coins: config.startingCoins,
     } : undefined),
 
-  leaderboard: (limit = 6) =>
-    api.get<any[]>(`/api/lobbies/leaderboard?limit=${limit}`).then((rows) => rows.map(toLeaderboardEntry)),
+  leaderboard: (lobbyId: string, limit = 6) =>
+    api.get<any[]>(`/api/lobbies/${lobbyId}/leaderboard?limit=${limit}`).then((rows) => rows.map(toLeaderboardEntry)),
 };

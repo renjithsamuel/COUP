@@ -60,7 +60,7 @@ class TestLobbyAPI:
         assert join_resp.json()["player_count"] == 2
 
     @pytest.mark.asyncio
-    async def test_join_lobby_reuses_profile_identity(self, client: AsyncClient):
+    async def test_join_lobby_reuses_existing_session(self, client: AsyncClient):
         create_resp = await client.post(
             "/api/lobbies", json={"host_name": "Alice", "profile_id": "profile-alice"}
         )
@@ -72,13 +72,38 @@ class TestLobbyAPI:
         )
         second_join_resp = await client.post(
             f"/api/lobbies/{lobby_id}/join",
-            json={"player_name": "Bobby", "profile_id": "profile-bob"},
+            json={
+                "player_name": "Bobby",
+                "profile_id": "profile-bob-updated",
+                "session_token": first_join_resp.json()["session_token"],
+            },
         )
 
         assert first_join_resp.status_code == 200
         assert second_join_resp.status_code == 200
         assert second_join_resp.json()["player_count"] == 2
         assert second_join_resp.json()["player_id"] == first_join_resp.json()["player_id"]
+
+    @pytest.mark.asyncio
+    async def test_join_lobby_allows_distinct_players_without_session_token(self, client: AsyncClient):
+        create_resp = await client.post(
+            "/api/lobbies", json={"host_name": "Alice", "profile_id": "profile-alice"}
+        )
+        lobby_id = create_resp.json()["id"]
+
+        first_join_resp = await client.post(
+            f"/api/lobbies/{lobby_id}/join",
+            json={"player_name": "Bob", "profile_id": "shared-profile"},
+        )
+        second_join_resp = await client.post(
+            f"/api/lobbies/{lobby_id}/join",
+            json={"player_name": "Bobby", "profile_id": "shared-profile"},
+        )
+
+        assert first_join_resp.status_code == 200
+        assert second_join_resp.status_code == 200
+        assert second_join_resp.json()["player_count"] == 3
+        assert second_join_resp.json()["player_id"] != first_join_resp.json()["player_id"]
 
     @pytest.mark.asyncio
     async def test_get_lobby(self, client: AsyncClient):
@@ -90,6 +115,63 @@ class TestLobbyAPI:
         resp = await client.get(f"/api/lobbies/{lobby_id}")
         assert resp.status_code == 200
         assert resp.json()["id"] == lobby_id
+
+    @pytest.mark.asyncio
+    async def test_any_player_can_kick_another_player(self, client: AsyncClient):
+        create_resp = await client.post(
+            "/api/lobbies", json={"host_name": "Alice", "profile_id": "profile-alice"}
+        )
+        lobby_id = create_resp.json()["id"]
+        host_id = create_resp.json()["player_id"]
+
+        join_resp = await client.post(
+            f"/api/lobbies/{lobby_id}/join",
+            json={"player_name": "Bob", "profile_id": "profile-bob"},
+        )
+        bob_token = join_resp.json()["session_token"]
+
+        kick_resp = await client.post(
+            f"/api/lobbies/{lobby_id}/kick",
+            json={
+                "target_player_id": host_id,
+                "session_token": bob_token,
+            },
+        )
+
+        assert kick_resp.status_code == 200
+        assert kick_resp.json()["player_count"] == 1
+        assert kick_resp.json()["players"][0]["name"] == "Bob"
+        assert kick_resp.json()["players"][0]["is_host"] is True
+
+    @pytest.mark.asyncio
+    async def test_player_cannot_kick_self(self, client: AsyncClient):
+        create_resp = await client.post(
+            "/api/lobbies", json={"host_name": "Alice", "profile_id": "profile-alice"}
+        )
+        lobby_id = create_resp.json()["id"]
+
+        kick_resp = await client.post(
+            f"/api/lobbies/{lobby_id}/kick",
+            json={
+                "target_player_id": create_resp.json()["player_id"],
+                "session_token": create_resp.json()["session_token"],
+            },
+        )
+
+        assert kick_resp.status_code == 400
+        assert kick_resp.json()["detail"] == "Players cannot kick themselves"
+
+    @pytest.mark.asyncio
+    async def test_room_leaderboard_is_scoped_to_room(self, client: AsyncClient):
+        create_resp = await client.post(
+            "/api/lobbies", json={"host_name": "Alice", "profile_id": "profile-alice"}
+        )
+        lobby_id = create_resp.json()["id"]
+
+        resp = await client.get(f"/api/lobbies/{lobby_id}/leaderboard")
+
+        assert resp.status_code == 200
+        assert resp.json() == []
 
     @pytest.mark.asyncio
     async def test_get_nonexistent_lobby(self, client: AsyncClient):

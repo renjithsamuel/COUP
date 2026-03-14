@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLobby, useLobbyLeaderboard, useStartGame } from '@/queries/useLobbyQueries';
 import { useLobbyContext } from '@/context/LobbyContext';
 import { LobbyRoom } from '@/containers/LobbyRoom';
@@ -15,13 +16,14 @@ export default function LobbyDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const lobbyId = params.id as string;
   const playerIdParam = searchParams.get('playerId');
 
   const { state, dispatch } = useLobbyContext();
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const { data: lobbyResponse, isLoading, isError } = useLobby(lobbyId, sessionToken);
-  const { data: leaderboard = [] } = useLobbyLeaderboard(6);
+  const { data: leaderboard = [] } = useLobbyLeaderboard(lobbyId, 6);
   const startGame = useStartGame();
   const [showConfig, setShowConfig] = useState(false);
 
@@ -99,6 +101,16 @@ export default function LobbyDetailPage() {
 
   const handleStart = () => {
     setShowConfig(true);
+  };
+
+  const handleKick = async (targetPlayerId: string) => {
+    await lobbyService.kick(lobbyId, {
+      targetPlayerId,
+      actorPlayerId: state.myPlayerId,
+      sessionToken,
+    });
+    await queryClient.invalidateQueries({ queryKey: ['lobbies', 'detail', lobbyId] });
+    await queryClient.invalidateQueries({ queryKey: ['lobbies', 'list'] });
   };
 
   const handleConfirmStart = async (config: GameConfig) => {
@@ -209,6 +221,7 @@ export default function LobbyDetailPage() {
         isHost={isHost}
         leaderboard={leaderboard}
         onStart={handleStart}
+        onKick={handleKick}
         onLeave={handleLeave}
       />
       <PreGameConfig

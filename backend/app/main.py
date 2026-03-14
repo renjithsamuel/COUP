@@ -129,6 +129,7 @@ def create_app() -> FastAPI:
             for task in background_tasks:
                 with suppress(asyncio.CancelledError):
                     await task
+            await game_service.close()
             await close_db()
 
     application = FastAPI(

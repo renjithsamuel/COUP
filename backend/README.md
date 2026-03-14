@@ -127,10 +127,11 @@ python -m pytest -v
 | `GET` | `/api/health` | Health check |
 | `POST` | `/api/lobbies` | Create lobby (`{ host_name, max_players, profile_id? }`) — returns 6-char room code |
 | `GET` | `/api/lobbies` | List open lobbies |
-| `GET` | `/api/lobbies/leaderboard` | Aggregate finished-game leaderboard for the lobby UI using stable player identities when available |
 | `GET` | `/api/lobbies/{id}` | Get lobby details (case-insensitive code). Optional `?session_token=...` refreshes presence and returns the caller's `player_id` |
-| `POST` | `/api/lobbies/{id}/join` | Join lobby by room code (`{ player_name, profile_id? }`) |
+| `GET` | `/api/lobbies/{id}/leaderboard` | Aggregate finished-game leaderboard for this room only |
+| `POST` | `/api/lobbies/{id}/join` | Join lobby by room code (`{ player_name, profile_id?, session_token? }`) |
 | `POST` | `/api/lobbies/{id}/leave` | Leave lobby (`?player_id=...` or `?session_token=...`) |
+| `POST` | `/api/lobbies/{id}/kick` | Remove another waiting-room player (`{ target_player_id, actor_player_id?, session_token? }`) while preventing self-kicks |
 | `POST` | `/api/lobbies/{id}/start` | Start game (host only, optional `GameConfig` body) |
 | `POST` | `/api/lobbies/{id}/reset` | Reset completed room back to waiting state for replay while keeping finished-game history for leaderboard aggregation |
 
@@ -180,9 +181,11 @@ Connection presence is reflected in `players[].connected` inside `GAME_STATE`. O
 
 Lobby presence is tracked separately from in-game WebSocket presence. Lobby reads that include a valid `session_token` refresh the player's lobby session, and waiting-room players who stop refreshing are evicted automatically after a short grace period so offline hosts cannot block a new game from starting. When a room is reset for replay, all lobby sessions in that room are refreshed so players returning from the game screen are not pruned immediately.
 
+While a room is still waiting to start, any seated player may kick another seated player out of the lobby. Self-kicks are rejected, and if the removed player was the host, host ownership falls through to the next remaining player.
+
 Finished games are retained temporarily for leaderboard aggregation, then purged automatically by a background cleanup sweep. The retention window is controlled by `finished_game_retention_minutes` in `app/config.py`; set it to `0` to disable automatic purging.
 
-Leaderboard rows award 1 participation point for every completed game plus 2 bonus points for each win, so a win is worth 3 total points. If the client supplies a stable `profile_id`, leaderboard aggregation follows that identity instead of merging players purely by display name.
+Leaderboard rows award 1 participation point for every completed game plus 2 bonus points for each win, so a win is worth 3 total points. Leaderboards are room-scoped, and if the client supplies a stable `profile_id`, aggregation follows that identity instead of merging players purely by display name. Waiting-room seat reuse is driven by the saved lobby `session_token`, so refresh/rejoin continuity still works without collapsing separate deliberate players into one seat.
 
 ## Modifying Game Rules
 

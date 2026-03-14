@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Query
 
 from app.models.game import GamePhase
-from app.models.lobby import GameConfig, LeaderboardEntry, LobbyCreate, LobbyJoin, LobbyResponse
+from app.models.lobby import GameConfig, LeaderboardEntry, LobbyCreate, LobbyJoin, LobbyKickRequest, LobbyResponse
 
 router = APIRouter(prefix="/api/lobbies", tags=["lobbies"])
 
@@ -36,9 +36,9 @@ async def list_lobbies() -> list[LobbyResponse]:
     return _lobby_service.list_lobbies()
 
 
-@router.get("/leaderboard", response_model=list[LeaderboardEntry])
-async def get_leaderboard(limit: int = Query(default=10, ge=1, le=25)) -> list[LeaderboardEntry]:
-    return await _game_service.get_leaderboard(limit=limit)
+@router.get("/{lobby_id}/leaderboard", response_model=list[LeaderboardEntry])
+async def get_leaderboard(lobby_id: str, limit: int = Query(default=10, ge=1, le=25)) -> list[LeaderboardEntry]:
+    return await _game_service.get_leaderboard(room_id=lobby_id.upper(), limit=limit)
 
 
 @router.get("/{lobby_id}", response_model=LobbyResponse)
@@ -55,7 +55,12 @@ async def get_lobby(
 @router.post("/{lobby_id}/join", response_model=LobbyResponse)
 async def join_lobby(lobby_id: str, body: LobbyJoin) -> LobbyResponse:
     try:
-        return _lobby_service.join_lobby(lobby_id.upper(), body.player_name, body.profile_id)
+        return _lobby_service.join_lobby(
+            lobby_id.upper(),
+            body.player_name,
+            body.profile_id,
+            body.session_token or None,
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -73,6 +78,22 @@ async def leave_lobby(
             session_token=session_token,
         )
         return {"ok": True, "lobby": result}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/{lobby_id}/kick", response_model=LobbyResponse)
+async def kick_player(lobby_id: str, body: LobbyKickRequest) -> LobbyResponse:
+    try:
+        lobby = _lobby_service.kick_player(
+            lobby_id.upper(),
+            body.target_player_id,
+            actor_player_id=body.actor_player_id or None,
+            session_token=body.session_token or None,
+        )
+        if lobby is None:
+            raise HTTPException(status_code=404, detail="Lobby not found")
+        return lobby
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

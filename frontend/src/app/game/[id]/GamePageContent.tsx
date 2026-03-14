@@ -5,7 +5,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { GameProvider } from '@/context/GameContext';
 import { GameBoard } from '@/containers/GameBoard';
-import { lobbyKeys } from '@/queries/useLobbyQueries';
+import { lobbyKeys, useLobbyLeaderboard } from '@/queries/useLobbyQueries';
 import { lobbyService } from '@/services/lobbyService';
 
 export function GamePageContent() {
@@ -16,6 +16,7 @@ export function GamePageContent() {
   const gameId = params.id as string;
   const playerId = searchParams.get('playerId') ?? '';
   const lobbyId = searchParams.get('lobbyId') ?? '';
+  const { data: roomLeaderboard = [] } = useLobbyLeaderboard(lobbyId, 8);
 
   const handlePlayAgain = async () => {
     if (lobbyId && playerId) {
@@ -35,7 +36,12 @@ export function GamePageContent() {
 
   return (
     <GameProvider>
-      <GameBoard gameId={gameId} playerId={playerId} onPlayAgain={handlePlayAgain} />
+      <GameBoard
+        gameId={gameId}
+        playerId={playerId}
+        onPlayAgain={handlePlayAgain}
+        roomLeaderboard={roomLeaderboard}
+      />
     </GameProvider>
   );
 }

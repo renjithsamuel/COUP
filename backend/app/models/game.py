@@ -66,6 +66,7 @@ class GameState(BaseModel):
     model_config = ConfigDict(strict=True)
 
     id: str
+    room_id: str | None = None
     status: GameStatus = GameStatus.WAITING
     phase: GamePhase = GamePhase.WAITING_FOR_PLAYERS
     config: GameConfig = Field(default_factory=GameConfig)
@@ -98,6 +99,7 @@ class GameStatePublic(BaseModel):
     model_config = ConfigDict(strict=True)
 
     id: str
+    room_id: str | None = None
     status: GameStatus
     phase: GamePhase
     config: GameConfig

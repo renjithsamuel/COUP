@@ -71,6 +71,7 @@ class GameWSHandler:
             await self._broadcast_state(game_id)
             # Auto-accept on behalf of disconnected player if in a response window
             await self._handle_disconnect_accept(game_id, player_id)
+            await self._gs.close()
 
     async def _process_message(
         self, game_id: str, player_id: str, raw: str
