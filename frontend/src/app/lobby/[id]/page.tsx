@@ -157,7 +157,6 @@ export default function LobbyDetailPage() {
       return;
     }
 
-    setIsStartingGameLocally(false);
     lobbyReturnStore.clear(lobbyId);
     setIsWaitingForLobbyReset(false);
   }, [lobby, lobbyId]);
@@ -335,6 +334,70 @@ export default function LobbyDetailPage() {
     setShowConfig(false);
   };
 
+  if (isStartingGameLocally || isNavigatingToGame) {
+    return (
+      <div
+        style={{
+          minHeight: "100dvh",
+          background: tokens.board.bg,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: tokens.spacing.lg,
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 420,
+            borderRadius: 24,
+            border: "1px solid rgba(255,255,255,0.08)",
+            background:
+              "linear-gradient(180deg, rgba(18,27,43,0.98) 0%, rgba(10,16,29,0.98) 100%)",
+            boxShadow: tokens.elevation.dp24,
+            padding: tokens.spacing.xl,
+            display: "flex",
+            flexDirection: "column",
+            gap: tokens.spacing.md,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 11,
+              letterSpacing: 1.6,
+              textTransform: "uppercase",
+              color: tokens.text.accent,
+              fontWeight: 800,
+            }}
+          >
+            Match start
+          </div>
+          <div
+            style={{
+              fontSize: 28,
+              lineHeight: 1.1,
+              fontWeight: 800,
+              color: tokens.text.primary,
+            }}
+          >
+            {isStartingGameLocally ? "Dealing the table." : "Starting..."}
+          </div>
+          <div
+            style={{
+              color: tokens.text.secondary,
+              lineHeight: 1.6,
+              fontSize: 14,
+            }}
+          >
+            {isStartingGameLocally
+              ? "Building the match and moving you into the game now."
+              : "The host started the match. Joining the table now."}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!hasResolvedSession || (isLoading && !lobby)) {
     return (
       <div
@@ -404,70 +467,6 @@ export default function LobbyDetailPage() {
 
   if (!lobby) {
     return null;
-  }
-
-  if (isStartingGameLocally || isNavigatingToGame) {
-    return (
-      <div
-        style={{
-          minHeight: "100dvh",
-          background: tokens.board.bg,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: tokens.spacing.lg,
-        }}
-      >
-        <div
-          style={{
-            width: "100%",
-            maxWidth: 420,
-            borderRadius: 24,
-            border: "1px solid rgba(255,255,255,0.08)",
-            background:
-              "linear-gradient(180deg, rgba(18,27,43,0.98) 0%, rgba(10,16,29,0.98) 100%)",
-            boxShadow: tokens.elevation.dp24,
-            padding: tokens.spacing.xl,
-            display: "flex",
-            flexDirection: "column",
-            gap: tokens.spacing.md,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 11,
-              letterSpacing: 1.6,
-              textTransform: "uppercase",
-              color: tokens.text.accent,
-              fontWeight: 800,
-            }}
-          >
-            Match start
-          </div>
-          <div
-            style={{
-              fontSize: 28,
-              lineHeight: 1.1,
-              fontWeight: 800,
-              color: tokens.text.primary,
-            }}
-          >
-            {isStartingGameLocally ? "Dealing the table." : "Starting..."}
-          </div>
-          <div
-            style={{
-              color: tokens.text.secondary,
-              lineHeight: 1.6,
-              fontSize: 14,
-            }}
-          >
-            {isStartingGameLocally
-              ? "Building the match and moving you into the game now."
-              : "The host started the match. Joining the table now."}
-          </div>
-        </div>
-      </div>
-    );
   }
 
   if (isWaitingForLobbyReset && lobby.status !== "waiting") {

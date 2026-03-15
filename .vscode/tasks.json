@@ -2,13 +2,25 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "backend-lobby-replay-test",
+			"label": "backend-lobby-replay-test-backend-root",
 			"type": "shell",
 			"command": "C:\\Python312\\python.exe",
 			"args": [
 				"-m",
 				"pytest",
-				"backend\\tests\\integration\\test_lobby_api.py",
+				"tests\\integration\\test_lobby_api.py",
+				"-q"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "backend-lobby-tests-lifespan",
+			"type": "shell",
+			"command": "C:\\Python312\\python.exe",
+			"args": [
+				"-m",
+				"pytest",
+				"tests\\integration\\test_lobby_api.py",
 				"-q"
 			],
 			"isBackground": false

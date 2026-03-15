@@ -276,11 +276,8 @@ export const gameOverModalStyles = {
     height: "auto",
     display: "block",
     borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.08)",
-    boxShadow: "0 14px 34px rgba(0,0,0,0.26)",
     aspectRatio: "1200 / 630",
     objectFit: "contain",
-    background: "rgba(255,255,255,0.03)",
     maxHeight: mobile ? 132 : 214,
   }),
 

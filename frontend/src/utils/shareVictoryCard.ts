@@ -159,6 +159,29 @@ const THEMES: VictoryCardDesign[] = [
     textSecondary: "#D6DECF",
     textMuted: "#AFC2B1",
   },
+  {
+    themeKey: "obsidian-noir",
+    themeLabel: "Obsidian Noir",
+    tagline: TAGLINES[6],
+    backgroundStart: "#0A0A0C",
+    backgroundMid: "#111114",
+    backgroundEnd: "#050506",
+    metallicStart: "#D4D4DA",
+    metallicEnd: "#78787F",
+    lineColor: "rgba(255, 255, 255, 0.05)",
+    panelFill: "rgba(255, 255, 255, 0.03)",
+    panelStroke: "rgba(255, 255, 255, 0.06)",
+    statusFill: "rgba(255, 255, 255, 0.035)",
+    statusStroke: "rgba(255, 255, 255, 0.06)",
+    orbColor: "rgba(255, 255, 255, 0.025)",
+    orbAccent: "rgba(255, 255, 255, 0.03)",
+    gemA: "#5A5A64",
+    gemB: "#484852",
+    gemC: "#6E6E78",
+    textPrimary: "#E6E6EC",
+    textSecondary: "#96969E",
+    textMuted: "#58585F",
+  },
 ] as const;
 
 function hashSeed(seed: string) {
@@ -195,16 +218,28 @@ function buildVictorySvg(winnerName: string, design: VictoryCardDesign) {
           <stop offset="0%" stop-color="${design.metallicStart}" />
           <stop offset="100%" stop-color="${design.metallicEnd}" />
         </linearGradient>
-        <radialGradient id="aura" cx="50%" cy="50%" r="62%">
-          <stop offset="0%" stop-color="${design.metallicStart}" stop-opacity="0.22" />
-          <stop offset="60%" stop-color="${design.metallicEnd}" stop-opacity="0.06" />
+        <linearGradient id="metalH" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="${design.metallicEnd}" stop-opacity="0" />
+          <stop offset="15%" stop-color="${design.metallicEnd}" stop-opacity="0.14" />
+          <stop offset="85%" stop-color="${design.metallicEnd}" stop-opacity="0.14" />
+          <stop offset="100%" stop-color="${design.metallicEnd}" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="shine" x1="0.15" y1="0" x2="0.85" y2="1">
+          <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0" />
+          <stop offset="44%" stop-color="#FFFFFF" stop-opacity="0.03" />
+          <stop offset="56%" stop-color="#FFFFFF" stop-opacity="0" />
+          <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+        </linearGradient>
+        <radialGradient id="aura" cx="50%" cy="50%" r="60%">
+          <stop offset="0%" stop-color="${design.metallicStart}" stop-opacity="0.16" />
+          <stop offset="60%" stop-color="${design.metallicEnd}" stop-opacity="0.04" />
           <stop offset="100%" stop-color="${design.metallicEnd}" stop-opacity="0" />
         </radialGradient>
-        <pattern id="grid" width="34" height="34" patternUnits="userSpaceOnUse">
-          <path d="M 34 0 L 0 0 0 34" fill="none" stroke="${design.lineColor}" stroke-width="1"/>
-        </pattern>
+        <clipPath id="cardClip">
+          <rect width="1200" height="630" rx="32" />
+        </clipPath>
         <filter id="glow">
-          <feGaussianBlur stdDeviation="15" result="blur" />
+          <feGaussianBlur stdDeviation="10" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
@@ -212,48 +247,50 @@ function buildVictorySvg(winnerName: string, design: VictoryCardDesign) {
         </filter>
       </defs>
 
-      <rect width="1200" height="630" rx="36" fill="url(#bg)" />
-      <rect x="20" y="20" width="1160" height="590" rx="28" fill="none" stroke="${design.panelStroke}" />
-      <rect x="42" y="42" width="1116" height="546" rx="24" fill="url(#grid)" opacity="0.45" />
-      <ellipse cx="760" cy="214" rx="280" ry="194" fill="url(#aura)" />
-      <circle cx="1018" cy="146" r="92" fill="${design.orbColor}" />
-      <circle cx="192" cy="486" r="110" fill="${design.orbAccent}" />
+      <g clip-path="url(#cardClip)">
+        <rect width="1200" height="630" fill="url(#bg)" />
+        <rect width="1200" height="630" fill="url(#shine)" />
+        <rect x="16" y="16" width="1168" height="598" rx="22" fill="none" stroke="${design.panelStroke}" stroke-width="1" />
 
-      <path d="M112 108c166-56 332-70 530-70 210 0 360 24 470 92" fill="none" stroke="${design.lineColor}" stroke-width="2" />
-      <path d="M110 514c142 66 322 92 544 92 190 0 326-18 452-58" fill="none" stroke="${design.lineColor}" stroke-width="2" />
+        <ellipse cx="920" cy="180" rx="240" ry="170" fill="url(#aura)" />
+        <circle cx="1060" cy="110" r="56" fill="${design.orbColor}" />
+        <circle cx="140" cy="530" r="72" fill="${design.orbAccent}" />
 
-      <g transform="translate(86 92)">
-        <text x="0" y="0" fill="${design.metallicEnd}" font-size="28" font-family="Georgia, Times New Roman, serif" letter-spacing="9">COUP</text>
-        <text x="0" y="58" fill="${design.textPrimary}" font-size="78" font-weight="900" font-family="Segoe UI, Arial, sans-serif">TABLE VICTORY</text>
-        <text x="0" y="108" fill="${design.textSecondary}" font-size="24" font-weight="600" font-family="Segoe UI, Arial, sans-serif">${safeTagline}</text>
-      </g>
+        <path d="M90 96c200-36 400-44 520-44 190 0 320 16 480 56" fill="none" stroke="${design.lineColor}" stroke-width="1.2" />
+        <path d="M90 546c180 44 380 56 520 56 170 0 300-10 480-40" fill="none" stroke="${design.lineColor}" stroke-width="1.2" />
 
-      <g transform="translate(648 168)" filter="url(#glow)">
-        <circle cx="0" cy="0" r="84" fill="${design.metallicStart}" fill-opacity="0.08" stroke="${design.metallicEnd}" stroke-opacity="0.24" stroke-width="2" />
-        <path d="M-54 28h108l-10-66-28 30-16-44-16 44-28-30Z" fill="url(#metal)" stroke="${design.metallicStart}" stroke-width="3.2" stroke-linejoin="round" />
-        <path d="M-40 50h80" stroke="${design.metallicEnd}" stroke-width="7" stroke-linecap="round" />
-      </g>
+        <rect x="72" y="236" width="1056" height="1" fill="url(#metalH)" />
 
-      <g transform="translate(92 298)">
-        <rect x="0" y="0" width="716" height="206" rx="30" fill="${design.panelFill}" stroke="${design.panelStroke}" />
-        <text x="38" y="52" fill="${design.textMuted}" font-size="23" font-weight="800" font-family="Segoe UI, Arial, sans-serif" letter-spacing="4">WINNER</text>
-        <text x="38" y="126" fill="${design.textPrimary}" font-size="88" font-weight="900" font-family="Segoe UI, Arial, sans-serif">${safeName}</text>
-        <text x="38" y="178" fill="${design.textSecondary}" font-size="30" font-weight="600" font-family="Segoe UI, Arial, sans-serif">${safeTagline}</text>
-      </g>
+        <g transform="translate(72 68)">
+          <text x="0" y="0" fill="${design.metallicEnd}" font-size="22" font-family="Georgia, Times New Roman, serif" letter-spacing="8" font-weight="400">COUP</text>
+          <text x="0" y="64" fill="${design.textPrimary}" font-size="68" font-weight="900" font-family="Segoe UI, Arial, sans-serif" letter-spacing="0.5">TABLE VICTORY</text>
+          <text x="0" y="112" fill="${design.textSecondary}" font-size="20" font-weight="600" font-family="Segoe UI, Arial, sans-serif">${safeTagline}</text>
+        </g>
 
-      <g transform="translate(870 382)">
-        <rect x="0" y="0" width="230" height="138" rx="28" fill="${design.statusFill}" stroke="${design.statusStroke}" />
-        <text x="28" y="46" fill="${design.metallicEnd}" font-size="18" font-weight="800" font-family="Segoe UI, Arial, sans-serif" letter-spacing="2">STATUS</text>
-        <text x="28" y="92" fill="${design.textPrimary}" font-size="38" font-weight="900" font-family="Segoe UI, Arial, sans-serif">Winner</text>
-        <text x="28" y="120" fill="${design.textMuted}" font-size="18" font-weight="600" font-family="Segoe UI, Arial, sans-serif">${escapeXml(design.themeLabel)}</text>
-      </g>
+        <g transform="translate(1062 80)" filter="url(#glow)">
+          <rect x="-48" y="-44" width="96" height="88" rx="14" fill="${design.metallicStart}" fill-opacity="0.06" stroke="${design.metallicEnd}" stroke-opacity="0.2" stroke-width="1.5" />
+          <path d="M-28 14h56l-5-36-15 16-8-24-8 24-15-16Z" fill="url(#metal)" stroke="${design.metallicStart}" stroke-width="2" stroke-linejoin="round" />
+          <path d="M-20 26h40" stroke="${design.metallicEnd}" stroke-width="3.5" stroke-linecap="round" />
+        </g>
 
-      <g opacity="0.92">
-        <path d="M1020 92l30 30-30 30-30-30Z" fill="${design.gemA}" fill-opacity="0.88" />
-        <path d="M76 480l20 20-20 20-20-20Z" fill="${design.gemB}" fill-opacity="0.9" />
-        <path d="M1116 544l14 14-14 14-14-14Z" fill="${design.gemC}" fill-opacity="0.9" />
-        <path d="M126 562l16 16-16 16-16-16Z" fill="${design.gemA}" fill-opacity="0.84" />
-        <path d="M552 126l14 14-14 14-14-14Z" fill="${design.gemA}" fill-opacity="0.84" />
+        <g transform="translate(72 288)">
+          <rect x="0" y="0" width="680" height="144" rx="22" fill="${design.panelFill}" stroke="${design.panelStroke}" stroke-width="1" />
+          <text x="30" y="40" fill="${design.textMuted}" font-size="17" font-weight="800" font-family="Segoe UI, Arial, sans-serif" letter-spacing="3.5">WINNER</text>
+          <text x="30" y="108" fill="${design.textPrimary}" font-size="72" font-weight="900" font-family="Segoe UI, Arial, sans-serif">${safeName}</text>
+        </g>
+
+        <g transform="translate(808 294)">
+          <rect x="0" y="0" width="312" height="138" rx="22" fill="${design.statusFill}" stroke="${design.statusStroke}" stroke-width="1" />
+          <text x="24" y="38" fill="${design.metallicEnd}" font-size="14" font-weight="800" font-family="Segoe UI, Arial, sans-serif" letter-spacing="2.5">STATUS</text>
+          <text x="24" y="80" fill="${design.textPrimary}" font-size="36" font-weight="900" font-family="Segoe UI, Arial, sans-serif">Winner</text>
+          <text x="24" y="112" fill="${design.textMuted}" font-size="15" font-weight="600" font-family="Segoe UI, Arial, sans-serif">${escapeXml(design.themeLabel)}</text>
+        </g>
+
+        <g opacity="0.82">
+          <path d="M1080 548l12 12-12 12-12-12Z" fill="${design.gemA}" fill-opacity="0.78" />
+          <path d="M108 498l14 14-14 14-14-14Z" fill="${design.gemB}" fill-opacity="0.8" />
+          <path d="M594 78l10 10-10 10-10-10Z" fill="${design.gemC}" fill-opacity="0.65" />
+        </g>
       </g>
     </svg>
   `;
@@ -298,6 +335,8 @@ async function svgToPngFile(
       throw new Error("Unable to render share card");
     }
 
+    context.fillStyle = design.backgroundEnd;
+    context.fillRect(0, 0, 1200, 630);
     context.drawImage(image, 0, 0);
     const pngBlob = await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((value) => {

@@ -184,10 +184,10 @@ export function GameOverModal({
     ? (victoryCardDesign?.tagline ??
       "The table tilted your way and stayed there.")
     : isAwaitingHostReset
-      ? "The host controls the return. If you stay on this screen, you will be sent back to the lobby automatically."
+      ? "You'll be returned to the lobby automatically when the host resets."
       : isLobbyReturnAction
-        ? "The lobby route stays open. If the room has not reset yet, you will wait there until it does."
-        : "The next round starts clean. Use the reset, not the result.";
+        ? "Ready when the room reopens."
+        : "Clean slate. Run it back.";
   const previewLabel = isWinner ? "Victory Snapshot" : "Final Snapshot";
 
   useEffect(() => {
