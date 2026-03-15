@@ -176,7 +176,9 @@ export const getPreGameConfigStyles = (isMobile: boolean) => ({
 
   simpleGrid: {
     display: "grid",
-    gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(240px, 1fr))",
+    gridTemplateColumns: isMobile
+      ? "1fr"
+      : "repeat(auto-fit, minmax(240px, 1fr))",
     gap: 10,
   } satisfies CSSProperties,
 
@@ -187,7 +189,8 @@ export const getPreGameConfigStyles = (isMobile: boolean) => ({
     padding: isMobile ? "12px" : "14px",
     borderRadius: 22,
     border: "1px solid rgba(255,255,255,0.08)",
-    background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.025) 100%)",
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.025) 100%)",
     boxShadow: "0 10px 28px rgba(0,0,0,0.16)",
   } satisfies CSSProperties,
 
@@ -255,7 +258,8 @@ export const getPreGameConfigStyles = (isMobile: boolean) => ({
     fontSize: 13,
     fontWeight: 700,
     paddingInline: 14,
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 8px 18px rgba(0,0,0,0.18)",
+    boxShadow:
+      "inset 0 1px 0 rgba(255,255,255,0.04), 0 8px 18px rgba(0,0,0,0.18)",
   } satisfies CSSProperties,
 
   selectDropdown: {
@@ -264,8 +268,7 @@ export const getPreGameConfigStyles = (isMobile: boolean) => ({
     background:
       "linear-gradient(180deg, rgba(18,29,47,0.98) 0%, rgba(9,15,28,0.99) 100%)",
     padding: 8,
-    boxShadow:
-      "0 0 0 1px rgba(255,255,255,0.04), 0 24px 50px rgba(0,0,0,0.42)",
+    boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 24px 50px rgba(0,0,0,0.42)",
     backdropFilter: "blur(18px)",
   } satisfies CSSProperties,
 
@@ -316,7 +319,8 @@ export const getPreGameConfigStyles = (isMobile: boolean) => ({
     padding: isMobile ? "12px" : "14px",
     borderRadius: 20,
     border: "1px solid rgba(255,255,255,0.08)",
-    background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.025) 100%)",
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.025) 100%)",
     boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
   } satisfies CSSProperties,
 

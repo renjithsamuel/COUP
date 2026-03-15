@@ -131,7 +131,10 @@ function toLobbyGameConfig(raw: any) {
   };
 }
 
-function mapPayload(type: ServerMessageType, raw: any): Record<string, unknown> {
+function mapPayload(
+  type: ServerMessageType,
+  raw: any,
+): Record<string, unknown> {
   if (type === ServerMessageType.RETURN_TO_LOBBY) {
     return {
       lobbyId: raw?.lobby_id ?? raw?.lobbyId ?? "",

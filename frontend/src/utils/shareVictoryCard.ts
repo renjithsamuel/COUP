@@ -163,7 +163,8 @@ const THEMES: VictoryCardDesign[] = [
 
 function hashSeed(seed: string) {
   return [...seed].reduce(
-    (total, char, index) => (total * 31 + char.charCodeAt(0) + index) % 2147483647,
+    (total, char, index) =>
+      (total * 31 + char.charCodeAt(0) + index) % 2147483647,
     7,
   );
 }
@@ -171,7 +172,8 @@ function hashSeed(seed: string) {
 export function chooseVictoryCardDesign(seed: string): VictoryCardDesign {
   const hash = hashSeed(seed);
   const theme = THEMES[hash % THEMES.length];
-  const tagline = TAGLINES[(Math.floor(hash / 11) + theme.themeKey.length) % TAGLINES.length];
+  const tagline =
+    TAGLINES[(Math.floor(hash / 11) + theme.themeKey.length) % TAGLINES.length];
   return {
     ...theme,
     tagline,
@@ -283,7 +285,8 @@ async function svgToPngFile(
     const image = await new Promise<HTMLImageElement>((resolve, reject) => {
       const nextImage = new Image();
       nextImage.onload = () => resolve(nextImage);
-      nextImage.onerror = () => reject(new Error("Unable to load share card image"));
+      nextImage.onerror = () =>
+        reject(new Error("Unable to load share card image"));
       nextImage.src = url;
     });
 
@@ -306,13 +309,9 @@ async function svgToPngFile(
       }, "image/png");
     });
 
-    return new File(
-      [pngBlob],
-      buildVictoryFilename(winnerName),
-      {
-        type: "image/png",
-      },
-    );
+    return new File([pngBlob], buildVictoryFilename(winnerName), {
+      type: "image/png",
+    });
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -349,7 +348,8 @@ export async function shareVictoryCard(
   if (
     typeof navigator !== "undefined" &&
     typeof navigator.share === "function" &&
-    (typeof navigator.canShare !== "function" || navigator.canShare(sharePayload))
+    (typeof navigator.canShare !== "function" ||
+      navigator.canShare(sharePayload))
   ) {
     await navigator.share(sharePayload);
     return "shared";

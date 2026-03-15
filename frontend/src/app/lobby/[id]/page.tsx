@@ -60,13 +60,15 @@ export default function LobbyDetailPage() {
   });
   const startGame = useStartGame();
   const [showConfig, setShowConfig] = useState(false);
-  const [savedConfig, setSavedConfig] = useState<GameConfig>(DEFAULT_LOBBY_CONFIG);
+  const [savedConfig, setSavedConfig] =
+    useState<GameConfig>(DEFAULT_LOBBY_CONFIG);
 
   const lobby = lobbyResponse?.lobby ?? null;
   const activePlayer = useMemo(
     () =>
       lobby && state.myPlayerId
-        ? lobby.players.find((player) => player.id === state.myPlayerId) ?? null
+        ? (lobby.players.find((player) => player.id === state.myPlayerId) ??
+          null)
         : null,
     [lobby, state.myPlayerId],
   );
@@ -205,7 +207,7 @@ export default function LobbyDetailPage() {
     return () => {
       ws.close();
     };
-  }, [hasResolvedSession, lobby?.status, lobbyId, router, state.myPlayerId]);
+  }, [hasResolvedSession, lobby, lobbyId, router, state.myPlayerId]);
 
   // Redirect to game when lobby starts — polling fallback for non-host players
   useEffect(() => {
@@ -243,7 +245,9 @@ export default function LobbyDetailPage() {
     }
     lobbySessionStore.clear(lobbyId);
     dispatch({ type: "LEAVE_LOBBY" });
-    await queryClient.cancelQueries({ queryKey: ["lobbies", "detail", lobbyId] });
+    await queryClient.cancelQueries({
+      queryKey: ["lobbies", "detail", lobbyId],
+    });
     queryClient.removeQueries({ queryKey: ["lobbies", "detail", lobbyId] });
     await queryClient.invalidateQueries({ queryKey: ["lobbies", "list"] });
     router.replace("/");
@@ -259,7 +263,10 @@ export default function LobbyDetailPage() {
       setIsWaitingForLobbyReset(false);
       setIsStartingGameLocally(true);
       try {
-        const res = await startGame.mutateAsync({ lobbyId, config: savedConfig });
+        const res = await startGame.mutateAsync({
+          lobbyId,
+          config: savedConfig,
+        });
         router.replace(
           `/game/${res.game_id}?playerId=${state.myPlayerId}&lobbyId=${lobbyId}`,
         );
@@ -292,7 +299,8 @@ export default function LobbyDetailPage() {
           res.playerId,
           res.sessionToken,
           nextPlayerName,
-          res.lobby.players.find((player) => player.id === res.playerId)?.isHost,
+          res.lobby.players.find((player) => player.id === res.playerId)
+            ?.isHost,
         );
         setSessionToken(res.sessionToken);
         dispatch({ type: "SET_MY_PLAYER_ID", payload: res.playerId });
@@ -372,7 +380,8 @@ export default function LobbyDetailPage() {
               color: tokens.text.muted,
             }}
           >
-            The lobby was closed or all waiting seats expired before the game started.
+            The lobby was closed or all waiting seats expired before the game
+            started.
           </div>
           <button
             onClick={() => router.push("/")}
@@ -516,7 +525,8 @@ export default function LobbyDetailPage() {
               fontSize: 14,
             }}
           >
-            You are back at the lobby route already. As soon as the room resets, this page will refresh into the waiting room automatically.
+            You are back at the lobby route already. As soon as the room resets,
+            this page will refresh into the waiting room automatically.
           </div>
           <button
             type="button"
@@ -598,149 +608,179 @@ export default function LobbyDetailPage() {
       />
       {showSeatRecovery && lobby && typeof document !== "undefined"
         ? createPortal(
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: tokens.zIndex.modal + 2,
-            background: "rgba(7, 12, 22, 0.72)",
-            backdropFilter: "blur(12px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: tokens.spacing.md,
-            pointerEvents: "auto",
-          }}
-        >
-          <div
-            onClick={(event) => event.stopPropagation()}
-            style={{
-              width: "100%",
-              maxWidth: 420,
-              pointerEvents: "auto",
-              borderRadius: 24,
-              border: "1px solid rgba(255,255,255,0.08)",
-              background:
-                "linear-gradient(180deg, rgba(18,27,43,0.98) 0%, rgba(10,16,29,0.98) 100%)",
-              boxShadow: tokens.elevation.dp24,
-              padding: tokens.spacing.xl,
-              display: "flex",
-              flexDirection: "column",
-              gap: tokens.spacing.md,
-            }}
-          >
             <div
               style={{
-                fontSize: 11,
-                letterSpacing: 1.6,
-                textTransform: "uppercase",
-                color: tokens.text.accent,
-                fontWeight: 800,
-              }}
-            >
-              Seat update
-            </div>
-            <div
-              style={{
-                fontSize: 28,
-                lineHeight: 1.1,
-                fontWeight: 800,
-                color: tokens.text.primary,
-              }}
-            >
-              Your saved seat expired.
-            </div>
-            <div
-              style={{
-                color: tokens.text.secondary,
-                lineHeight: 1.6,
-                fontSize: 14,
-              }}
-            >
-              The room is still open, but this tab no longer owns a waiting-room seat. You can join again as a fresh player or head back home.
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                gap: tokens.spacing.sm,
-              }}
-            >
-              <div
-                style={{
-                  borderRadius: 16,
-                  border: "1px solid rgba(255,255,255,0.07)",
-                  background: "rgba(255,255,255,0.035)",
-                  padding: `${tokens.spacing.sm}px ${tokens.spacing.md}px`,
-                }}
-              >
-                <div style={{ fontSize: 11, color: tokens.text.muted, textTransform: "uppercase", letterSpacing: 1 }}>
-                  Room
-                </div>
-                <div style={{ fontSize: 18, color: tokens.text.primary, fontWeight: 700, marginTop: 4 }}>
-                  {lobby.id}
-                </div>
-              </div>
-              <div
-                style={{
-                  borderRadius: 16,
-                  border: "1px solid rgba(255,255,255,0.07)",
-                  background: "rgba(255,255,255,0.035)",
-                  padding: `${tokens.spacing.sm}px ${tokens.spacing.md}px`,
-                }}
-              >
-                <div style={{ fontSize: 11, color: tokens.text.muted, textTransform: "uppercase", letterSpacing: 1 }}>
-                  Rejoin as
-                </div>
-                <div style={{ fontSize: 18, color: tokens.text.primary, fontWeight: 700, marginTop: 4 }}>
-                  {savedPlayerName || "Previous name"}
-                </div>
-              </div>
-            </div>
-            <div
-              style={{
+                position: "fixed",
+                inset: 0,
+                zIndex: tokens.zIndex.modal + 2,
+                background: "rgba(7, 12, 22, 0.72)",
+                backdropFilter: "blur(12px)",
                 display: "flex",
-                gap: tokens.spacing.sm,
+                alignItems: "center",
+                justifyContent: "center",
+                padding: tokens.spacing.md,
+                pointerEvents: "auto",
               }}
             >
-              <button
-                type="button"
-                onClick={() => router.replace("/")}
+              <div
+                onClick={(event) => event.stopPropagation()}
                 style={{
-                  flex: 1,
-                  minHeight: 46,
-                  borderRadius: 14,
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  background: "rgba(255,255,255,0.04)",
-                  color: tokens.text.primary,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                Back Home
-              </button>
-              <button
-                type="button"
-                onClick={handleRejoinAsNewSeat}
-                style={{
-                  flex: 1,
-                  minHeight: 46,
-                  borderRadius: 14,
-                  border: "1px solid rgba(255,193,7,0.28)",
+                  width: "100%",
+                  maxWidth: 420,
+                  pointerEvents: "auto",
+                  borderRadius: 24,
+                  border: "1px solid rgba(255,255,255,0.08)",
                   background:
-                    "linear-gradient(135deg, rgba(255,193,7,0.18), rgba(255,143,0,0.1))",
-                  color: tokens.text.accent,
-                  fontWeight: 800,
-                  cursor: "pointer",
+                    "linear-gradient(180deg, rgba(18,27,43,0.98) 0%, rgba(10,16,29,0.98) 100%)",
+                  boxShadow: tokens.elevation.dp24,
+                  padding: tokens.spacing.xl,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: tokens.spacing.md,
                 }}
               >
-                Join New Seat
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )
+                <div
+                  style={{
+                    fontSize: 11,
+                    letterSpacing: 1.6,
+                    textTransform: "uppercase",
+                    color: tokens.text.accent,
+                    fontWeight: 800,
+                  }}
+                >
+                  Seat update
+                </div>
+                <div
+                  style={{
+                    fontSize: 28,
+                    lineHeight: 1.1,
+                    fontWeight: 800,
+                    color: tokens.text.primary,
+                  }}
+                >
+                  Your saved seat expired.
+                </div>
+                <div
+                  style={{
+                    color: tokens.text.secondary,
+                    lineHeight: 1.6,
+                    fontSize: 14,
+                  }}
+                >
+                  The room is still open, but this tab no longer owns a
+                  waiting-room seat. You can join again as a fresh player or
+                  head back home.
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                    gap: tokens.spacing.sm,
+                  }}
+                >
+                  <div
+                    style={{
+                      borderRadius: 16,
+                      border: "1px solid rgba(255,255,255,0.07)",
+                      background: "rgba(255,255,255,0.035)",
+                      padding: `${tokens.spacing.sm}px ${tokens.spacing.md}px`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: tokens.text.muted,
+                        textTransform: "uppercase",
+                        letterSpacing: 1,
+                      }}
+                    >
+                      Room
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 18,
+                        color: tokens.text.primary,
+                        fontWeight: 700,
+                        marginTop: 4,
+                      }}
+                    >
+                      {lobby.id}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      borderRadius: 16,
+                      border: "1px solid rgba(255,255,255,0.07)",
+                      background: "rgba(255,255,255,0.035)",
+                      padding: `${tokens.spacing.sm}px ${tokens.spacing.md}px`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: tokens.text.muted,
+                        textTransform: "uppercase",
+                        letterSpacing: 1,
+                      }}
+                    >
+                      Rejoin as
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 18,
+                        color: tokens.text.primary,
+                        fontWeight: 700,
+                        marginTop: 4,
+                      }}
+                    >
+                      {savedPlayerName || "Previous name"}
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: tokens.spacing.sm,
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => router.replace("/")}
+                    style={{
+                      flex: 1,
+                      minHeight: 46,
+                      borderRadius: 14,
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: "rgba(255,255,255,0.04)",
+                      color: tokens.text.primary,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Back Home
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRejoinAsNewSeat}
+                    style={{
+                      flex: 1,
+                      minHeight: 46,
+                      borderRadius: 14,
+                      border: "1px solid rgba(255,193,7,0.28)",
+                      background:
+                        "linear-gradient(135deg, rgba(255,193,7,0.18), rgba(255,143,0,0.1))",
+                      color: tokens.text.accent,
+                      fontWeight: 800,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Join New Seat
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
         : null}
       <PreGameConfig
         isOpen={showConfig}

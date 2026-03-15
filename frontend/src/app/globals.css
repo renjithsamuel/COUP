@@ -30,13 +30,21 @@ body,
 }
 
 *::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(247, 230, 188, 0.72), rgba(190, 141, 75, 0.82));
+  background: linear-gradient(
+    180deg,
+    rgba(247, 230, 188, 0.72),
+    rgba(190, 141, 75, 0.82)
+  );
   border-radius: 999px;
   border: 2px solid rgba(7, 12, 24, 0.22);
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(255, 241, 208, 0.9), rgba(211, 162, 97, 0.95));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 241, 208, 0.9),
+    rgba(211, 162, 97, 0.95)
+  );
 }
 
 *::-webkit-scrollbar-corner {

@@ -335,15 +335,28 @@ export function LobbyRoom({
           <div
             style={
               isMobile
-                ? { ...s.heroCard, padding: "14px 14px 12px", gap: 6, borderRadius: 18 }
+                ? {
+                    ...s.heroCard,
+                    padding: "14px 14px 12px",
+                    gap: 6,
+                    borderRadius: 18,
+                  }
                 : s.heroCard
             }
           >
             <div style={s.eyebrow}>Lobby room</div>
-            <div style={isMobile ? { ...s.title, fontSize: 22, lineHeight: 1.1 } : s.title}>
+            <div
+              style={
+                isMobile
+                  ? { ...s.title, fontSize: 22, lineHeight: 1.1 }
+                  : s.title
+              }
+            >
               {lobby.name || `Lobby ${lobby.id}`}
             </div>
-            <div style={isMobile ? { ...s.subtitle, fontSize: 12 } : s.subtitle}>
+            <div
+              style={isMobile ? { ...s.subtitle, fontSize: 12 } : s.subtitle}
+            >
               Gather the table, share the code, and start when the room is
               ready.
             </div>
@@ -387,19 +400,43 @@ export function LobbyRoom({
           <div
             style={
               isMobile
-                ? { ...s.statsRow, gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }
+                ? {
+                    ...s.statsRow,
+                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                    gap: 8,
+                  }
                 : s.statsRow
             }
           >
-            <div style={isMobile ? { ...s.statCard, padding: "12px 12px", borderRadius: 16 } : s.statCard}>
+            <div
+              style={
+                isMobile
+                  ? { ...s.statCard, padding: "12px 12px", borderRadius: 16 }
+                  : s.statCard
+              }
+            >
               <div style={s.statLabel}>Players</div>
-              <div style={isMobile ? { ...s.statValue, fontSize: 16 } : s.statValue}>
+              <div
+                style={
+                  isMobile ? { ...s.statValue, fontSize: 16 } : s.statValue
+                }
+              >
                 {lobby.players.length} / {lobby.maxPlayers}
               </div>
             </div>
-            <div style={isMobile ? { ...s.statCard, padding: "12px 12px", borderRadius: 16 } : s.statCard}>
+            <div
+              style={
+                isMobile
+                  ? { ...s.statCard, padding: "12px 12px", borderRadius: 16 }
+                  : s.statCard
+              }
+            >
               <div style={s.statLabel}>Status</div>
-              <div style={isMobile ? { ...s.statValue, fontSize: 16 } : s.statValue}>
+              <div
+                style={
+                  isMobile ? { ...s.statValue, fontSize: 16 } : s.statValue
+                }
+              >
                 {lobby.status === "waiting" ? "Waiting" : "Starting"}
               </div>
             </div>
@@ -432,8 +469,20 @@ export function LobbyRoom({
               custom={i}
             >
               <div style={s.playerMeta}>
-                <span style={isMobile ? { ...s.playerName, fontSize: 13 } : s.playerName}>{player.name}</span>
-                <span style={isMobile ? { ...s.playerCaption, fontSize: 10 } : s.playerCaption}>
+                <span
+                  style={
+                    isMobile ? { ...s.playerName, fontSize: 13 } : s.playerName
+                  }
+                >
+                  {player.name}
+                </span>
+                <span
+                  style={
+                    isMobile
+                      ? { ...s.playerCaption, fontSize: 10 }
+                      : s.playerCaption
+                  }
+                >
                   {player.id === myPlayerId ? "You" : "Player seat"}
                 </span>
               </div>
@@ -455,7 +504,15 @@ export function LobbyRoom({
                   lobby.status === "waiting" && (
                     <button
                       type="button"
-                      style={isMobile ? { ...s.kickButton, minWidth: 80, padding: "7px 10px" } : s.kickButton}
+                      style={
+                        isMobile
+                          ? {
+                              ...s.kickButton,
+                              minWidth: 80,
+                              padding: "7px 10px",
+                            }
+                          : s.kickButton
+                      }
                       onClick={() =>
                         setConfirmState({
                           type: "kick",
@@ -505,7 +562,12 @@ export function LobbyRoom({
             <button
               style={
                 isMobile
-                  ? { ...s.secondaryButton, width: "100%", minHeight: 42, fontSize: 11 }
+                  ? {
+                      ...s.secondaryButton,
+                      width: "100%",
+                      minHeight: 42,
+                      fontSize: 11,
+                    }
                   : s.secondaryButton
               }
               onClick={() => setShowLeaderboard(true)}
@@ -521,7 +583,9 @@ export function LobbyRoom({
                 onClick={() => setConfirmState({ type: "leave" })}
                 style={{
                   ...s.secondaryButton,
-                  ...(isMobile ? { width: "100%", minHeight: 42, fontSize: 11 } : {}),
+                  ...(isMobile
+                    ? { width: "100%", minHeight: 42, fontSize: 11 }
+                    : {}),
                   border: "1px solid rgba(239,83,80,0.3)",
                   background: "rgba(239,83,80,0.08)",
                   color: "#ef5350",
@@ -540,7 +604,12 @@ export function LobbyRoom({
                 onClick={onEditConfig}
                 style={
                   isMobile
-                    ? { ...s.secondaryButton, width: "100%", minHeight: 42, fontSize: 11 }
+                    ? {
+                        ...s.secondaryButton,
+                        width: "100%",
+                        minHeight: 42,
+                        fontSize: 11,
+                      }
                     : s.secondaryButton
                 }
               >
@@ -556,7 +625,13 @@ export function LobbyRoom({
             <button
               style={
                 isMobile
-                  ? { ...s.startButton, width: "100%", minHeight: 50, fontSize: 14, padding: "12px 14px" }
+                  ? {
+                      ...s.startButton,
+                      width: "100%",
+                      minHeight: 50,
+                      fontSize: 14,
+                      padding: "12px 14px",
+                    }
                   : s.startButton
               }
               onClick={onStart}
@@ -564,7 +639,11 @@ export function LobbyRoom({
               Start Game
             </button>
           ) : (
-            <div style={isMobile ? { ...s.waitingText, width: "100%" } : s.waitingText}>
+            <div
+              style={
+                isMobile ? { ...s.waitingText, width: "100%" } : s.waitingText
+              }
+            >
               {lobby.status !== "waiting"
                 ? "Game starting..."
                 : isHost

@@ -40,7 +40,10 @@ export function GuideModal({
     CHARACTER_GUIDE_DETAILS[character].segments.map((segment, index) => {
       if (segment.tone === "action") {
         return (
-          <span key={`${character}-segment-${index}`} style={s.inlineActionText}>
+          <span
+            key={`${character}-segment-${index}`}
+            style={s.inlineActionText}
+          >
             {segment.text}
           </span>
         );
@@ -191,7 +194,9 @@ export function GuideModal({
                     >
                       {CHARACTER_GUIDE_DETAILS[char].actionLabel}
                     </span>
-                    <span style={s.characterAbility}>{renderGuideSegments(char)}</span>
+                    <span style={s.characterAbility}>
+                      {renderGuideSegments(char)}
+                    </span>
                   </span>
                 </div>
               ))}

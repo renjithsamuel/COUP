@@ -29,7 +29,13 @@ export interface GameOverModalProps {
 
 function CloseIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
       <path
         d="M6 6 18 18"
         stroke="currentColor"
@@ -48,7 +54,13 @@ function CloseIcon() {
 
 function ShareIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
       <path
         d="M14 5l5 5-5 5"
         stroke="currentColor"
@@ -69,8 +81,19 @@ function ShareIcon() {
 
 function DownloadIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 4v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M12 4v10"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
       <path
         d="m8 10 4 4 4-4"
         stroke="currentColor"
@@ -78,7 +101,12 @@ function DownloadIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path d="M5 19h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path
+        d="M5 19h14"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -134,7 +162,9 @@ export function GameOverModal({
   const modalRef = useRef<HTMLDivElement>(null);
   const [isReplaying, setIsReplaying] = useState(false);
   const isMobile = useIsMobile();
-  const isLobbyReturnAction = primaryActionLabel.toLowerCase().includes("lobby");
+  const isLobbyReturnAction = primaryActionLabel
+    .toLowerCase()
+    .includes("lobby");
   const outcomeTitle = isWinner ? "Victory" : "Defeat";
   const isAwaitingHostReset = !isWinner && !showPrimaryAction;
   const subtitle = isWinner
@@ -151,7 +181,8 @@ export function GameOverModal({
       ? getVictoryCardPreviewSrc(winnerName || "Winner", victoryCardDesign)
       : null;
   const resultSummary = isWinner
-    ? victoryCardDesign?.tagline ?? "The table tilted your way and stayed there."
+    ? (victoryCardDesign?.tagline ??
+      "The table tilted your way and stayed there.")
     : isAwaitingHostReset
       ? "The host controls the return. If you stay on this screen, you will be sent back to the lobby automatically."
       : isLobbyReturnAction
@@ -215,7 +246,10 @@ export function GameOverModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          <div ref={modalRef} style={gameOverModalStyles.modal(isMobile, isWinner)}>
+          <div
+            ref={modalRef}
+            style={gameOverModalStyles.modal(isMobile, isWinner)}
+          >
             <div style={gameOverModalStyles.aura} />
             <div style={gameOverModalStyles.scrollArea}>
               <div style={gameOverModalStyles.topBar}>
@@ -255,35 +289,58 @@ export function GameOverModal({
                     </div>
                   )}
                 </div>
-                <div style={gameOverModalStyles.summaryText}>{resultSummary}</div>
+                <div style={gameOverModalStyles.summaryText}>
+                  {resultSummary}
+                </div>
               </div>
               {previewSrc && (
                 <div style={gameOverModalStyles.previewShell(isMobile)}>
                   <div style={gameOverModalStyles.previewChrome}>
-                    <span style={gameOverModalStyles.previewLabel}>{previewLabel}</span>
+                    <span style={gameOverModalStyles.previewLabel}>
+                      {previewLabel}
+                    </span>
                     <div style={gameOverModalStyles.previewActions}>
                       <button
                         type="button"
-                        style={gameOverModalStyles.iconButton(isReplaying || isSharingWin)}
+                        style={gameOverModalStyles.iconButton(
+                          isReplaying || isSharingWin,
+                        )}
                         onClick={() => void onShareWin?.()}
                         disabled={isReplaying || isSharingWin}
-                        aria-label={isSharingWin ? "Preparing share card" : "Share victory card"}
-                        title={isSharingWin ? "Preparing..." : "Share victory card"}
+                        aria-label={
+                          isSharingWin
+                            ? "Preparing share card"
+                            : "Share victory card"
+                        }
+                        title={
+                          isSharingWin ? "Preparing..." : "Share victory card"
+                        }
                       >
                         <ShareIcon />
                       </button>
                       <button
                         type="button"
-                        style={gameOverModalStyles.iconButton(isReplaying || isSharingWin)}
+                        style={gameOverModalStyles.iconButton(
+                          isReplaying || isSharingWin,
+                        )}
                         onClick={() => void onDownloadWin?.()}
                         disabled={isReplaying || isSharingWin}
-                        aria-label={isSharingWin ? "Preparing download" : "Download victory card"}
-                        title={isSharingWin ? "Preparing..." : "Download victory card"}
+                        aria-label={
+                          isSharingWin
+                            ? "Preparing download"
+                            : "Download victory card"
+                        }
+                        title={
+                          isSharingWin
+                            ? "Preparing..."
+                            : "Download victory card"
+                        }
                       >
                         <DownloadIcon />
                       </button>
                     </div>
                   </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={previewSrc}
                     alt={`Victory card preview for ${winnerName || "winner"}`}

@@ -54,9 +54,8 @@ export function GamePageContent() {
   const [lobbySession, setLobbySession] = useState<StoredLobbySession | null>(
     null,
   );
-  const [hasResolvedLobbySession, setHasResolvedLobbySession] = useState(
-    !lobbyId,
-  );
+  const [hasResolvedLobbySession, setHasResolvedLobbySession] =
+    useState(!lobbyId);
   const aiReplay = readAiReplayConfig(searchParams);
   const { data: lobbyResponse } = useLobby(
     lobbyId,
@@ -72,15 +71,19 @@ export function GamePageContent() {
     () =>
       Boolean(
         lobbyId &&
-          resolvedLobbyPlayerId &&
-          (lobbyResponse?.lobby.players.some(
-            (player) =>
-              player.id === resolvedLobbyPlayerId && player.isHost,
-          ) ||
-            (lobbySession?.playerId === resolvedLobbyPlayerId &&
-              lobbySession?.isHost === true)),
+        resolvedLobbyPlayerId &&
+        (lobbyResponse?.lobby.players.some(
+          (player) => player.id === resolvedLobbyPlayerId && player.isHost,
+        ) ||
+          (lobbySession?.playerId === resolvedLobbyPlayerId &&
+            lobbySession?.isHost === true)),
       ),
-    [lobbyId, lobbyResponse?.lobby.players, lobbySession, resolvedLobbyPlayerId],
+    [
+      lobbyId,
+      lobbyResponse?.lobby.players,
+      lobbySession,
+      resolvedLobbyPlayerId,
+    ],
   );
   const showPlayAgainAction = lobbyId ? true : Boolean(aiReplay);
   const playAgainLabel = lobbyId ? "Back To Lobby" : "Play Again";
@@ -109,13 +112,7 @@ export function GamePageContent() {
     const targetPlayerId =
       lobbyResponse.playerId ?? lobbySession?.playerId ?? playerId;
     router.replace(`/lobby/${lobbyId}?playerId=${targetPlayerId}`);
-  }, [
-    lobbyId,
-    lobbyResponse,
-    lobbySession?.playerId,
-    playerId,
-    router,
-  ]);
+  }, [lobbyId, lobbyResponse, lobbySession?.playerId, playerId, router]);
 
   const handlePlayAgain = async () => {
     if (lobbyId && playerId) {
@@ -132,7 +129,10 @@ export function GamePageContent() {
           sessionToken: lobbySession?.sessionToken,
         });
         queryClient.setQueryData(
-          [...lobbyKeys.detail(lobbyId), lobbySession?.sessionToken ?? "anonymous"],
+          [
+            ...lobbyKeys.detail(lobbyId),
+            lobbySession?.sessionToken ?? "anonymous",
+          ],
           {
             lobby: resetLobby,
             playerId,
@@ -145,8 +145,8 @@ export function GamePageContent() {
             playerId,
             lobbySession.sessionToken,
             lobbySession.playerName,
-            resetLobby.players.find((player) => player.id === playerId)?.isHost ??
-              lobbySession.isHost,
+            resetLobby.players.find((player) => player.id === playerId)
+              ?.isHost ?? lobbySession.isHost,
           );
         }
         await Promise.all([

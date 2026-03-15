@@ -167,12 +167,7 @@ export interface GameBoardProps {
   roomLeaderboard?: LeaderboardEntry[];
 }
 
-const CONFETTI_COLORS = [
-  "#F6C445",
-  "#EDE4CF",
-  "#8CCBFF",
-  "#F7B7A3",
-];
+const CONFETTI_COLORS = ["#F6C445", "#EDE4CF", "#8CCBFF", "#F7B7A3"];
 const CONFETTI_PIECES = Array.from({ length: 44 }, (_, index) => ({
   id: index,
   x: (index * 17) % 100,
@@ -414,8 +409,14 @@ export function GameBoard({
         return;
       }
 
-      const maxWidth = Math.min(POST_GAME_TRAY_MAX_WIDTH, window.innerWidth - 24);
-      const maxHeight = Math.min(POST_GAME_TRAY_MAX_HEIGHT, window.innerHeight - 110);
+      const maxWidth = Math.min(
+        POST_GAME_TRAY_MAX_WIDTH,
+        window.innerWidth - 24,
+      );
+      const maxHeight = Math.min(
+        POST_GAME_TRAY_MAX_HEIGHT,
+        window.innerHeight - 110,
+      );
 
       setPostGameTraySize({
         width: clamp(
@@ -477,7 +478,15 @@ export function GameBoard({
     return () => {
       window.clearTimeout(timerId);
     };
-  }, [gameId, gameState?.turnNumber, isGameOver, isMobile, isWinner, playerId, winnerName]);
+  }, [
+    gameId,
+    gameState?.turnNumber,
+    isGameOver,
+    isMobile,
+    isWinner,
+    playerId,
+    winnerName,
+  ]);
 
   useEffect(() => {
     if (!isGameOver || !isWinner) {
@@ -605,9 +614,7 @@ export function GameBoard({
       <div
         style={{ ...s.wrapper, alignItems: "center", justifyContent: "center" }}
       >
-        <div style={{ color: "#8B95A8", fontSize: 16 }}>
-          {loadingLabel}
-        </div>
+        <div style={{ color: "#8B95A8", fontSize: 16 }}>{loadingLabel}</div>
       </div>
     );
   }
@@ -798,7 +805,11 @@ export function GameBoard({
         winnerName || myPlayer?.name || "Winner",
         victoryCardDesign,
       );
-      setActionHint(outcome === "shared" ? "Victory card shared." : "Victory card downloaded.");
+      setActionHint(
+        outcome === "shared"
+          ? "Victory card shared."
+          : "Victory card downloaded.",
+      );
     } catch {
       setActionHint("Could not prepare the victory card.");
     } finally {
@@ -837,7 +848,8 @@ export function GameBoard({
       ? "Open the summary, then pull the whole room back to the lobby when you are ready."
       : "The host controls the return. Stay here and you will be pulled back to the lobby automatically."
     : isWinner
-      ? victoryCardDesign?.tagline ?? "Share the finish or run the room again."
+      ? (victoryCardDesign?.tagline ??
+        "Share the finish or run the room again.")
       : "Open the summary for the result, then reset when you are ready.";
   const widthRatio =
     (pinnedGuideSize.width - PINNED_GUIDE_MIN_WIDTH) /
@@ -845,7 +857,8 @@ export function GameBoard({
   const heightRatio =
     (pinnedGuideSize.height - PINNED_GUIDE_MIN_HEIGHT) /
     (PINNED_GUIDE_MAX_HEIGHT - PINNED_GUIDE_MIN_HEIGHT);
-  const pinnedGuideScale = 0.94 + clamp((widthRatio + heightRatio) / 2, 0, 1) * 0.22;
+  const pinnedGuideScale =
+    0.94 + clamp((widthRatio + heightRatio) / 2, 0, 1) * 0.22;
 
   const handlePinnedGuideResizeStart = (
     event: React.PointerEvent<HTMLButtonElement>,
@@ -1074,7 +1087,9 @@ export function GameBoard({
                           opacity: isReplayPending ? 0.72 : 1,
                         }}
                       >
-                        {isReplayPending ? playAgainPendingLabel : playAgainLabel}
+                        {isReplayPending
+                          ? playAgainPendingLabel
+                          : playAgainLabel}
                       </button>
                     )}
                   </div>
@@ -1385,7 +1400,11 @@ export function GameBoard({
             {CONFETTI_DUST.map((particle) => (
               <motion.span
                 key={`dust-${particle.id}`}
-                style={s.confettiDust(particle.x, particle.size, particle.color)}
+                style={s.confettiDust(
+                  particle.x,
+                  particle.size,
+                  particle.color,
+                )}
                 initial={{ x: 0, y: "-6vh", opacity: 0, scale: 0.72 }}
                 animate={{
                   x: [0, particle.drift * 0.45, particle.drift],
@@ -1810,7 +1829,10 @@ export function GameBoard({
             animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, x: 16, y: 6 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            style={s.pinnedGuidePanel(pinnedGuideSize.width, pinnedGuideSize.height)}
+            style={s.pinnedGuidePanel(
+              pinnedGuideSize.width,
+              pinnedGuideSize.height,
+            )}
           >
             <div
               style={s.pinnedGuideHandle}
@@ -1894,7 +1916,8 @@ export function GameBoard({
                       <span style={s.modalEyebrow}>Exit game</span>
                       <span style={s.modalTitle}>Leave this match?</span>
                       <span style={s.modalSubtitle}>
-                        Leave the table and return to the home screen. The match will continue for anyone still connected.
+                        Leave the table and return to the home screen. The match
+                        will continue for anyone still connected.
                       </span>
                     </div>
                     <button

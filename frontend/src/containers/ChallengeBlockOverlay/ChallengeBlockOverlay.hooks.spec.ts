@@ -24,8 +24,6 @@ describe("getBlockOptions", () => {
   it("marks contessa as a bluff when the player cannot block assassination honestly", () => {
     const options = getBlockOptions([Character.CONTESSA], [Character.DUKE]);
 
-    expect(options).toEqual([
-      { character: Character.CONTESSA, isBluff: true },
-    ]);
+    expect(options).toEqual([{ character: Character.CONTESSA, isBluff: true }]);
   });
 });

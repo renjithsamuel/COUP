@@ -260,7 +260,8 @@ export const gameOverModalStyles = {
     height: 30,
     borderRadius: 999,
     border: "1px solid rgba(255,255,255,0.1)",
-    background: "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(246,196,69,0.08))",
+    background:
+      "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(246,196,69,0.08))",
     color: tokens.text.primary,
     display: "inline-flex",
     alignItems: "center",

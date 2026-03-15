@@ -261,8 +261,9 @@ function getTimerExpiredConsequence(phase: GamePhase): ResponseStatus | null {
 export function useGameBoard(gameId: string, playerId: string) {
   const { state, dispatch, isMyTurn, currentPhase } = useGameContext();
   const [activeEvent, setActiveEvent] = useState<GameEvent | null>(null);
-  const [returnToLobby, setReturnToLobby] =
-    useState<ReturnToLobbyState | null>(null);
+  const [returnToLobby, setReturnToLobby] = useState<ReturnToLobbyState | null>(
+    null,
+  );
   const mountedRef = useRef(true);
   const { enqueue, clear } = useAnimationQueue();
 
@@ -455,7 +456,8 @@ export function useGameBoard(gameId: string, playerId: string) {
                     playerSegment(challenged),
                     plainSegment("'s "),
                     actionSegment(
-                      ACTION_RULES[actionType as ActionType]?.label ?? actionType,
+                      ACTION_RULES[actionType as ActionType]?.label ??
+                        actionType,
                     ),
                     plainSegment("."),
                   ];
@@ -698,7 +700,8 @@ export function useGameBoard(gameId: string, playerId: string) {
             if (lobbyId) {
               setReturnToLobby({
                 lobbyId,
-                config: (msg.payload.config as GameConfig | undefined) ?? undefined,
+                config:
+                  (msg.payload.config as GameConfig | undefined) ?? undefined,
               });
             }
           }

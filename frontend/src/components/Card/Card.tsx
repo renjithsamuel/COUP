@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Character, CHARACTER_LABELS } from "@/models/card";
 import { cardHoverVariants, cardTapMotion } from "@/animations";
@@ -76,9 +77,10 @@ export function Card({
                 : cardStyles.face(character).boxShadow,
           }}
         >
-          <img
-            src={CARD_ART[character].src}
+          <Image
+            src={CARD_ART[character]}
             alt=""
+            fill
             style={cardStyles.faceImage}
             draggable={false}
           />

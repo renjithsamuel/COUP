@@ -51,7 +51,9 @@ describe("lobbyService storage", () => {
       playerName: "Alice",
       isHost: true,
     });
-    expect(window.sessionStorage.getItem("coup:lobby-session:9MBTDS")).not.toBeNull();
+    expect(
+      window.sessionStorage.getItem("coup:lobby-session:9MBTDS"),
+    ).not.toBeNull();
     expect(window.localStorage.getItem("coup:lobby-session:9MBTDS")).toBeNull();
   });
 

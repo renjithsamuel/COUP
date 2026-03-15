@@ -478,8 +478,8 @@ export default function HomePage() {
     });
     if (res.playerId && res.sessionToken) {
       const isHost =
-        res.lobby.players.find((player) => player.id === res.playerId)?.isHost ??
-        true;
+        res.lobby.players.find((player) => player.id === res.playerId)
+          ?.isHost ?? true;
       lobbySessionStore.save(
         res.lobby.id,
         res.playerId,
@@ -520,8 +520,8 @@ export default function HomePage() {
       });
       if (res.playerId && res.sessionToken) {
         const isHost =
-          res.lobby.players.find((player) => player.id === res.playerId)?.isHost ??
-          false;
+          res.lobby.players.find((player) => player.id === res.playerId)
+            ?.isHost ?? false;
         lobbySessionStore.save(
           res.lobby.id,
           res.playerId,
@@ -707,19 +707,21 @@ export default function HomePage() {
       <div style={s.optionSection}>
         <div style={s.optionLabel}>Difficulty</div>
         <div style={s.optionGridFour}>
-          {(["easy", "medium", "hard", "lethal"] as AiDifficulty[]).map((level) => (
-            <button
-              key={level}
-              style={{
-                ...s.optionButton,
-                ...s.optionButtonCompact,
-                ...(difficulty === level ? s.optionButtonActive : {}),
-              }}
-              onClick={() => setDifficulty(level)}
-            >
-              {level}
-            </button>
-          ))}
+          {(["easy", "medium", "hard", "lethal"] as AiDifficulty[]).map(
+            (level) => (
+              <button
+                key={level}
+                style={{
+                  ...s.optionButton,
+                  ...s.optionButtonCompact,
+                  ...(difficulty === level ? s.optionButtonActive : {}),
+                }}
+                onClick={() => setDifficulty(level)}
+              >
+                {level}
+              </button>
+            ),
+          )}
         </div>
         <div style={s.helperText}>{difficultyNotes[difficulty]}</div>
       </div>
@@ -797,7 +799,9 @@ export default function HomePage() {
             ...s.heroCard,
             minHeight: showCompactMobileHero ? "auto" : isMobile ? 300 : 500,
             padding: showCompactMobileHero ? "18px 20px" : s.heroCard.padding,
-            justifyContent: showCompactMobileHero ? "center" : s.heroCard.justifyContent,
+            justifyContent: showCompactMobileHero
+              ? "center"
+              : s.heroCard.justifyContent,
           }}
           variants={slideUpVariants}
           initial="hidden"
@@ -818,8 +822,8 @@ export default function HomePage() {
                 <div style={s.title}>COUP</div>
                 <div style={s.subtitle}>
                   Run the table with clean reads, false confidence, and timed
-                  pressure. Every action is public. Every bluff can be challenged.
-                  The last player with influence wins.
+                  pressure. Every action is public. Every bluff can be
+                  challenged. The last player with influence wins.
                 </div>
               </div>
 
@@ -842,8 +846,8 @@ export default function HomePage() {
                   <div style={s.featureCard}>
                     <div style={s.featureTitle}>Human-Like Bots</div>
                     <div style={s.featureText}>
-                      Bots bluff, pass, and challenge with difficulty-based mistakes
-                      instead of perfect play.
+                      Bots bluff, pass, and challenge with difficulty-based
+                      mistakes instead of perfect play.
                     </div>
                   </div>
                 )}
@@ -851,8 +855,8 @@ export default function HomePage() {
                   <div style={s.featureCard}>
                     <div style={s.featureTitle}>Same Live Board</div>
                     <div style={s.featureText}>
-                      AI matches use the same real-time game board, turn windows,
-                      and reveal flow as multiplayer games.
+                      AI matches use the same real-time game board, turn
+                      windows, and reveal flow as multiplayer games.
                     </div>
                   </div>
                 )}

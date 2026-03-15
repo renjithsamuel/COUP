@@ -107,7 +107,11 @@ export function useWebSocket({
       }
 
       setStatus("disconnected");
-      if (!closedManuallyRef.current && autoReconnect && retriesRef.current < maxRetries) {
+      if (
+        !closedManuallyRef.current &&
+        autoReconnect &&
+        retriesRef.current < maxRetries
+      ) {
         retriesRef.current += 1;
         const delay = getReconnectDelay(retriesRef.current, openedOnce);
         reconnectTimeoutRef.current = window.setTimeout(() => {
@@ -116,7 +120,14 @@ export function useWebSocket({
         }, delay);
       }
     };
-  }, [clearReconnectTimeout, gameId, playerId, autoReconnect, getReconnectDelay, maxRetries]);
+  }, [
+    clearReconnectTimeout,
+    gameId,
+    playerId,
+    autoReconnect,
+    getReconnectDelay,
+    maxRetries,
+  ]);
 
   const disconnect = useCallback(() => {
     closedManuallyRef.current = true;

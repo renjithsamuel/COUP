@@ -119,7 +119,7 @@ export function GameLog({ variant = "modal" }: GameLogProps) {
 
       if (segment.tone === "action") {
         const accent = entry.actionType
-          ? ACTION_PRESENTATIONS[entry.actionType]?.accent ?? visual.accent
+          ? (ACTION_PRESENTATIONS[entry.actionType]?.accent ?? visual.accent)
           : visual.accent;
         return (
           <span
@@ -156,7 +156,10 @@ export function GameLog({ variant = "modal" }: GameLogProps) {
       }
 
       return (
-        <span key={`${entry.id}-segment-${index}`} style={gameLogStyles.messagePlain}>
+        <span
+          key={`${entry.id}-segment-${index}`}
+          style={gameLogStyles.messagePlain}
+        >
           {segment.text}
         </span>
       );
@@ -215,7 +218,9 @@ export function GameLog({ variant = "modal" }: GameLogProps) {
                       {actionLabel}
                     </span>
                   )}
-                  <div style={gameLogStyles.message}>{renderMessage(entry, visual)}</div>
+                  <div style={gameLogStyles.message}>
+                    {renderMessage(entry, visual)}
+                  </div>
                 </div>
               </div>
             </article>

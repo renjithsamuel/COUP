@@ -55,43 +55,44 @@ export interface CharacterGuideDetail {
   segments: CharacterGuideSegment[];
 }
 
-export const CHARACTER_GUIDE_DETAILS: Record<Character, CharacterGuideDetail> = {
-  [Character.DUKE]: {
-    actionLabel: "Tax",
-    segments: [
-      { text: "Take 3 coins. Blocks " },
-      { text: "Foreign Aid", tone: "action" },
-      { text: "." },
-    ],
-  },
-  [Character.ASSASSIN]: {
-    actionLabel: "Assassinate",
-    segments: [
-      { text: "Pay 3 coins to force a target to lose an influence." },
-    ],
-  },
-  [Character.CAPTAIN]: {
-    actionLabel: "Steal",
-    segments: [
-      { text: "Take 2 coins from another player. Blocks " },
-      { text: "Steal", tone: "action" },
-      { text: "." },
-    ],
-  },
-  [Character.AMBASSADOR]: {
-    actionLabel: "Exchange",
-    segments: [
-      { text: "Swap cards with the Court Deck. Blocks " },
-      { text: "Steal", tone: "action" },
-      { text: "." },
-    ],
-  },
-  [Character.CONTESSA]: {
-    actionLabel: "Block Assassinate",
-    segments: [
-      { text: "Stops " },
-      { text: "Assassinate", tone: "action" },
-      { text: " against you." },
-    ],
-  },
-};
+export const CHARACTER_GUIDE_DETAILS: Record<Character, CharacterGuideDetail> =
+  {
+    [Character.DUKE]: {
+      actionLabel: "Tax",
+      segments: [
+        { text: "Take 3 coins. Blocks " },
+        { text: "Foreign Aid", tone: "action" },
+        { text: "." },
+      ],
+    },
+    [Character.ASSASSIN]: {
+      actionLabel: "Assassinate",
+      segments: [
+        { text: "Pay 3 coins to force a target to lose an influence." },
+      ],
+    },
+    [Character.CAPTAIN]: {
+      actionLabel: "Steal",
+      segments: [
+        { text: "Take 2 coins from another player. Blocks " },
+        { text: "Steal", tone: "action" },
+        { text: "." },
+      ],
+    },
+    [Character.AMBASSADOR]: {
+      actionLabel: "Exchange",
+      segments: [
+        { text: "Swap cards with the Court Deck. Blocks " },
+        { text: "Steal", tone: "action" },
+        { text: "." },
+      ],
+    },
+    [Character.CONTESSA]: {
+      actionLabel: "Block Assassinate",
+      segments: [
+        { text: "Stops " },
+        { text: "Assassinate", tone: "action" },
+        { text: " against you." },
+      ],
+    },
+  };

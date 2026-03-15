@@ -23,15 +23,9 @@ export const gameLogStyles = {
       variant === "panel"
         ? `0 ${tokens.spacing.xs}px ${tokens.spacing.md}px`
         : `${tokens.spacing.sm}px ${tokens.spacing.md}px`,
-    background:
-      variant === "panel"
-        ? "transparent"
-        : tokens.surface.card,
+    background: variant === "panel" ? "transparent" : tokens.surface.card,
     borderRadius: variant === "panel" ? 0 : 10,
-    border:
-      variant === "panel"
-        ? "none"
-        : `1px solid ${tokens.surface.border}`,
+    border: variant === "panel" ? "none" : `1px solid ${tokens.surface.border}`,
     fontSize: 12,
     color: tokens.text.secondary,
     scrollBehavior: "smooth",

@@ -1465,7 +1465,11 @@ function s(mobile: boolean) {
       transformOrigin: "center",
     }),
 
-    confettiDust: (xPercent: number, size: number, color: string): CSSProperties => ({
+    confettiDust: (
+      xPercent: number,
+      size: number,
+      color: string,
+    ): CSSProperties => ({
       position: "absolute",
       left: `${xPercent}%`,
       top: "-8vh",

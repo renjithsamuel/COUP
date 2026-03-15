@@ -27,7 +27,6 @@ export function ChallengeBlockOverlay({
     canChallenge,
     canBlock,
     blockOptions,
-    blockableCharacters,
     actorName,
     blockerName,
     waitingForText,

@@ -18,7 +18,12 @@ export interface PreGameConfigProps {
 }
 
 type ConfigTab = "simple" | "advanced";
-type TempoPresetId = "quick" | "balanced" | "deliberate" | "peaceful" | "custom";
+type TempoPresetId =
+  | "quick"
+  | "balanced"
+  | "deliberate"
+  | "peaceful"
+  | "custom";
 
 interface TimerSettingDef {
   key: "turnTimerSeconds" | "challengeWindowSeconds" | "blockWindowSeconds";
@@ -177,7 +182,9 @@ export function PreGameConfig({
     const nextConfig = initialConfig ?? DEFAULT_CONFIG;
     setConfig({
       ...nextConfig,
-      botCount: showBotFillControls ? Math.min(nextConfig.botCount ?? 0, maxBotCount) : 0,
+      botCount: showBotFillControls
+        ? Math.min(nextConfig.botCount ?? 0, maxBotCount)
+        : 0,
       botDifficulty: nextConfig.botDifficulty ?? "medium",
     });
   }, [initialConfig, isOpen, maxBotCount, showBotFillControls]);
@@ -185,7 +192,9 @@ export function PreGameConfig({
   const botCount = Math.min(config.botCount ?? 0, maxBotCount);
   const botDifficulty = config.botDifficulty ?? "medium";
   const tempoPresetId = getTempoPresetId(config);
-  const activeTempoPreset = TEMPO_PRESETS.find(({ id }) => id === tempoPresetId);
+  const activeTempoPreset = TEMPO_PRESETS.find(
+    ({ id }) => id === tempoPresetId,
+  );
   const botSeatOptions = useMemo(
     () => Array.from({ length: maxBotCount + 1 }, (_, index) => index),
     [maxBotCount],
@@ -216,7 +225,8 @@ export function PreGameConfig({
     () =>
       botSeatOptions.map((value) => ({
         value: String(value),
-        label: value === 0 ? "No bots" : `${value} ${value === 1 ? "bot" : "bots"}`,
+        label:
+          value === 0 ? "No bots" : `${value} ${value === 1 ? "bot" : "bots"}`,
       })),
     [botSeatOptions],
   );
@@ -270,7 +280,7 @@ export function PreGameConfig({
     setConfig((prev) => ({
       ...prev,
       botCount: value,
-      botDifficulty: value > 0 ? prev.botDifficulty ?? "medium" : "medium",
+      botDifficulty: value > 0 ? (prev.botDifficulty ?? "medium") : "medium",
     }));
   };
 
@@ -279,12 +289,14 @@ export function PreGameConfig({
     `${config.startingCoins} starting coins`,
     tempoPresetId === "custom"
       ? `${config.turnTimerSeconds}s / ${config.challengeWindowSeconds}s / ${config.blockWindowSeconds}s`
-      : activeTempoPreset?.title ?? "Balanced",
+      : (activeTempoPreset?.title ?? "Balanced"),
   ];
 
   if (showBotFillControls) {
     summaryBits.push(
-      botCount > 0 ? `${botCount} bots • ${formatDifficultyLabel(botDifficulty)}` : "no bots",
+      botCount > 0
+        ? `${botCount} bots • ${formatDifficultyLabel(botDifficulty)}`
+        : "no bots",
     );
   }
 
@@ -318,7 +330,8 @@ export function PreGameConfig({
               <div style={s.eyebrow}>Pre-game setup</div>
               <div style={s.title}>Game Configuration</div>
               <div style={s.subtitle}>
-                Keep it to tempo, bots, and coins first. Open Advanced only if you need to override timer windows.
+                Keep it to tempo, bots, and coins first. Open Advanced only if
+                you need to override timer windows.
               </div>
             </div>
 
@@ -377,7 +390,9 @@ export function PreGameConfig({
                             return;
                           }
 
-                          applyTempoPreset(value as Exclude<TempoPresetId, "custom">);
+                          applyTempoPreset(
+                            value as Exclude<TempoPresetId, "custom">,
+                          );
                         }}
                       />
                       <div style={s.inlineNote}>
@@ -389,7 +404,9 @@ export function PreGameConfig({
                     <div style={s.primaryCard}>
                       <div style={s.fieldHeader}>
                         <div style={s.fieldLabel}>Starting coins</div>
-                        <div style={s.fieldHint}>Opening economy for every seat.</div>
+                        <div style={s.fieldHint}>
+                          Opening economy for every seat.
+                        </div>
                       </div>
                       <Select
                         aria-label="Starting coins"
@@ -418,7 +435,7 @@ export function PreGameConfig({
                         <div style={s.fieldHeader}>
                           <div style={s.fieldLabel}>AI fill bots</div>
                           <div style={s.fieldHint}>
-                              Add bots only if you want to auto-fill open seats.
+                            Add bots only if you want to auto-fill open seats.
                           </div>
                         </div>
                         <Select
@@ -477,7 +494,10 @@ export function PreGameConfig({
                 >
                   <div style={s.summaryStrip}>
                     <span style={s.summaryLabel}>Advanced</span>
-                    <span style={s.summaryValue}>Override timer windows only when the default tempo is not enough.</span>
+                    <span style={s.summaryValue}>
+                      Override timer windows only when the default tempo is not
+                      enough.
+                    </span>
                   </div>
 
                   <div style={s.advancedGrid}>
@@ -518,15 +538,21 @@ export function PreGameConfig({
                     <div style={s.metricRow}>
                       <div style={s.metricCard}>
                         <div style={s.metricLabel}>Turn</div>
-                        <div style={s.metricValue}>{config.turnTimerSeconds}s</div>
+                        <div style={s.metricValue}>
+                          {config.turnTimerSeconds}s
+                        </div>
                       </div>
                       <div style={s.metricCard}>
                         <div style={s.metricLabel}>Challenge</div>
-                        <div style={s.metricValue}>{config.challengeWindowSeconds}s</div>
+                        <div style={s.metricValue}>
+                          {config.challengeWindowSeconds}s
+                        </div>
                       </div>
                       <div style={s.metricCard}>
                         <div style={s.metricLabel}>Block</div>
-                        <div style={s.metricValue}>{config.blockWindowSeconds}s</div>
+                        <div style={s.metricValue}>
+                          {config.blockWindowSeconds}s
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -540,7 +566,11 @@ export function PreGameConfig({
                 <button type="button" style={s.cancelButton} onClick={onCancel}>
                   Cancel
                 </button>
-                <button type="button" style={s.confirmButton} onClick={() => onConfirm(config)}>
+                <button
+                  type="button"
+                  style={s.confirmButton}
+                  onClick={() => onConfirm(config)}
+                >
                   {confirmLabel}
                 </button>
               </div>
