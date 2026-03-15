@@ -39,6 +39,7 @@ function s(mobile: boolean) {
       gap: mobile ? tokens.spacing.sm : tokens.spacing.md,
       flex: 1,
       minWidth: 0,
+      position: "relative",
     } satisfies CSSProperties,
 
     topBarRight: {
@@ -317,12 +318,12 @@ function s(mobile: boolean) {
       color: "rgba(232, 234, 240, 0.72)",
     } satisfies CSSProperties,
 
-    pinnedGuidePanel: {
+    pinnedGuidePanel: (width: number, height: number): CSSProperties => ({
       position: "fixed",
       top: 96,
       right: 26,
-      width: 320,
-      maxHeight: "min(68vh, 520px)",
+      width,
+      height,
       overflow: "hidden",
       borderRadius: 18,
       border: "1px solid rgba(255,255,255,0.1)",
@@ -331,7 +332,7 @@ function s(mobile: boolean) {
       boxShadow: "0 22px 50px rgba(0,0,0,0.34)",
       backdropFilter: "blur(14px)",
       zIndex: 120,
-    } satisfies CSSProperties,
+    }),
 
     pinnedGuideHandle: {
       display: "flex",
@@ -344,13 +345,13 @@ function s(mobile: boolean) {
       background: "rgba(255,255,255,0.03)",
     } satisfies CSSProperties,
 
-    pinnedGuideHandleLabel: {
-      fontSize: 11,
+    pinnedGuideHandleLabel: (scale: number): CSSProperties => ({
+      fontSize: 11 * scale,
       fontWeight: 900,
       letterSpacing: 1,
       textTransform: "uppercase",
       color: tokens.text.primary,
-    } satisfies CSSProperties,
+    }),
 
     pinnedGuideHandleActions: {
       display: "flex",
@@ -358,13 +359,13 @@ function s(mobile: boolean) {
       gap: 8,
     } satisfies CSSProperties,
 
-    pinnedGuideGrabber: {
-      fontSize: 10,
+    pinnedGuideGrabber: (scale: number): CSSProperties => ({
+      fontSize: 10 * scale,
       fontWeight: 700,
       color: tokens.text.muted,
       letterSpacing: 0.4,
       textTransform: "uppercase",
-    } satisfies CSSProperties,
+    }),
 
     pinnedGuideCloseBtn: {
       width: 28,
@@ -381,14 +382,14 @@ function s(mobile: boolean) {
       flexShrink: 0,
     } satisfies CSSProperties,
 
-    pinnedGuideBody: {
+    pinnedGuideBody: (height: number): CSSProperties => ({
       display: "flex",
       flexDirection: "column",
       gap: 10,
       padding: "12px",
-      maxHeight: "calc(min(68vh, 520px) - 50px)",
+      maxHeight: `calc(${height}px - 50px)`,
       overflowY: "auto",
-    } satisfies CSSProperties,
+    }),
 
     pinnedGuideRow: {
       display: "flex",
@@ -398,18 +399,74 @@ function s(mobile: boolean) {
       borderBottom: "1px solid rgba(255,255,255,0.06)",
     } satisfies CSSProperties,
 
-    pinnedGuideName: {
-      fontSize: 12,
-      fontWeight: 800,
-      color: tokens.text.accent,
-      textTransform: "uppercase",
-      letterSpacing: 0.7,
+    pinnedGuideTitleRow: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+      flexWrap: "wrap",
     } satisfies CSSProperties,
 
-    pinnedGuideText: {
-      fontSize: 12,
+    pinnedGuideName: (color: string, scale: number): CSSProperties => ({
+      fontSize: 12 * scale,
+      fontWeight: 800,
+      color,
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+    }),
+
+    pinnedGuideActionBadge: (color: string, scale: number): CSSProperties => ({
+      display: "inline-flex",
+      alignItems: "center",
+      padding: `${Math.max(3, 3 * scale)}px ${Math.max(8, 8 * scale)}px`,
+      borderRadius: 999,
+      border: `1px solid ${color}33`,
+      background: `${color}18`,
+      color,
+      fontSize: 9.5 * scale,
+      fontWeight: 800,
+      letterSpacing: 0.5,
+      textTransform: "uppercase",
+      whiteSpace: "nowrap",
+    }),
+
+    pinnedGuideText: (scale: number): CSSProperties => ({
+      fontSize: 12 * scale,
       lineHeight: 1.45,
       color: tokens.text.secondary,
+    }),
+
+    pinnedGuideInlineAction: (color: string): CSSProperties => ({
+      color,
+      fontWeight: 800,
+    }),
+
+    pinnedGuideInlineCard: (color: string): CSSProperties => ({
+      color,
+      fontWeight: 800,
+    }),
+
+    pinnedGuideResizeHandle: {
+      position: "absolute",
+      right: 6,
+      bottom: 6,
+      width: 28,
+      height: 28,
+      borderRadius: 10,
+      border: "1px solid rgba(255,255,255,0.08)",
+      background: "rgba(255,255,255,0.04)",
+      color: tokens.text.secondary,
+      cursor: "nwse-resize",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 2,
+    } satisfies CSSProperties,
+
+    pinnedGuideResizeGlyph: {
+      fontSize: 14,
+      lineHeight: 1,
+      transform: "translateY(-1px)",
     } satisfies CSSProperties,
 
     mobileStatusPill: (
@@ -651,11 +708,13 @@ function s(mobile: boolean) {
       return {
         display: "flex",
         flexDirection: "column",
+        width: mobile ? "min(92vw, 380px)" : "100%",
         minHeight: 0,
-        height: "100%",
+        height: mobile ? "calc(100dvh - 24px)" : "100%",
         overflow: "hidden",
-        borderRadius: mobile ? 0 : 28,
-        border: mobile ? "none" : "1px solid rgba(255,255,255,0.08)",
+        margin: mobile ? "12px 12px 12px auto" : undefined,
+        borderRadius: 28,
+        border: "1px solid rgba(255,255,255,0.08)",
         background: mobile
           ? "linear-gradient(180deg, rgba(8, 13, 24, 0.98) 0%, rgba(12, 19, 34, 0.98) 100%)"
           : "linear-gradient(180deg, rgba(12, 19, 34, 0.94) 0%, rgba(8, 13, 24, 0.94) 100%)",
@@ -674,12 +733,6 @@ function s(mobile: boolean) {
       justifyContent: "flex-end",
       background: "rgba(2, 6, 14, 0.52)",
       backdropFilter: "blur(8px)",
-    } satisfies CSSProperties,
-
-    mobileSidePanelShell: {
-      width: "min(92vw, 380px)",
-      height: "100dvh",
-      padding: `${tokens.spacing.md}px ${tokens.spacing.md}px ${tokens.spacing.lg}px`,
     } satisfies CSSProperties,
 
     sidePanelHeader: {
@@ -851,6 +904,20 @@ function s(mobile: boolean) {
       border: `1px solid ${tokens.surface.borderLight}`,
       background: "rgba(255,255,255,0.03)",
       color: tokens.text.primary,
+      fontSize: 12,
+      fontWeight: 800,
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+      cursor: "pointer",
+    } satisfies CSSProperties,
+
+    confirmModalLobbyBtn: {
+      padding: "10px 14px",
+      borderRadius: 12,
+      border: "1px solid rgba(255,193,7,0.22)",
+      background:
+        "linear-gradient(135deg, rgba(255,193,7,0.14), rgba(255,143,0,0.08))",
+      color: tokens.text.accent,
       fontSize: 12,
       fontWeight: 800,
       textTransform: "uppercase",
@@ -1397,6 +1464,33 @@ function s(mobile: boolean) {
       boxShadow: `0 0 12px ${color}66`,
       transformOrigin: "center",
     }),
+
+    confettiDust: (xPercent: number, size: number, color: string): CSSProperties => ({
+      position: "absolute",
+      left: `${xPercent}%`,
+      top: "-8vh",
+      width: size,
+      height: size,
+      borderRadius: "50%",
+      background: color,
+      boxShadow: `0 0 16px ${color}55`,
+      filter: "blur(0.4px)",
+      opacity: 0.88,
+    }),
+
+    victoryHalo: {
+      position: "absolute",
+      top: "9%",
+      left: "50%",
+      width: mobile ? 180 : 240,
+      height: mobile ? 180 : 240,
+      borderRadius: "50%",
+      transform: "translateX(-50%)",
+      background:
+        "radial-gradient(circle, rgba(246,196,69,0.18) 0%, rgba(246,196,69,0.08) 34%, rgba(125,211,252,0.05) 56%, rgba(246,196,69,0) 76%)",
+      boxShadow: "0 0 42px rgba(246,196,69,0.08)",
+      mixBlendMode: "screen",
+    } satisfies CSSProperties,
   };
 }
 

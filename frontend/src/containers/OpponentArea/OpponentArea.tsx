@@ -59,6 +59,33 @@ export function OpponentArea({
     setCanScrollRight(maxScrollLeft - node.scrollLeft > 8);
   }, []);
 
+  const handleViewportWheel = useCallback(
+    (event: React.WheelEvent<HTMLDivElement>) => {
+      const node = scrollRef.current;
+      if (!node) {
+        return;
+      }
+
+      const maxScrollLeft = node.scrollWidth - node.clientWidth;
+      if (maxScrollLeft <= 0) {
+        return;
+      }
+
+      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
+        ? event.deltaX
+        : event.deltaY;
+
+      if (delta === 0) {
+        return;
+      }
+
+      event.preventDefault();
+      node.scrollBy({ left: delta, behavior: "auto" });
+      updateScrollState();
+    },
+    [updateScrollState],
+  );
+
   useEffect(() => {
     if (!gs?.currentPlayerId) {
       previousCurrentPlayerIdRef.current = null;
@@ -141,7 +168,12 @@ export function OpponentArea({
     <div style={s.shell}>
       <div style={s.edgeFade("left", canScrollLeft)} />
       <div style={s.edgeFade("right", canScrollRight)} />
-      <div ref={scrollRef} style={s.viewport} className={shellClassName}>
+      <div
+        ref={scrollRef}
+        style={s.viewport}
+        className={shellClassName}
+        onWheel={handleViewportWheel}
+      >
         <div style={s.track}>
           {showRailMargins && <div style={s.railSpacer} aria-hidden="true" />}
           {opponents.map((opp) => (

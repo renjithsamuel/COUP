@@ -306,6 +306,11 @@ const s = {
     gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
     gap: 6,
   },
+  optionGridFour: {
+    display: "grid",
+    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+    gap: 6,
+  },
   optionGridWide: {
     display: "grid",
     gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
@@ -320,6 +325,14 @@ const s = {
     fontSize: 12,
     fontWeight: 700,
     cursor: "pointer",
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden" as const,
+    textOverflow: "ellipsis" as const,
+  },
+  optionButtonCompact: {
+    padding: "10px 6px",
+    fontSize: 11,
+    letterSpacing: 0.2,
   },
   optionButtonActive: {
     border: "1px solid rgba(255,193,7,0.32)",
@@ -414,6 +427,8 @@ const difficultyNotes: Record<AiDifficulty, string> = {
   easy: "Bluffs more, reads worse, and sometimes passes on strong plays.",
   medium: "Balanced bot table with believable pressure and occasional greed.",
   hard: "Sharper targeting and better challenges, but still not perfect.",
+  lethal:
+    "Punishes weak lines, counts public information better, and closes fast without feeling omniscient.",
 };
 
 const modeOptions: Array<{ key: PlayMode; title: string; text: string }> = [
@@ -446,6 +461,9 @@ export default function HomePage() {
   const [botCount, setBotCount] = useState(3);
   const [difficulty, setDifficulty] = useState<AiDifficulty>("medium");
   const [showAiConfig, setShowAiConfig] = useState(false);
+  const isMobileIntro = isMobile && mobileFlow === "home";
+  const shouldShowNameInput = !isMobile || mobileFlow !== "home";
+  const showCompactMobileHero = isMobile && mobileFlow !== "home";
 
   useEffect(() => {
     setMobileFlow(isMobile ? "home" : "mode");
@@ -459,7 +477,16 @@ export default function HomePage() {
       maxPlayers: GAME_CONSTANTS.MAX_PLAYERS,
     });
     if (res.playerId && res.sessionToken) {
-      lobbySessionStore.save(res.lobby.id, res.playerId, res.sessionToken);
+      const isHost =
+        res.lobby.players.find((player) => player.id === res.playerId)?.isHost ??
+        true;
+      lobbySessionStore.save(
+        res.lobby.id,
+        res.playerId,
+        res.sessionToken,
+        playerName.trim(),
+        isHost,
+      );
     }
     router.push(`/lobby/${res.lobby.id}?playerId=${res.playerId}`);
   };
@@ -468,16 +495,40 @@ export default function HomePage() {
     if (!playerName.trim() || !roomCode.trim()) return;
     setJoinError("");
     try {
+      const normalizedRoomCode = roomCode.trim();
+      const storedSession = lobbySessionStore.read(normalizedRoomCode);
+      let sessionToken: string | null = null;
+
+      if (storedSession?.sessionToken) {
+        const shouldReuseSeat = window.confirm(
+          "A saved seat was found for this room. Press OK to rejoin that seat, or Cancel to join as a new player.",
+        );
+
+        if (shouldReuseSeat) {
+          sessionToken = storedSession.sessionToken;
+        } else {
+          lobbySessionStore.clear(normalizedRoomCode);
+        }
+      }
+
       const res = await joinLobby.mutateAsync({
-        lobbyId: roomCode.trim(),
+        lobbyId: normalizedRoomCode,
         data: {
           playerName: playerName.trim(),
-          sessionToken:
-            lobbySessionStore.read(roomCode.trim())?.sessionToken ?? null,
+          sessionToken,
         },
       });
       if (res.playerId && res.sessionToken) {
-        lobbySessionStore.save(res.lobby.id, res.playerId, res.sessionToken);
+        const isHost =
+          res.lobby.players.find((player) => player.id === res.playerId)?.isHost ??
+          false;
+        lobbySessionStore.save(
+          res.lobby.id,
+          res.playerId,
+          res.sessionToken,
+          playerName.trim(),
+          isHost,
+        );
       }
       router.push(`/lobby/${res.lobby.id}?playerId=${res.playerId}`);
     } catch {
@@ -655,12 +706,13 @@ export default function HomePage() {
 
       <div style={s.optionSection}>
         <div style={s.optionLabel}>Difficulty</div>
-        <div style={s.optionGrid}>
-          {(["easy", "medium", "hard"] as AiDifficulty[]).map((level) => (
+        <div style={s.optionGridFour}>
+          {(["easy", "medium", "hard", "lethal"] as AiDifficulty[]).map((level) => (
             <button
               key={level}
               style={{
                 ...s.optionButton,
+                ...s.optionButtonCompact,
                 ...(difficulty === level ? s.optionButtonActive : {}),
               }}
               onClick={() => setDifficulty(level)}
@@ -691,6 +743,16 @@ export default function HomePage() {
           : `Play vs ${botCount} AI${botCount > 1 ? " Bots" : " Bot"}`}
       </motion.button>
     </>
+  );
+
+  const playerNameInput = (
+    <input
+      style={s.input}
+      placeholder="Your name"
+      value={playerName}
+      onChange={(event) => setPlayerName(event.target.value)}
+      maxLength={20}
+    />
   );
 
   return (
@@ -731,59 +793,72 @@ export default function HomePage() {
 
       <div style={s.stage}>
         <motion.section
-          style={{ ...s.heroCard, minHeight: isMobile ? 300 : 500 }}
+          style={{
+            ...s.heroCard,
+            minHeight: showCompactMobileHero ? "auto" : isMobile ? 300 : 500,
+            padding: showCompactMobileHero ? "18px 20px" : s.heroCard.padding,
+            justifyContent: showCompactMobileHero ? "center" : s.heroCard.justifyContent,
+          }}
           variants={slideUpVariants}
           initial="hidden"
           animate="visible"
         >
           <div style={s.heroGlow} />
-          <div>
-            <div style={s.heroEyebrow}>Realtime multiplayer bluffing</div>
-            <div style={{ marginBottom: isMobile ? 12 : 14 }}>
-              <CoupLogo compact={isMobile} />
+          {showCompactMobileHero ? (
+            <div style={{ ...s.title, marginBottom: 0, textAlign: "center" }}>
+              COUP
             </div>
-            <div style={s.title}>COUP</div>
-            <div style={s.subtitle}>
-              Run the table with clean reads, false confidence, and timed
-              pressure. Every action is public. Every bluff can be challenged.
-              The last player with influence wins.
-            </div>
-          </div>
+          ) : (
+            <>
+              <div>
+                <div style={s.heroEyebrow}>Realtime multiplayer bluffing</div>
+                <div style={{ marginBottom: isMobile ? 12 : 14 }}>
+                  <CoupLogo compact={isMobile} />
+                </div>
+                <div style={s.title}>COUP</div>
+                <div style={s.subtitle}>
+                  Run the table with clean reads, false confidence, and timed
+                  pressure. Every action is public. Every bluff can be challenged.
+                  The last player with influence wins.
+                </div>
+              </div>
 
-          <div
-            style={{
-              ...s.featureGrid,
-              gridTemplateColumns: isMobile
-                ? "1fr"
-                : s.featureGrid.gridTemplateColumns,
-            }}
-          >
-            <div style={s.featureCard}>
-              <div style={s.featureTitle}>Play Your Way</div>
-              <div style={s.featureText}>
-                Jump into a private room with friends or start a solo table
-                instantly against bots.
-              </div>
-            </div>
-            {!isMobile && (
-              <div style={s.featureCard}>
-                <div style={s.featureTitle}>Human-Like Bots</div>
-                <div style={s.featureText}>
-                  Bots bluff, pass, and challenge with difficulty-based mistakes
-                  instead of perfect play.
+              <div
+                style={{
+                  ...s.featureGrid,
+                  gridTemplateColumns: isMobile
+                    ? "1fr"
+                    : s.featureGrid.gridTemplateColumns,
+                }}
+              >
+                <div style={s.featureCard}>
+                  <div style={s.featureTitle}>Play Your Way</div>
+                  <div style={s.featureText}>
+                    Jump into a private room with friends or start a solo table
+                    instantly against bots.
+                  </div>
                 </div>
+                {!isMobile && (
+                  <div style={s.featureCard}>
+                    <div style={s.featureTitle}>Human-Like Bots</div>
+                    <div style={s.featureText}>
+                      Bots bluff, pass, and challenge with difficulty-based mistakes
+                      instead of perfect play.
+                    </div>
+                  </div>
+                )}
+                {!isMobile && (
+                  <div style={s.featureCard}>
+                    <div style={s.featureTitle}>Same Live Board</div>
+                    <div style={s.featureText}>
+                      AI matches use the same real-time game board, turn windows,
+                      and reveal flow as multiplayer games.
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-            {!isMobile && (
-              <div style={s.featureCard}>
-                <div style={s.featureTitle}>Same Live Board</div>
-                <div style={s.featureText}>
-                  AI matches use the same real-time game board, turn windows,
-                  and reveal flow as multiplayer games.
-                </div>
-              </div>
-            )}
-          </div>
+            </>
+          )}
         </motion.section>
 
         <motion.section
@@ -794,20 +869,17 @@ export default function HomePage() {
         >
           <div style={s.actionShell}>
             <div style={s.actionHeader}>
-              <div style={s.actionTitle}>Choose your table</div>
+              <div style={s.actionTitle}>
+                {isMobileIntro ? "Quick start" : "Choose your table"}
+              </div>
               <div style={s.actionSubtitle}>
-                Set your name once, then pick friends or AI and jump into the
-                matching flow.
+                {isMobileIntro
+                  ? "Start clean on mobile, then choose friends or AI on the next screen."
+                  : "Set your name once, then pick friends or AI and jump into the matching flow."}
               </div>
             </div>
 
-            <input
-              style={s.input}
-              placeholder="Your name"
-              value={playerName}
-              onChange={(event) => setPlayerName(event.target.value)}
-              maxLength={20}
-            />
+            {shouldShowNameInput && playerNameInput}
 
             {isMobile && mobileFlow === "home" && (
               <button
@@ -995,6 +1067,7 @@ export default function HomePage() {
       <PreGameConfig
         isOpen={showAiConfig}
         playerCount={botCount + 1}
+        showBotFillControls={false}
         onCancel={() => setShowAiConfig(false)}
         onConfirm={async (config) => {
           setShowAiConfig(false);

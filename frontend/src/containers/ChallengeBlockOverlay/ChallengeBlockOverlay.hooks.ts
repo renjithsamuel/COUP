@@ -6,6 +6,21 @@ import { ACTION_RULES, ActionType } from "@/models/action";
 import { Character } from "@/models/card";
 import { getEligibleResponderIds } from "@/utils/responseWindows";
 
+export interface BlockOption {
+  character: Character;
+  isBluff: boolean;
+}
+
+export function getBlockOptions(
+  blockableCharacters: Character[],
+  myCards: Character[],
+): BlockOption[] {
+  return blockableCharacters.map((character) => ({
+    character,
+    isBluff: !myCards.includes(character),
+  }));
+}
+
 export function useChallengeBlockOverlay(
   send: (msg: ClientMessage) => boolean,
 ) {
@@ -60,12 +75,20 @@ export function useChallengeBlockOverlay(
   const canChallenge = showChallengeWindow || showBlockChallengeWindow;
 
   const canSeeBlock = showBlockWindow;
+  const myCards = state.myCards
+    .filter((card) => !card.isRevealed)
+    .map((card) => card.character);
 
   const blockableCharacters = useMemo(() => {
     if (!canSeeBlock || !pending) return [];
     const rule = ACTION_RULES[pending.actionType as ActionType];
     return rule?.blockedBy ?? [];
   }, [canSeeBlock, pending]);
+
+  const blockOptions = useMemo(
+    () => getBlockOptions(blockableCharacters, myCards),
+    [blockableCharacters, myCards],
+  );
 
   const canBlock = blockableCharacters.length > 0;
 
@@ -167,6 +190,7 @@ export function useChallengeBlockOverlay(
     iAlreadyAccepted,
     canChallenge,
     canBlock,
+    blockOptions,
     blockableCharacters,
     actorName,
     blockerName,

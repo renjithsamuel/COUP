@@ -15,6 +15,8 @@ export interface StoredLobbySession {
   lobbyId: string;
   playerId: string;
   sessionToken: string;
+  playerName?: string;
+  isHost?: boolean;
 }
 
 export interface StoredPlayerIdentity {
@@ -65,7 +67,23 @@ interface AiMatchResponseApi {
 
 const lobbySessionKey = (lobbyId: string) =>
   `coup:lobby-session:${lobbyId.toUpperCase()}`;
+const lobbyConfigKey = (lobbyId: string) =>
+  `coup:lobby-config:${lobbyId.toUpperCase()}`;
+const lobbyReturnKey = (lobbyId: string) =>
+  `coup:lobby-return:${lobbyId.toUpperCase()}`;
 const playerIdentityKey = "coup:player-identity";
+
+const getBrowserStorage = (kind: "local" | "session"): Storage | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return kind === "local" ? window.localStorage : window.sessionStorage;
+  } catch {
+    return null;
+  }
+};
 
 const createProfileId = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -77,34 +95,36 @@ const createProfileId = () => {
 
 export const playerIdentityStore = {
   getOrCreate(): StoredPlayerIdentity {
-    if (typeof window === "undefined") {
+    const storage = getBrowserStorage("local");
+    if (!storage) {
       return { profileId: "server-profile" };
     }
 
-    const existing = window.localStorage.getItem(playerIdentityKey);
+    const existing = storage.getItem(playerIdentityKey);
     if (existing) {
       try {
         return JSON.parse(existing) as StoredPlayerIdentity;
       } catch {
-        window.localStorage.removeItem(playerIdentityKey);
+        storage.removeItem(playerIdentityKey);
       }
     }
 
     const created = {
       profileId: createProfileId(),
     } satisfies StoredPlayerIdentity;
-    window.localStorage.setItem(playerIdentityKey, JSON.stringify(created));
+    storage.setItem(playerIdentityKey, JSON.stringify(created));
     return created;
   },
 };
 
 export const lobbySessionStore = {
   read(lobbyId: string): StoredLobbySession | null {
-    if (typeof window === "undefined") {
+    const storage = getBrowserStorage("session");
+    if (!storage) {
       return null;
     }
 
-    const raw = window.localStorage.getItem(lobbySessionKey(lobbyId));
+    const raw = storage.getItem(lobbySessionKey(lobbyId));
     if (!raw) {
       return null;
     }
@@ -112,32 +132,110 @@ export const lobbySessionStore = {
     try {
       return JSON.parse(raw) as StoredLobbySession;
     } catch {
-      window.localStorage.removeItem(lobbySessionKey(lobbyId));
+      storage.removeItem(lobbySessionKey(lobbyId));
       return null;
     }
   },
 
-  save(lobbyId: string, playerId: string, sessionToken: string) {
-    if (typeof window === "undefined") {
+  save(
+    lobbyId: string,
+    playerId: string,
+    sessionToken: string,
+    playerName?: string,
+    isHost?: boolean,
+  ) {
+    const storage = getBrowserStorage("session");
+    if (!storage) {
       return;
     }
 
-    window.localStorage.setItem(
+    storage.setItem(
       lobbySessionKey(lobbyId),
       JSON.stringify({
         lobbyId: lobbyId.toUpperCase(),
         playerId,
         sessionToken,
+        ...(playerName ? { playerName } : {}),
+        ...(typeof isHost === "boolean" ? { isHost } : {}),
       } satisfies StoredLobbySession),
     );
   },
 
   clear(lobbyId: string) {
-    if (typeof window === "undefined") {
+    const storage = getBrowserStorage("session");
+    if (!storage) {
       return;
     }
 
-    window.localStorage.removeItem(lobbySessionKey(lobbyId));
+    storage.removeItem(lobbySessionKey(lobbyId));
+  },
+};
+
+export const lobbyConfigStore = {
+  read(lobbyId: string): GameConfig | null {
+    const storage = getBrowserStorage("session");
+    if (!storage) {
+      return null;
+    }
+
+    const raw = storage.getItem(lobbyConfigKey(lobbyId));
+    if (!raw) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(raw) as GameConfig;
+    } catch {
+      storage.removeItem(lobbyConfigKey(lobbyId));
+      return null;
+    }
+  },
+
+  save(lobbyId: string, config: GameConfig) {
+    const storage = getBrowserStorage("session");
+    if (!storage) {
+      return;
+    }
+
+    storage.setItem(lobbyConfigKey(lobbyId), JSON.stringify(config));
+  },
+
+  clear(lobbyId: string) {
+    const storage = getBrowserStorage("session");
+    if (!storage) {
+      return;
+    }
+
+    storage.removeItem(lobbyConfigKey(lobbyId));
+  },
+};
+
+export const lobbyReturnStore = {
+  read(lobbyId: string): boolean {
+    const storage = getBrowserStorage("session");
+    if (!storage) {
+      return false;
+    }
+
+    return storage.getItem(lobbyReturnKey(lobbyId)) === "1";
+  },
+
+  save(lobbyId: string) {
+    const storage = getBrowserStorage("session");
+    if (!storage) {
+      return;
+    }
+
+    storage.setItem(lobbyReturnKey(lobbyId), "1");
+  },
+
+  clear(lobbyId: string) {
+    const storage = getBrowserStorage("session");
+    if (!storage) {
+      return;
+    }
+
+    storage.removeItem(lobbyReturnKey(lobbyId));
   },
 };
 
@@ -250,10 +348,7 @@ export const lobbyService = {
       .post<LobbyApi>(`/api/lobbies/${lobbyId}/join`, {
         player_name: data.playerName,
         profile_id: playerIdentityStore.getOrCreate().profileId,
-        session_token:
-          data.sessionToken ??
-          lobbySessionStore.read(lobbyId)?.sessionToken ??
-          "",
+        session_token: data.sessionToken ?? "",
       })
       .then(toJoinResponse),
 
@@ -287,8 +382,22 @@ export const lobbyService = {
       })
       .then(toLobbyResponse),
 
-  reset: (lobbyId: string) =>
-    api.post<LobbyApi>(`/api/lobbies/${lobbyId}/reset`).then(toLobby),
+  reset: (
+    lobbyId: string,
+    options: { playerId?: string | null; sessionToken?: string | null },
+  ) => {
+    const params = new URLSearchParams();
+    if (options.playerId) {
+      params.set("player_id", options.playerId);
+    }
+    if (options.sessionToken) {
+      params.set("session_token", options.sessionToken);
+    }
+
+    return api
+      .post<LobbyApi>(`/api/lobbies/${lobbyId}/reset?${params.toString()}`)
+      .then(toLobby);
+  },
 
   start: (lobbyId: string, config?: GameConfig) =>
     api.post<{ game_id: string }>(
@@ -299,6 +408,8 @@ export const lobbyService = {
             challenge_window_seconds: config.challengeWindowSeconds,
             block_window_seconds: config.blockWindowSeconds,
             starting_coins: config.startingCoins,
+            bot_count: config.botCount ?? 0,
+            bot_difficulty: config.botDifficulty ?? "medium",
           }
         : undefined,
     ),

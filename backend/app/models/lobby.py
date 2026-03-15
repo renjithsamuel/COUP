@@ -13,6 +13,7 @@ class AiDifficulty(str, Enum):
     EASY = "easy"
     MEDIUM = "medium"
     HARD = "hard"
+    LETHAL = "lethal"
 
 
 class LobbyPlayer(BaseModel):
@@ -121,6 +122,11 @@ class GameConfig(BaseModel):
     challenge_window_seconds: int = Field(default=10, ge=0, le=30)
     block_window_seconds: int = Field(default=10, ge=0, le=30)
     starting_coins: int = Field(default=2, ge=1, le=5)
+    bot_count: int = Field(default=0, ge=0, le=5)
+    bot_difficulty: str = Field(
+        default=AiDifficulty.MEDIUM.value,
+        pattern="^(easy|medium|hard|lethal)$",
+    )
 
 
 class AiMatchCreate(BaseModel):
@@ -130,7 +136,7 @@ class AiMatchCreate(BaseModel):
 
     player_name: str = Field(..., min_length=1, max_length=20)
     bot_count: int = Field(..., ge=1, le=5)
-    difficulty: str = Field(default=AiDifficulty.MEDIUM.value, pattern="^(easy|medium|hard)$")
+    difficulty: str = Field(default=AiDifficulty.MEDIUM.value, pattern="^(easy|medium|hard|lethal)$")
     profile_id: str = Field(default="", max_length=64)
     config: GameConfig | None = None
 

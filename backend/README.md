@@ -6,9 +6,9 @@ Real-time multiplayer Coup card game — FastAPI backend with WebSocket support,
 
 This is the Python backend for the Coup multiplayer card game. It handles:
 - **Game logic engine** — Pure, stateless game rules implementation
-- **REST API** — Lobby management plus direct AI-match creation
+- **REST API** — Lobby management, optional lobby fill-bot start config, plus direct AI-match creation
 - **WebSocket** — Real-time gameplay (actions, challenges, blocks, state sync)
-- **Bot orchestration** — Server-side turn, challenge, block, reveal, and exchange decisions for solo AI matches
+- **Bot orchestration** — Server-side turn, challenge, block, reveal, and exchange decisions for solo AI matches and multiplayer fill-bots, with randomized identity workshops, core-value-driven heuristics, and humanized delays
 - **SQLite database** — Game state persistence via SQLAlchemy 2.0
 
 ## Tech Stack
@@ -135,18 +135,21 @@ python -m pytest -v
 | `POST` | `/api/lobbies/{id}/leave` | Leave lobby (`?player_id=...` or `?session_token=...`) |
 | `POST` | `/api/lobbies/{id}/kick` | Remove another waiting-room player (`{ target_player_id, actor_player_id?, session_token? }`) while preventing self-kicks |
 | `POST` | `/api/lobbies/{id}/start` | Start game (host only, optional `GameConfig` body) |
-| `POST` | `/api/lobbies/{id}/reset` | Reset completed room back to waiting state for replay while keeping finished-game history for leaderboard aggregation |
+| `POST` | `/api/lobbies/{id}/reset` | Host-only room reset (`?player_id=...` or `?session_token=...`) that returns the room to waiting state, preserves finished-game history for leaderboard aggregation, and coordinates replay for all connected players |
 
 `GameConfig` request body fields:
 - `turn_timer_seconds` (`0-120`) — `0` disables turn timer (Peaceful Mode)
 - `challenge_window_seconds` (`0-30`) — `0` disables challenge timeout
 - `block_window_seconds` (`0-30`) — `0` disables block timeout
 - `starting_coins` (`1-5`)
+- `bot_count` (`0-5`) — optional lobby-only fill-bot seats; ignored for solo AI creation because solo bot count is already top-level
+- `bot_difficulty` (`easy|medium|hard|lethal`) — lobby fill-bot difficulty; defaults to `medium`
 
 AI match difficulty values:
 - `easy` — looser bluffing and weaker responses
 - `medium` — balanced play with some mistakes
 - `hard` — stronger targeting and challenge logic without perfect play
+- `lethal` — sharper endgame conversion, better public-info reads, and lower-bluff pressure while still keeping human-like variance
 
 AI matches also accept the same optional `config` object used by lobby starts, so solo games can launch with custom turn timer, challenge window, block window, and starting-coin settings.
 
@@ -170,6 +173,7 @@ Response windows resolve as follows:
 - Targeted blocks remain one-on-one: only the target may block, and only the acting player may challenge that block.
 - Untargeted challenge/block windows are still table-wide: any eligible non-actor may challenge or block, and an untargeted window only closes once every eligible responder has allowed it or a valid challenge/block interrupts it.
 - Timed phases are server-authoritative. `GAME_STATE` now includes `phase_started_at` and `phase_deadline_at`, and the backend auto-resolves expired turn, challenge, and block windows even if the acting client stalls or disconnects.
+- If a response window loses its final eligible responder because that player disconnected or was eliminated during the same resolution chain, the backend closes that empty window immediately instead of leaving the table stuck waiting forever.
 
 #### Server Messages
 
@@ -184,11 +188,12 @@ Response windows resolve as follows:
 | `PLAYER_ELIMINATED` | Player eliminated from game |
 | `TURN_CHANGED` | New turn started (player, turn number) |
 | `GAME_OVER` | Game finished (winner) |
+| `RETURN_TO_LOBBY` | Host-triggered replay reset; clients should leave the board and reopen the waiting room with the included `lobby_id` and saved config |
 | `ERROR` | Error message |
 
-Connection presence is reflected in `players[].connected` inside `GAME_STATE`. On connect/disconnect, the server emits `PLAYER_CONNECTED`/`PLAYER_DISCONNECTED` and then sends updated game state so other players can see presence changes immediately.
+Connection presence is reflected in `players[].connected` inside `GAME_STATE`. On connect/disconnect, the server emits `PLAYER_CONNECTED`/`PLAYER_DISCONNECTED` and then sends updated game state so other players can see presence changes immediately. Reconnecting with the same `player_id` replaces any stale socket for that seat without tearing down the shared game service.
 
-Lobby presence is tracked separately from in-game WebSocket presence. Lobby reads that include a valid `session_token` refresh the player's lobby session, and waiting-room players who stop refreshing are evicted automatically after a short grace period so offline hosts cannot block a new game from starting. When a room is reset for replay, all lobby sessions in that room are refreshed so players returning from the game screen are not pruned immediately.
+Lobby presence is tracked separately from in-game WebSocket presence. Lobby reads that include a valid `session_token` refresh the player's lobby session, and waiting-room players who stop refreshing are evicted automatically after a short grace period so offline hosts cannot block a new game from starting. When a room is reset for replay, the reset call is host-authoritative and the server broadcasts `RETURN_TO_LOBBY` before reopening the room so every connected client can navigate back together without dropping the room leaderboard.
 
 While a room is still waiting to start, any seated player may kick another seated player out of the lobby. Self-kicks are rejected, and if the removed player was the host, host ownership falls through to the next remaining player.
 
@@ -196,7 +201,7 @@ Finished games are retained temporarily for leaderboard aggregation, then purged
 
 Leaderboard rows award 1 participation point for every completed game plus 2 bonus points for each win, so a win is worth 3 total points. Leaderboards are room-scoped, and if the client supplies a stable `profile_id`, aggregation follows that identity instead of merging players purely by display name. Waiting-room seat reuse is driven by the saved lobby `session_token`, so refresh/rejoin continuity still works without collapsing separate deliberate players into one seat.
 
-Solo AI matches start directly into `/game/[id]` without a lobby. Bots are persisted as regular game players with bot metadata, and a background bot loop advances their decisions server-side after the human player connects or reconnects.
+Solo AI matches start directly into `/game/[id]` without a lobby. Bots are persisted as regular game players with bot metadata, and a background bot loop advances their decisions server-side after the human player connects or reconnects. Bot names, archetypes, and core values are drawn from a larger workshop-based persona library, and their pace varies by role, stake, personality, and difficulty instead of using a flat fixed delay.
 
 ## Modifying Game Rules
 

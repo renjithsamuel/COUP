@@ -6,8 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import {
   Character,
+  CHARACTER_GUIDE_DETAILS,
   CHARACTER_LABELS,
-  CHARACTER_ABILITIES,
+  CHARACTER_TEXT_COLORS,
 } from "@/models/card";
 import { getGuideModalStyles } from "./GuideModal.styles";
 
@@ -26,15 +27,6 @@ const CHARACTERS = [
   Character.CONTESSA,
 ];
 
-/** Readable accent colors for each character in text */
-const CHAR_TEXT_COLORS: Record<Character, string> = {
-  [Character.DUKE]: "#CE93D8",
-  [Character.ASSASSIN]: "#90A4AE",
-  [Character.CAPTAIN]: "#64B5F6",
-  [Character.AMBASSADOR]: "#81C784",
-  [Character.CONTESSA]: "#EF9A9A",
-};
-
 export function GuideModal({
   isOpen,
   onClose,
@@ -43,6 +35,34 @@ export function GuideModal({
 }: GuideModalProps) {
   const isMobile = useIsMobile();
   const s = getGuideModalStyles(isMobile);
+
+  const renderGuideSegments = (character: Character) =>
+    CHARACTER_GUIDE_DETAILS[character].segments.map((segment, index) => {
+      if (segment.tone === "action") {
+        return (
+          <span key={`${character}-segment-${index}`} style={s.inlineActionText}>
+            {segment.text}
+          </span>
+        );
+      }
+
+      if (segment.tone === "card") {
+        return (
+          <span
+            key={`${character}-segment-${index}`}
+            style={s.inlineCardText(CHARACTER_TEXT_COLORS[character])}
+          >
+            {segment.text}
+          </span>
+        );
+      }
+
+      return (
+        <React.Fragment key={`${character}-segment-${index}`}>
+          {segment.text}
+        </React.Fragment>
+      );
+    });
 
   useEffect(() => {
     if (!isOpen) {
@@ -116,7 +136,7 @@ export function GuideModal({
                   — Take 2 coins. Can be blocked by{" "}
                   <span
                     style={{
-                      color: CHAR_TEXT_COLORS[Character.DUKE],
+                      color: CHARACTER_TEXT_COLORS[Character.DUKE],
                       fontWeight: 700,
                     }}
                   >
@@ -154,17 +174,24 @@ export function GuideModal({
               </p>
               {CHARACTERS.map((char) => (
                 <div key={char} style={s.characterRow}>
-                  <span style={s.characterDot(CHAR_TEXT_COLORS[char])} />
+                  <span style={s.characterDot(CHARACTER_TEXT_COLORS[char])} />
                   <span
                     style={{
                       ...s.characterName,
-                      color: CHAR_TEXT_COLORS[char],
+                      color: CHARACTER_TEXT_COLORS[char],
                     }}
                   >
                     {CHARACTER_LABELS[char]}
                   </span>
-                  <span style={s.characterAbility}>
-                    {CHARACTER_ABILITIES[char]}
+                  <span style={s.characterAbilityWrap}>
+                    <span
+                      style={s.characterActionBadge(
+                        CHARACTER_TEXT_COLORS[char],
+                      )}
+                    >
+                      {CHARACTER_GUIDE_DETAILS[char].actionLabel}
+                    </span>
+                    <span style={s.characterAbility}>{renderGuideSegments(char)}</span>
                   </span>
                 </div>
               ))}

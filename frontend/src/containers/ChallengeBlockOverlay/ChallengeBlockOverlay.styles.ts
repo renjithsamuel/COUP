@@ -141,6 +141,35 @@ export function getChallengeBlockOverlayStyles(mobile: boolean) {
       boxShadow: "0 16px 30px rgba(0,0,0,0.24)",
     } satisfies CSSProperties,
 
+    blockButtonContent: {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: mobile ? 8 : 10,
+      flexWrap: "wrap",
+    } satisfies CSSProperties,
+
+    blockButtonLabel: {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+    } satisfies CSSProperties,
+
+    blockBluffTag: {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: mobile ? "3px 6px" : "4px 8px",
+      borderRadius: 999,
+      border: "1px solid rgba(239,83,80,0.28)",
+      background: "rgba(239,83,80,0.14)",
+      color: "#FEB2B2",
+      fontSize: mobile ? 9 : 10,
+      fontWeight: 800,
+      letterSpacing: 0.7,
+      textTransform: "uppercase",
+    } satisfies CSSProperties,
+
     acceptBtn: {
       ...btnBase(mobile),
       border: "1px solid rgba(255,255,255,0.14)",

@@ -176,7 +176,7 @@ def create_app() -> FastAPI:
     )
 
     # Wire services into lobby router
-    init_lobby_router(lobby_service, game_service)
+    init_lobby_router(lobby_service, game_service, connection_manager)
     init_game_router(game_service)
 
     # Include REST routes
@@ -191,6 +191,23 @@ def create_app() -> FastAPI:
     ):
         ws_handler = container.game_ws_handler()
         await ws_handler.handle_connection(websocket, game_id, player_id)
+
+    # Lobby WebSocket — lightweight presence channel for instant game-start notification
+    @application.websocket("/ws/lobby/{lobby_id}")
+    async def lobby_websocket(
+        websocket: WebSocket,
+        lobby_id: str,
+        player_id: str = Query(...),
+    ):
+        lobby_key = f"lobby:{lobby_id.upper()}"
+        await connection_manager.connect(websocket, lobby_key, player_id)
+        try:
+            while True:
+                await websocket.receive_text()
+        except WebSocketDisconnect:
+            pass
+        finally:
+            connection_manager.disconnect(lobby_key, player_id)
 
     return application
 

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { lobbyService } from "@/services/lobbyService";
+import { ApiError } from "@/services/api";
 import {
   AiMatchCreate,
   GameConfig,
@@ -13,6 +14,18 @@ export const lobbyKeys = {
   detail: (id: string) => [...lobbyKeys.all, "detail", id] as const,
 };
 
+interface LobbyQueryOptions {
+  enabled?: boolean;
+}
+
+const shouldRetryLobbyQuery = (failureCount: number, error: unknown) => {
+  if (error instanceof ApiError && error.status === 404) {
+    return false;
+  }
+
+  return failureCount < 2;
+};
+
 export function useLobbies() {
   return useQuery({
     queryKey: lobbyKeys.list(),
@@ -21,20 +34,36 @@ export function useLobbies() {
   });
 }
 
-export function useLobby(lobbyId: string, sessionToken?: string | null) {
+export function useLobby(
+  lobbyId: string,
+  sessionToken?: string | null,
+  options: LobbyQueryOptions = {},
+) {
   return useQuery({
     queryKey: [...lobbyKeys.detail(lobbyId), sessionToken ?? "anonymous"],
     queryFn: () => lobbyService.get(lobbyId, sessionToken),
-    enabled: !!lobbyId,
-    refetchInterval: 3000,
+    enabled: (options.enabled ?? true) && !!lobbyId,
+    retry: shouldRetryLobbyQuery,
+    refetchInterval: ({ state }) => {
+      if (state.error instanceof ApiError && state.error.status === 404) {
+        return false;
+      }
+
+      return 3000;
+    },
   });
 }
 
-export function useLobbyLeaderboard(lobbyId: string, limit = 6) {
+export function useLobbyLeaderboard(
+  lobbyId: string,
+  limit = 6,
+  options: LobbyQueryOptions = {},
+) {
   return useQuery({
     queryKey: [...lobbyKeys.detail(lobbyId), "leaderboard", limit],
     queryFn: () => lobbyService.leaderboard(lobbyId, limit),
-    enabled: !!lobbyId,
+    enabled: (options.enabled ?? true) && !!lobbyId,
+    retry: shouldRetryLobbyQuery,
     refetchInterval: 15000,
   });
 }

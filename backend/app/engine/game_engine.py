@@ -355,7 +355,15 @@ class GameEngine:
                     # Challenger lost — action proceeds
                     action_type = ActionType(pending.action_type)
                     rule = ACTION_RULES[action_type]
-                    if rule.blocked_by:
+                    target = (
+                        state.get_player(pending.target_id)
+                        if pending.target_id is not None
+                        else None
+                    )
+                    target_can_still_respond = target is not None and target.is_alive
+                    if rule.blocked_by and (
+                        pending.target_id is None or target_can_still_respond
+                    ):
                         # Clear accepts — block phase needs fresh responses
                         pending.accepted_by = []
                         state.phase = GamePhase.BLOCK_WINDOW

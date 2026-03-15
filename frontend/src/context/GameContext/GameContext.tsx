@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useMemo } from "react";
-import { GameStatePublic, GamePhase } from "@/models/game";
+import { GamePhase, GameStatePublic } from "@/models/game";
 import { Card } from "@/models/card";
 import { ActionType } from "@/models/action";
 
@@ -15,6 +15,7 @@ export interface GameContextState {
 export interface GameLogEntry {
   id: string;
   message: string;
+  segments?: GameLogSegment[];
   timestamp: number;
   type:
     | "action"
@@ -25,6 +26,11 @@ export interface GameLogEntry {
     | "system"
     | "turn";
   actionType?: ActionType;
+}
+
+export interface GameLogSegment {
+  text: string;
+  tone?: "plain" | "player" | "action" | "card" | "error";
 }
 
 const initialState: GameContextState = {
@@ -77,9 +83,6 @@ function gameReducer(
           ...state.gameState,
           currentPlayerId: action.payload.currentPlayerId,
           turnNumber: action.payload.turnNumber,
-          phase: GamePhase.TURN_START,
-          pendingAction: null,
-          awaitingInfluenceLossFrom: null,
         },
       };
     case "ADD_LOG":

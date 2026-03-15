@@ -70,12 +70,30 @@ const KickIcon = () => (
   </svg>
 );
 
+const EditIcon = () => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </svg>
+);
+
 export interface LobbyRoomProps {
   lobby: Lobby;
   myPlayerId: string;
   isHost: boolean;
   leaderboard: LeaderboardEntry[];
   onStart: () => void;
+  onEditConfig?: () => void;
   onKick?: (playerId: string) => Promise<void> | void;
   onLeave?: () => void;
 }
@@ -86,6 +104,7 @@ export function LobbyRoom({
   isHost,
   leaderboard,
   onStart,
+  onEditConfig,
   onKick,
   onLeave,
 }: LobbyRoomProps) {
@@ -296,27 +315,67 @@ export function LobbyRoom({
 
   return (
     <motion.div
-      style={s.wrapper}
+      style={
+        isMobile
+          ? {
+              ...s.wrapper,
+              width: "100%",
+              maxWidth: 560,
+              padding: "16px 14px 18px",
+              borderRadius: 24,
+            }
+          : s.wrapper
+      }
       variants={fadeInVariants}
       initial="hidden"
       animate="visible"
     >
-      <div style={s.content}>
-        <div style={s.hero}>
-          <div style={s.heroCard}>
+      <div style={isMobile ? { ...s.content, gap: 14 } : s.content}>
+        <div style={isMobile ? { ...s.hero, gap: 10 } : s.hero}>
+          <div
+            style={
+              isMobile
+                ? { ...s.heroCard, padding: "14px 14px 12px", gap: 6, borderRadius: 18 }
+                : s.heroCard
+            }
+          >
             <div style={s.eyebrow}>Lobby room</div>
-            <div style={s.title}>{lobby.name || `Lobby ${lobby.id}`}</div>
-            <div style={s.subtitle}>
+            <div style={isMobile ? { ...s.title, fontSize: 22, lineHeight: 1.1 } : s.title}>
+              {lobby.name || `Lobby ${lobby.id}`}
+            </div>
+            <div style={isMobile ? { ...s.subtitle, fontSize: 12 } : s.subtitle}>
               Gather the table, share the code, and start when the room is
               ready.
             </div>
-            <div style={s.roomCodeRow}>
-              <div style={s.roomCodeLabel}>Room Code</div>
-              <div style={s.roomCodeValue}>{lobby.id}</div>
+            <div
+              style={
+                isMobile
+                  ? {
+                      ...s.roomCodeRow,
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 8,
+                    }
+                  : s.roomCodeRow
+              }
+            >
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <div style={s.roomCodeLabel}>Room Code</div>
+                <div
+                  style={
+                    isMobile
+                      ? { ...s.roomCodeValue, fontSize: 18, letterSpacing: 3 }
+                      : s.roomCodeValue
+                  }
+                >
+                  {lobby.id}
+                </div>
+              </div>
               <button
                 onClick={handleCopyCode}
                 style={{
                   ...s.copyButton,
+                  ...(isMobile ? { padding: "7px 12px", fontSize: 10 } : {}),
                   color: copied ? "#81C784" : tokens.text.secondary,
                 }}
               >
@@ -325,16 +384,22 @@ export function LobbyRoom({
             </div>
           </div>
 
-          <div style={s.statsRow}>
-            <div style={s.statCard}>
+          <div
+            style={
+              isMobile
+                ? { ...s.statsRow, gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }
+                : s.statsRow
+            }
+          >
+            <div style={isMobile ? { ...s.statCard, padding: "12px 12px", borderRadius: 16 } : s.statCard}>
               <div style={s.statLabel}>Players</div>
-              <div style={s.statValue}>
+              <div style={isMobile ? { ...s.statValue, fontSize: 16 } : s.statValue}>
                 {lobby.players.length} / {lobby.maxPlayers}
               </div>
             </div>
-            <div style={s.statCard}>
+            <div style={isMobile ? { ...s.statCard, padding: "12px 12px", borderRadius: 16 } : s.statCard}>
               <div style={s.statLabel}>Status</div>
-              <div style={s.statValue}>
+              <div style={isMobile ? { ...s.statValue, fontSize: 16 } : s.statValue}>
                 {lobby.status === "waiting" ? "Waiting" : "Starting"}
               </div>
             </div>
@@ -347,30 +412,50 @@ export function LobbyRoom({
           </div>
         </div>
 
-        <div style={s.playerList}>
+        <div style={isMobile ? { ...s.playerList, gap: 10 } : s.playerList}>
           {lobby.players.map((player, i) => (
             <motion.div
               key={player.id}
-              style={s.playerRow}
+              style={
+                isMobile
+                  ? {
+                      ...s.playerRow,
+                      padding: "12px 12px",
+                      borderRadius: 16,
+                      gap: 10,
+                    }
+                  : s.playerRow
+              }
               variants={slideUpVariants}
               initial="hidden"
               animate="visible"
               custom={i}
             >
               <div style={s.playerMeta}>
-                <span style={s.playerName}>{player.name}</span>
-                <span style={s.playerCaption}>
+                <span style={isMobile ? { ...s.playerName, fontSize: 13 } : s.playerName}>{player.name}</span>
+                <span style={isMobile ? { ...s.playerCaption, fontSize: 10 } : s.playerCaption}>
                   {player.id === myPlayerId ? "You" : "Player seat"}
                 </span>
               </div>
-              <div style={s.playerActions}>
+              <div
+                style={
+                  isMobile
+                    ? {
+                        ...s.playerActions,
+                        width: "100%",
+                        justifyContent: "space-between",
+                        marginLeft: 0,
+                      }
+                    : s.playerActions
+                }
+              >
                 {player.isHost && <span style={s.hostBadge}>Host</span>}
                 {player.id !== myPlayerId &&
                   onKick &&
                   lobby.status === "waiting" && (
                     <button
                       type="button"
-                      style={s.kickButton}
+                      style={isMobile ? { ...s.kickButton, minWidth: 80, padding: "7px 10px" } : s.kickButton}
                       onClick={() =>
                         setConfirmState({
                           type: "kick",
@@ -393,10 +478,36 @@ export function LobbyRoom({
           ))}
         </div>
 
-        <div style={s.footer}>
-          <div style={s.footerActions}>
+        <div
+          style={
+            isMobile
+              ? {
+                  ...s.footer,
+                  flexDirection: "column",
+                  alignItems: "stretch",
+                }
+              : s.footer
+          }
+        >
+          <div
+            style={
+              isMobile
+                ? {
+                    ...s.footerActions,
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                    gap: 8,
+                    width: "100%",
+                  }
+                : s.footerActions
+            }
+          >
             <button
-              style={s.secondaryButton}
+              style={
+                isMobile
+                  ? { ...s.secondaryButton, width: "100%", minHeight: 42, fontSize: 11 }
+                  : s.secondaryButton
+              }
               onClick={() => setShowLeaderboard(true)}
             >
               <span style={s.buttonIcon}>
@@ -410,6 +521,7 @@ export function LobbyRoom({
                 onClick={() => setConfirmState({ type: "leave" })}
                 style={{
                   ...s.secondaryButton,
+                  ...(isMobile ? { width: "100%", minHeight: 42, fontSize: 11 } : {}),
                   border: "1px solid rgba(239,83,80,0.3)",
                   background: "rgba(239,83,80,0.08)",
                   color: "#ef5350",
@@ -421,14 +533,38 @@ export function LobbyRoom({
                 <span>Leave Room</span>
               </button>
             )}
+
+            {isHost && onEditConfig && lobby.status === "waiting" && (
+              <button
+                type="button"
+                onClick={onEditConfig}
+                style={
+                  isMobile
+                    ? { ...s.secondaryButton, width: "100%", minHeight: 42, fontSize: 11 }
+                    : s.secondaryButton
+                }
+              >
+                <span style={s.buttonIcon}>
+                  <EditIcon />
+                </span>
+                <span>Edit Config</span>
+              </button>
+            )}
           </div>
 
           {canStart ? (
-            <button style={s.startButton} onClick={onStart}>
+            <button
+              style={
+                isMobile
+                  ? { ...s.startButton, width: "100%", minHeight: 50, fontSize: 14, padding: "12px 14px" }
+                  : s.startButton
+              }
+              onClick={onStart}
+            >
               Start Game
             </button>
           ) : (
-            <div style={s.waitingText}>
+            <div style={isMobile ? { ...s.waitingText, width: "100%" } : s.waitingText}>
               {lobby.status !== "waiting"
                 ? "Game starting..."
                 : isHost

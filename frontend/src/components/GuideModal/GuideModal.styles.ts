@@ -156,10 +156,43 @@ export function getGuideModalStyles(mobile: boolean) {
       minWidth: mobile ? 84 : 110,
     } satisfies CSSProperties,
 
+    characterAbilityWrap: {
+      display: "flex",
+      flexWrap: "wrap",
+      alignItems: "center",
+      gap: mobile ? 6 : 8,
+      minWidth: 0,
+    } satisfies CSSProperties,
+
+    characterActionBadge: (color: string): CSSProperties => ({
+      display: "inline-flex",
+      alignItems: "center",
+      padding: mobile ? "3px 7px" : "4px 8px",
+      borderRadius: 999,
+      border: `1px solid ${color}33`,
+      background: `${color}18`,
+      color,
+      fontSize: mobile ? 9 : 10,
+      fontWeight: 800,
+      letterSpacing: 0.5,
+      textTransform: "uppercase",
+      whiteSpace: "nowrap",
+    }),
+
     characterAbility: {
       fontSize: mobile ? 11 : 13,
       color: tokens.text.secondary,
       lineHeight: mobile ? 1.45 : 1.6,
     } satisfies CSSProperties,
+
+    inlineActionText: {
+      color: tokens.text.accent,
+      fontWeight: 800,
+    } satisfies CSSProperties,
+
+    inlineCardText: (color: string): CSSProperties => ({
+      color,
+      fontWeight: 800,
+    }),
   };
 }

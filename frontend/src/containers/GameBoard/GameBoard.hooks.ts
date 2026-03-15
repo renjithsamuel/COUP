@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useGameContext } from "@/context/GameContext";
+import { useGameContext, type GameLogSegment } from "@/context/GameContext";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useAnimationQueue } from "@/hooks/useAnimationQueue";
 import { ServerMessage, ServerMessageType } from "@/models/websocket-message";
 import { GamePhase } from "@/models/game";
+import { GameConfig } from "@/models/lobby";
 import {
   ACTION_PRESENTATIONS,
   ACTION_RULES,
@@ -38,6 +39,11 @@ export interface ResponseStatus {
   tone: "danger" | "warn" | "info" | "ok";
   title: string;
   detail: string;
+}
+
+export interface ReturnToLobbyState {
+  lobbyId: string;
+  config?: GameConfig;
 }
 
 let eventIdCounter = 0;
@@ -92,38 +98,133 @@ function getActionPresentation(actionType: string) {
   };
 }
 
-function formatActionLog(
+function playerSegment(text: string): GameLogSegment {
+  return { text, tone: "player" };
+}
+
+function actionSegment(text: string): GameLogSegment {
+  return { text, tone: "action" };
+}
+
+function cardSegment(text: string): GameLogSegment {
+  return { text, tone: "card" };
+}
+
+function plainSegment(text: string): GameLogSegment {
+  return { text, tone: "plain" };
+}
+
+function errorSegment(text: string): GameLogSegment {
+  return { text, tone: "error" };
+}
+
+function buildLogMessage(segments: GameLogSegment[]) {
+  return segments.map((segment) => segment.text).join("");
+}
+
+function formatActionLogSegments(
   actionType: string,
   actorName: string,
   targetName: string,
 ) {
   const rule = ACTION_RULES[actionType as ActionType];
+  let segments: GameLogSegment[];
+
   if (!rule) {
-    return targetName
-      ? `${actorName} acted on ${targetName}.`
-      : `${actorName} took an action.`;
+    segments = targetName
+      ? [
+          playerSegment(actorName),
+          plainSegment(" acted on "),
+          playerSegment(targetName),
+          plainSegment("."),
+        ]
+      : [playerSegment(actorName), plainSegment(" took an action.")];
+
+    return { message: buildLogMessage(segments), segments };
   }
 
   switch (actionType) {
     case ActionType.INCOME:
-      return `${actorName} took Income.`;
+      segments = [
+        playerSegment(actorName),
+        plainSegment(" took "),
+        actionSegment("Income"),
+        plainSegment("."),
+      ];
+      break;
     case ActionType.FOREIGN_AID:
-      return `${actorName} took Foreign Aid.`;
+      segments = [
+        playerSegment(actorName),
+        plainSegment(" took "),
+        actionSegment("Foreign Aid"),
+        plainSegment("."),
+      ];
+      break;
     case ActionType.COUP:
-      return `${actorName} launched Coup on ${targetName}.`;
+      segments = [
+        playerSegment(actorName),
+        plainSegment(" launched "),
+        actionSegment("Coup"),
+        plainSegment(" on "),
+        playerSegment(targetName),
+        plainSegment("."),
+      ];
+      break;
     case ActionType.TAX:
-      return `${actorName} used Tax.`;
+      segments = [
+        playerSegment(actorName),
+        plainSegment(" used "),
+        actionSegment("Tax"),
+        plainSegment("."),
+      ];
+      break;
     case ActionType.ASSASSINATE:
-      return `${actorName} used Assassinate on ${targetName}.`;
+      segments = [
+        playerSegment(actorName),
+        plainSegment(" used "),
+        actionSegment("Assassinate"),
+        plainSegment(" on "),
+        playerSegment(targetName),
+        plainSegment("."),
+      ];
+      break;
     case ActionType.STEAL:
-      return `${actorName} used Steal on ${targetName}.`;
+      segments = [
+        playerSegment(actorName),
+        plainSegment(" used "),
+        actionSegment("Steal"),
+        plainSegment(" on "),
+        playerSegment(targetName),
+        plainSegment("."),
+      ];
+      break;
     case ActionType.EXCHANGE:
-      return `${actorName} used Exchange.`;
+      segments = [
+        playerSegment(actorName),
+        plainSegment(" used "),
+        actionSegment("Exchange"),
+        plainSegment("."),
+      ];
+      break;
     default:
-      return targetName
-        ? `${actorName} used ${rule.label} on ${targetName}.`
-        : `${actorName} used ${rule.label}.`;
+      segments = targetName
+        ? [
+            playerSegment(actorName),
+            plainSegment(" used "),
+            actionSegment(rule.label),
+            plainSegment(" on "),
+            playerSegment(targetName),
+            plainSegment("."),
+          ]
+        : [
+            playerSegment(actorName),
+            plainSegment(" used "),
+            actionSegment(rule.label),
+            plainSegment("."),
+          ];
   }
+
+  return { message: buildLogMessage(segments), segments };
 }
 
 function getTimerExpiredConsequence(phase: GamePhase): ResponseStatus | null {
@@ -160,6 +261,8 @@ function getTimerExpiredConsequence(phase: GamePhase): ResponseStatus | null {
 export function useGameBoard(gameId: string, playerId: string) {
   const { state, dispatch, isMyTurn, currentPhase } = useGameContext();
   const [activeEvent, setActiveEvent] = useState<GameEvent | null>(null);
+  const [returnToLobby, setReturnToLobby] =
+    useState<ReturnToLobbyState | null>(null);
   const mountedRef = useRef(true);
   const { enqueue, clear } = useAnimationQueue();
 
@@ -253,7 +356,7 @@ export function useGameBoard(gameId: string, playerId: string) {
             dispatch({
               type: "ADD_LOG",
               payload: {
-                message: formatActionLog(actionType, actorName, targetName),
+                ...formatActionLogSegments(actionType, actorName, targetName),
                 type: "action",
                 actionType: actionType as ActionType,
               },
@@ -273,13 +376,29 @@ export function useGameBoard(gameId: string, playerId: string) {
             const window = String(msg.payload.window ?? "");
             const actionLabel =
               ACTION_RULES[actionType as ActionType]?.label ?? actionType;
+            const segments =
+              window === GamePhase.BLOCK_CHALLENGE_WINDOW
+                ? [
+                    playerSegment(name),
+                    plainSegment(" challenged "),
+                    playerSegment(challenged),
+                    plainSegment("'s "),
+                    cardSegment(blockingCharacter),
+                    plainSegment(" block."),
+                  ]
+                : [
+                    playerSegment(name),
+                    plainSegment(" challenged "),
+                    playerSegment(challenged),
+                    plainSegment("'s "),
+                    actionSegment(actionLabel),
+                    plainSegment("."),
+                  ];
             dispatch({
               type: "ADD_LOG",
               payload: {
-                message:
-                  window === GamePhase.BLOCK_CHALLENGE_WINDOW
-                    ? `${name} challenged ${challenged}'s ${blockingCharacter} block.`
-                    : `${name} challenged ${challenged}'s ${actionLabel}.`,
+                message: buildLogMessage(segments),
+                segments,
                 type: "challenge",
                 actionType: actionType as ActionType,
               },
@@ -312,10 +431,39 @@ export function useGameBoard(gameId: string, playerId: string) {
               title: text,
               type: "challenge",
             });
+            const segments =
+              window === GamePhase.BLOCK_CHALLENGE_WINDOW
+                ? [
+                    playerSegment(challengerName),
+                    plainSegment(
+                      won
+                        ? " won the challenge against "
+                        : " lost the challenge against ",
+                    ),
+                    playerSegment(challenged),
+                    plainSegment("'s "),
+                    cardSegment(blockingCharacter),
+                    plainSegment(" block."),
+                  ]
+                : [
+                    playerSegment(challengerName),
+                    plainSegment(
+                      won
+                        ? " won the challenge against "
+                        : " lost the challenge against ",
+                    ),
+                    playerSegment(challenged),
+                    plainSegment("'s "),
+                    actionSegment(
+                      ACTION_RULES[actionType as ActionType]?.label ?? actionType,
+                    ),
+                    plainSegment("."),
+                  ];
             dispatch({
               type: "ADD_LOG",
               payload: {
-                message: text,
+                message: buildLogMessage(segments),
+                segments,
                 type: "challenge",
                 actionType: actionType as ActionType,
               },
@@ -353,7 +501,26 @@ export function useGameBoard(gameId: string, playerId: string) {
             dispatch({
               type: "ADD_LOG",
               payload: {
-                message: text,
+                message: buildLogMessage([
+                  playerSegment(blockerName),
+                  plainSegment(" blocked "),
+                  playerSegment(actorName),
+                  plainSegment("'s "),
+                  actionSegment(actionLabel),
+                  plainSegment(" with "),
+                  cardSegment(char),
+                  plainSegment("."),
+                ]),
+                segments: [
+                  playerSegment(blockerName),
+                  plainSegment(" blocked "),
+                  playerSegment(actorName),
+                  plainSegment("'s "),
+                  actionSegment(actionLabel),
+                  plainSegment(" with "),
+                  cardSegment(char),
+                  plainSegment("."),
+                ],
                 type: "block",
                 actionType: actionType as ActionType,
               },
@@ -369,7 +536,16 @@ export function useGameBoard(gameId: string, playerId: string) {
             const text = `${name} revealed ${char}.`;
             dispatch({
               type: "ADD_LOG",
-              payload: { message: text, type: "reveal" },
+              payload: {
+                message: text,
+                segments: [
+                  playerSegment(name),
+                  plainSegment(" revealed "),
+                  cardSegment(char),
+                  plainSegment("."),
+                ],
+                type: "reveal",
+              },
             });
           }
           if (msg.gameState)
@@ -381,7 +557,14 @@ export function useGameBoard(gameId: string, playerId: string) {
             dispatch({
               type: "ADD_LOG",
               payload: {
-                message: `${name} was eliminated from the table.`,
+                message: buildLogMessage([
+                  playerSegment(name),
+                  plainSegment(" was eliminated from the table."),
+                ]),
+                segments: [
+                  playerSegment(name),
+                  plainSegment(" was eliminated from the table."),
+                ],
                 type: "elimination",
               },
             });
@@ -408,7 +591,16 @@ export function useGameBoard(gameId: string, playerId: string) {
             dispatch({
               type: "ADD_LOG",
               payload: {
-                message: `Turn ${turn} · ${name} to act`,
+                message: buildLogMessage([
+                  plainSegment(`Turn ${turn} · `),
+                  playerSegment(name),
+                  plainSegment(" to act"),
+                ]),
+                segments: [
+                  plainSegment(`Turn ${turn} · `),
+                  playerSegment(name),
+                  plainSegment(" to act"),
+                ],
                 type: "turn",
               },
             });
@@ -429,7 +621,17 @@ export function useGameBoard(gameId: string, playerId: string) {
             });
             dispatch({
               type: "ADD_LOG",
-              payload: { message: `${name} won the table.`, type: "system" },
+              payload: {
+                message: buildLogMessage([
+                  playerSegment(name),
+                  plainSegment(" won the table."),
+                ]),
+                segments: [
+                  playerSegment(name),
+                  plainSegment(" won the table."),
+                ],
+                type: "system",
+              },
             });
           }
           if (msg.gameState)
@@ -449,7 +651,17 @@ export function useGameBoard(gameId: string, playerId: string) {
             if (!isStalePhaseError) {
               dispatch({
                 type: "ADD_LOG",
-                payload: { message: `Error: ${errorMsg}`, type: "system" },
+                payload: {
+                  message: buildLogMessage([
+                    errorSegment("Error"),
+                    plainSegment(`: ${errorMsg}`),
+                  ]),
+                  segments: [
+                    errorSegment("Error"),
+                    plainSegment(`: ${errorMsg}`),
+                  ],
+                  type: "system",
+                },
               });
             }
           }
@@ -464,7 +676,14 @@ export function useGameBoard(gameId: string, playerId: string) {
               dispatch({
                 type: "ADD_LOG",
                 payload: {
-                  message: `${disconnectedPlayer.name} disconnected`,
+                  message: buildLogMessage([
+                    playerSegment(disconnectedPlayer.name),
+                    plainSegment(" disconnected"),
+                  ]),
+                  segments: [
+                    playerSegment(disconnectedPlayer.name),
+                    plainSegment(" disconnected"),
+                  ],
                   type: "system",
                 },
               });
@@ -472,6 +691,17 @@ export function useGameBoard(gameId: string, playerId: string) {
           }
           if (msg.gameState)
             dispatch({ type: "SET_GAME_STATE", payload: msg.gameState });
+          break;
+        case ServerMessageType.RETURN_TO_LOBBY:
+          {
+            const lobbyId = String(msg.payload.lobbyId ?? "");
+            if (lobbyId) {
+              setReturnToLobby({
+                lobbyId,
+                config: (msg.payload.config as GameConfig | undefined) ?? undefined,
+              });
+            }
+          }
           break;
         default:
           if (msg.gameState)
@@ -785,5 +1015,6 @@ export function useGameBoard(gameId: string, playerId: string) {
     activeCardEffect,
     responseStatus: timerExpiredMessage || responseStatus,
     isWinner: state.gameState?.winnerId === playerId,
+    returnToLobby,
   };
 }

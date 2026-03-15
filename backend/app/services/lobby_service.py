@@ -7,20 +7,24 @@ import string
 import uuid
 from datetime import datetime, timedelta, timezone
 
+from app.config import settings
 from app.models.lobby import Lobby, LobbyPlayer, LobbyResponse
 
 _CODE_ALPHABET = string.ascii_uppercase + string.digits
 _CODE_LENGTH = 6
-_INACTIVE_PLAYER_SECONDS = 20
 
 
 class LobbyService:
     """In-memory lobby management. Lobbies don't need persistence."""
 
-    def __init__(self) -> None:
+    def __init__(self, inactive_player_seconds: int | None = None) -> None:
         self._lobbies: dict[str, Lobby] = {}
         self._player_tokens: dict[str, tuple[str, str]] = {}  # token -> (lobby_id, player_id)
         self._player_last_seen: dict[str, str] = {}
+        self._inactive_player_seconds = max(
+            5,
+            inactive_player_seconds or settings.reconnect_grace_seconds,
+        )
 
     def _generate_code(self) -> str:
         """Generate a short unique room code."""
@@ -71,6 +75,40 @@ class LobbyService:
             return None
         return player_id
 
+    def resolve_player_id(
+        self,
+        lobby_id: str,
+        *,
+        player_id: str | None = None,
+        session_token: str | None = None,
+    ) -> str | None:
+        return player_id or self._get_player_id_for_token(lobby_id, session_token)
+
+    def require_host(
+        self,
+        lobby_id: str,
+        *,
+        player_id: str | None = None,
+        session_token: str | None = None,
+    ) -> str:
+        lobby = self._lobbies.get(lobby_id)
+        if lobby is None:
+            raise ValueError("Lobby not found")
+
+        resolved_player_id = self.resolve_player_id(
+            lobby_id,
+            player_id=player_id,
+            session_token=session_token,
+        )
+        if resolved_player_id is None:
+            raise ValueError("Host not found in lobby")
+
+        host = lobby.host
+        if host is None or host.id != resolved_player_id:
+            raise PermissionError("Only the host can reset the lobby")
+
+        return resolved_player_id
+
     def _remove_player_tokens(self, lobby_id: str, player_id: str) -> None:
         for token, token_details in list(self._player_tokens.items()):
             token_lobby_id, token_player_id = token_details
@@ -115,9 +153,9 @@ class LobbyService:
             try:
                 last_seen = datetime.fromisoformat(last_seen_raw)
             except ValueError:
-                last_seen = now - timedelta(seconds=_INACTIVE_PLAYER_SECONDS + 1)
+                last_seen = now - timedelta(seconds=self._inactive_player_seconds + 1)
 
-            if now - last_seen <= timedelta(seconds=_INACTIVE_PLAYER_SECONDS):
+            if now - last_seen <= timedelta(seconds=self._inactive_player_seconds):
                 continue
 
             self._remove_player(token_lobby_id, player_id)

@@ -1,12 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { GameProvider } from "@/context/GameContext";
 import { GameBoard } from "@/containers/GameBoard";
-import { lobbyKeys, useLobbyLeaderboard } from "@/queries/useLobbyQueries";
-import { lobbyService } from "@/services/lobbyService";
+import {
+  lobbyKeys,
+  useLobby,
+  useLobbyLeaderboard,
+} from "@/queries/useLobbyQueries";
+import {
+  StoredLobbySession,
+  lobbyReturnStore,
+  lobbyService,
+  lobbySessionStore,
+} from "@/services/lobbyService";
 import { AiDifficulty, GameConfig } from "@/models/lobby";
 
 function readAiReplayConfig(searchParams: ReturnType<typeof useSearchParams>) {
@@ -42,25 +51,117 @@ export function GamePageContent() {
   const gameId = params.id as string;
   const playerId = searchParams.get("playerId") ?? "";
   const lobbyId = searchParams.get("lobbyId") ?? "";
+  const [lobbySession, setLobbySession] = useState<StoredLobbySession | null>(
+    null,
+  );
+  const [hasResolvedLobbySession, setHasResolvedLobbySession] = useState(
+    !lobbyId,
+  );
   const aiReplay = readAiReplayConfig(searchParams);
+  const { data: lobbyResponse } = useLobby(
+    lobbyId,
+    lobbySession?.sessionToken,
+    {
+      enabled: Boolean(lobbyId) && hasResolvedLobbySession,
+    },
+  );
   const { data: roomLeaderboard = [] } = useLobbyLeaderboard(lobbyId, 8);
+  const resolvedLobbyPlayerId =
+    lobbyResponse?.playerId ?? lobbySession?.playerId ?? playerId;
+  const isLobbyHost = useMemo(
+    () =>
+      Boolean(
+        lobbyId &&
+          resolvedLobbyPlayerId &&
+          (lobbyResponse?.lobby.players.some(
+            (player) =>
+              player.id === resolvedLobbyPlayerId && player.isHost,
+          ) ||
+            (lobbySession?.playerId === resolvedLobbyPlayerId &&
+              lobbySession?.isHost === true)),
+      ),
+    [lobbyId, lobbyResponse?.lobby.players, lobbySession, resolvedLobbyPlayerId],
+  );
+  const showPlayAgainAction = lobbyId ? true : Boolean(aiReplay);
+  const playAgainLabel = lobbyId ? "Back To Lobby" : "Play Again";
+
+  useEffect(() => {
+    if (!lobbyId) {
+      setLobbySession(null);
+      setHasResolvedLobbySession(true);
+      return;
+    }
+
+    setLobbySession(lobbySessionStore.read(lobbyId));
+    setHasResolvedLobbySession(true);
+  }, [lobbyId]);
+
+  useEffect(() => {
+    if (
+      !lobbyId ||
+      !lobbyResponse ||
+      lobbyResponse.lobby.status !== "waiting" ||
+      lobbyResponse.lobby.gameId
+    ) {
+      return;
+    }
+
+    const targetPlayerId =
+      lobbyResponse.playerId ?? lobbySession?.playerId ?? playerId;
+    router.replace(`/lobby/${lobbyId}?playerId=${targetPlayerId}`);
+  }, [
+    lobbyId,
+    lobbyResponse,
+    lobbySession?.playerId,
+    playerId,
+    router,
+  ]);
 
   const handlePlayAgain = async () => {
     if (lobbyId && playerId) {
+      lobbyReturnStore.save(lobbyId);
+
+      if (!isLobbyHost) {
+        router.replace(`/lobby/${lobbyId}?playerId=${playerId}`);
+        return;
+      }
+
       try {
-        await lobbyService.reset(lobbyId);
+        const resetLobby = await lobbyService.reset(lobbyId, {
+          playerId,
+          sessionToken: lobbySession?.sessionToken,
+        });
+        queryClient.setQueryData(
+          [...lobbyKeys.detail(lobbyId), lobbySession?.sessionToken ?? "anonymous"],
+          {
+            lobby: resetLobby,
+            playerId,
+            sessionToken: lobbySession?.sessionToken ?? null,
+          },
+        );
+        if (lobbySession?.sessionToken) {
+          lobbySessionStore.save(
+            lobbyId,
+            playerId,
+            lobbySession.sessionToken,
+            lobbySession.playerName,
+            resetLobby.players.find((player) => player.id === playerId)?.isHost ??
+              lobbySession.isHost,
+          );
+        }
         await Promise.all([
           queryClient.invalidateQueries({
             queryKey: lobbyKeys.detail(lobbyId),
           }),
           queryClient.invalidateQueries({ queryKey: lobbyKeys.list() }),
         ]);
-      } catch {
-        router.push("/");
+        lobbyReturnStore.clear(lobbyId);
+        router.replace(`/lobby/${lobbyId}?playerId=${playerId}`);
         return;
+      } catch (error) {
+        lobbyReturnStore.clear(lobbyId);
+        throw error;
       }
-      router.push(`/lobby/${lobbyId}?playerId=${playerId}`);
-      return;
     }
 
     if (aiReplay) {
@@ -79,7 +180,7 @@ export function GamePageContent() {
           blockWindowSeconds: String(aiReplay.config.blockWindowSeconds),
           startingCoins: String(aiReplay.config.startingCoins),
         });
-        router.push(`/game/${res.gameId}?${params.toString()}`);
+        router.replace(`/game/${res.gameId}?${params.toString()}`);
         return;
       } catch {
         router.push("/");
@@ -95,7 +196,10 @@ export function GamePageContent() {
       <GameBoard
         gameId={gameId}
         playerId={playerId}
+        lobbyId={lobbyId}
         onPlayAgain={handlePlayAgain}
+        showPlayAgainAction={showPlayAgainAction}
+        playAgainLabel={playAgainLabel}
         roomLeaderboard={roomLeaderboard}
       />
     </GameProvider>

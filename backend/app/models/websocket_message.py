@@ -51,6 +51,7 @@ class ServerMessageType(str, Enum):
     PLAYER_CONNECTED = "PLAYER_CONNECTED"
     PLAYER_DISCONNECTED = "PLAYER_DISCONNECTED"
     WAITING_FOR = "WAITING_FOR"
+    RETURN_TO_LOBBY = "RETURN_TO_LOBBY"
 
 
 class ServerMessage(BaseModel):

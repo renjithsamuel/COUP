@@ -31,6 +31,7 @@ const MESSAGE_TYPE_MAP: Record<string, ServerMessageType> = {
   GAME_OVER: ServerMessageType.GAME_OVER,
   PLAYER_JOINED: ServerMessageType.PLAYER_JOINED,
   PLAYER_LEFT: ServerMessageType.PLAYER_LEFT,
+  RETURN_TO_LOBBY: ServerMessageType.RETURN_TO_LOBBY,
   ERROR: ServerMessageType.ERROR,
   EXCHANGE_CARDS: ServerMessageType.EXCHANGE_CARDS,
   PLAYER_CONNECTED: ServerMessageType.PLAYER_JOINED,
@@ -115,13 +116,39 @@ function toGameStatePrivate(raw: any): GameStatePrivate {
   };
 }
 
+function toLobbyGameConfig(raw: any) {
+  if (!raw) {
+    return undefined;
+  }
+
+  return {
+    turnTimerSeconds: raw.turn_timer_seconds ?? raw.turnTimerSeconds ?? 30,
+    challengeWindowSeconds:
+      raw.challenge_window_seconds ?? raw.challengeWindowSeconds ?? 10,
+    blockWindowSeconds:
+      raw.block_window_seconds ?? raw.blockWindowSeconds ?? 10,
+    startingCoins: raw.starting_coins ?? raw.startingCoins ?? 2,
+  };
+}
+
+function mapPayload(type: ServerMessageType, raw: any): Record<string, unknown> {
+  if (type === ServerMessageType.RETURN_TO_LOBBY) {
+    return {
+      lobbyId: raw?.lobby_id ?? raw?.lobbyId ?? "",
+      config: toLobbyGameConfig(raw?.config),
+    };
+  }
+
+  return raw ?? {};
+}
+
 /** Convert a raw JSON WebSocket message from the backend into a typed ServerMessage. */
 export function mapServerMessage(raw: any): ServerMessage {
   const backendType: string = raw.type ?? "";
   const type =
     MESSAGE_TYPE_MAP[backendType] ??
     (backendType.toLowerCase() as ServerMessageType);
-  const payload = raw.payload ?? {};
+  const payload = mapPayload(type, raw.payload ?? {});
 
   // For GAME_STATE messages the payload IS the game state
   let gameState: GameStatePublic | undefined;

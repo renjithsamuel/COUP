@@ -7,8 +7,10 @@ from datetime import timedelta, timezone, datetime
 
 from app.engine.game_engine import GameEngine
 from app.models.action import ActionType
-from app.models.game import GamePhase, GameState, GameStatus
-from app.models.lobby import AiDifficulty
+from app.models.card import Character
+from app.models.game import GamePhase, GameState, GameStatus, PendingAction
+from app.models.lobby import AiDifficulty, GameConfig as LobbyGameConfig, Lobby, LobbyPlayer
+from app.services.bot_logic import get_bot_persona
 from app.services.game_service import GameService
 
 
@@ -512,5 +514,128 @@ def test_cleanup_finished_games_removes_only_expired_finished_records(
         assert expired_finished.id not in GameService._game_locks
         assert recent_finished.id in GameService._games
         assert active_game.id in GameService._games
+
+    asyncio.run(scenario())
+
+
+def test_targeted_challenge_skips_block_window_when_target_is_eliminated(
+    engine: GameEngine,
+    monkeypatch,
+) -> None:
+    async def scenario() -> None:
+        monkeypatch.setattr("app.engine.game_engine.random.choice", lambda players: players[0])
+        state = engine.create_game("eliminated-target-game")
+        state, actor = engine.add_player(state, "Rsk")
+        state, target = engine.add_player(state, "Arun")
+        state, spectator = engine.add_player(state, "MAK")
+        state = engine.start_game(state)
+
+        actor.influences[0].character = Character.ASSASSIN
+        actor.coins = 3
+        target.influences[0].revealed = True
+
+        service = await _create_service_with_state(state)
+
+        state = await service.process_action(state.id, actor.id, "assassinate", target.id)
+        assert state.phase == GamePhase.CHALLENGE_WINDOW
+
+        state, challenger_won = await service.process_challenge(state.id, target.id)
+        assert challenger_won is False
+        assert state.phase == GamePhase.AWAITING_INFLUENCE_LOSS
+
+        state = await service.process_influence_loss(state.id, target.id, 0)
+
+        assert target.is_alive is False
+        assert state.phase == GamePhase.TURN_START
+        assert state.current_turn_player_id == spectator.id
+        assert state.turn_number == 2
+        assert state.pending_action is None
+
+    asyncio.run(scenario())
+
+
+def test_process_accept_auto_resolves_when_last_responder_is_no_longer_eligible(
+    engine: GameEngine,
+    monkeypatch,
+) -> None:
+    async def scenario() -> None:
+        monkeypatch.setattr("app.engine.game_engine.random.choice", lambda players: players[0])
+        state = engine.create_game("empty-eligible-window")
+        state, actor = engine.add_player(state, "Rsk")
+        state, target = engine.add_player(state, "Arun")
+        state, spectator = engine.add_player(state, "MAK")
+        state = engine.start_game(state)
+
+        target.is_alive = False
+        target.influences[0].revealed = True
+        target.influences[1].revealed = True
+        state.current_turn_player_id = actor.id
+        state.turn_number = 4
+        state.phase = GamePhase.BLOCK_WINDOW
+        state.pending_action = PendingAction(
+            action_type=ActionType.ASSASSINATE.value,
+            player_id=actor.id,
+            target_id=target.id,
+        )
+
+        service = await _create_service_with_state(state)
+
+        stale_state, processed = await service.process_accept(state.id, target.id)
+        assert processed is True
+        assert stale_state.phase == GamePhase.TURN_START
+        assert stale_state.current_turn_player_id == spectator.id
+        assert stale_state.turn_number == 5
+
+    asyncio.run(scenario())
+
+
+def test_create_ai_match_assigns_unique_personas_for_lethal_bots() -> None:
+    async def scenario() -> None:
+        repo = InMemoryGameRepository()
+        service = GameService(GameEngine(), repo)
+
+        state, _ = await service.create_ai_match(
+            player_name="Alice",
+            bot_count=4,
+            difficulty=AiDifficulty.LETHAL,
+            profile_id="profile-alice",
+        )
+
+        bot_players = [player for player in state.players if player.is_bot]
+
+        assert len(bot_players) == 4
+        assert {player.bot_difficulty for player in bot_players} == {AiDifficulty.LETHAL.value}
+        assert len({player.name for player in bot_players}) == 4
+        assert all("Bot" not in player.name for player in bot_players)
+        assert all(len(get_bot_persona(player).core_values) == 3 for player in bot_players)
+        assert len({get_bot_persona(player).archetype for player in bot_players}) == 4
+
+    asyncio.run(scenario())
+
+
+def test_create_game_from_lobby_can_fill_open_seats_with_bots() -> None:
+    async def scenario() -> None:
+        repo = InMemoryGameRepository()
+        service = GameService(GameEngine(), repo)
+        lobby = Lobby(
+            id="ROOM42",
+            name="Friends",
+            max_players=6,
+            players=[
+                LobbyPlayer(id="host", name="Alice", profile_id="alice", is_host=True, is_ready=True),
+                LobbyPlayer(id="peer", name="Bob", profile_id="bob", is_host=False, is_ready=True),
+            ],
+        )
+
+        state = await service.create_game_from_lobby(
+            lobby,
+            LobbyGameConfig(bot_count=2, bot_difficulty=AiDifficulty.HARD.value),
+        )
+
+        bot_players = [player for player in state.players if player.is_bot]
+        assert len(state.players) == 4
+        assert len(bot_players) == 2
+        assert {player.bot_difficulty for player in bot_players} == {AiDifficulty.HARD.value}
+        assert len({player.name for player in bot_players}) == 2
 
     asyncio.run(scenario())

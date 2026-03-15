@@ -21,16 +21,16 @@ export const gameLogStyles = {
     overflowY: "auto",
     padding:
       variant === "panel"
-        ? `${tokens.spacing.sm}px ${tokens.spacing.sm}px ${tokens.spacing.lg}px`
+        ? `0 ${tokens.spacing.xs}px ${tokens.spacing.md}px`
         : `${tokens.spacing.sm}px ${tokens.spacing.md}px`,
     background:
       variant === "panel"
-        ? "linear-gradient(180deg, rgba(10, 16, 30, 0.42) 0%, rgba(10, 16, 30, 0.18) 100%)"
+        ? "transparent"
         : tokens.surface.card,
-    borderRadius: variant === "panel" ? 22 : 10,
+    borderRadius: variant === "panel" ? 0 : 10,
     border:
       variant === "panel"
-        ? "1px solid rgba(255,255,255,0.06)"
+        ? "none"
         : `1px solid ${tokens.surface.border}`,
     fontSize: 12,
     color: tokens.text.secondary,
@@ -127,7 +127,32 @@ export const gameLogStyles = {
     color: tokens.text.primary,
     fontSize: 13,
     lineHeight: 1.55,
-    fontWeight: 700,
+    fontWeight: 500,
+  } satisfies CSSProperties,
+
+  messagePlain: {
+    color: tokens.text.primary,
+    fontWeight: 500,
+  } satisfies CSSProperties,
+
+  messagePlayer: (accent: string): CSSProperties => ({
+    color: accent,
+    fontWeight: 800,
+  }),
+
+  messageAction: (accent: string): CSSProperties => ({
+    color: accent,
+    fontWeight: 800,
+  }),
+
+  messageCard: (accent: string): CSSProperties => ({
+    color: accent,
+    fontWeight: 800,
+  }),
+
+  messageError: {
+    color: "#FCA5A5",
+    fontWeight: 800,
   } satisfies CSSProperties,
 
   timestamp: {

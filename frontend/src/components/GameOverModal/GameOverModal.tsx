@@ -4,6 +4,11 @@ import React, { useRef, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import { createVictoryTimeline } from "@/animations";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import {
+  getVictoryCardPreviewSrc,
+  type VictoryCardDesign,
+} from "@/utils/shareVictoryCard";
 import { gameOverModalStyles } from "./GameOverModal.styles";
 
 export interface GameOverModalProps {
@@ -11,7 +16,71 @@ export interface GameOverModalProps {
   winnerName: string;
   isWinner: boolean;
   onPlayAgain: () => void | Promise<void>;
+  showPrimaryAction?: boolean;
+  primaryActionLabel?: string;
+  primaryActionPendingLabel?: string;
+  onClose: () => void;
+  onShareWin?: () => void | Promise<void>;
+  onDownloadWin?: () => void | Promise<void>;
+  isSharingWin?: boolean;
   onExit: () => void;
+  victoryCardDesign?: VictoryCardDesign | null;
+}
+
+function CloseIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M6 6 18 18"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M18 6 6 18"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function ShareIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M14 5l5 5-5 5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M19 10h-7a5 5 0 0 0-5 5v4"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function DownloadIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 4v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path
+        d="m8 10 4 4 4-4"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M5 19h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 function CrownMark() {
@@ -52,14 +121,43 @@ export function GameOverModal({
   winnerName,
   isWinner,
   onPlayAgain,
+  showPrimaryAction = true,
+  primaryActionLabel = "Play Again",
+  primaryActionPendingLabel = "Returning...",
+  onClose,
+  onShareWin,
+  onDownloadWin,
+  isSharingWin = false,
   onExit,
+  victoryCardDesign,
 }: GameOverModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const [isReplaying, setIsReplaying] = useState(false);
+  const isMobile = useIsMobile();
+  const isLobbyReturnAction = primaryActionLabel.toLowerCase().includes("lobby");
   const outcomeTitle = isWinner ? "Victory" : "Defeat";
+  const isAwaitingHostReset = !isWinner && !showPrimaryAction;
   const subtitle = isWinner
-    ? "You own the table. Return to the room for another round or leave now."
-    : `${winnerName || "Another player"} took the table. Return to the room for another round or leave now.`;
+    ? isLobbyReturnAction
+      ? "Share the finish, head back to the lobby, or leave the table."
+      : "You closed the room cleanly. Share the finish, run it back, or leave the table."
+    : isAwaitingHostReset
+      ? `${winnerName || "Another player"} closed the table first. Stay here for the host reset, or step out.`
+      : isLobbyReturnAction
+        ? `${winnerName || "Another player"} closed the table first. Head back to the lobby now or step out.`
+        : `${winnerName || "Another player"} closed the table first. Reset for another round or step out.`;
+  const previewSrc =
+    isWinner && victoryCardDesign
+      ? getVictoryCardPreviewSrc(winnerName || "Winner", victoryCardDesign)
+      : null;
+  const resultSummary = isWinner
+    ? victoryCardDesign?.tagline ?? "The table tilted your way and stayed there."
+    : isAwaitingHostReset
+      ? "The host controls the return. If you stay on this screen, you will be sent back to the lobby automatically."
+      : isLobbyReturnAction
+        ? "The lobby route stays open. If the room has not reset yet, you will wait there until it does."
+        : "The next round starts clean. Use the reset, not the result.";
+  const previewLabel = isWinner ? "Victory Snapshot" : "Final Snapshot";
 
   useEffect(() => {
     if (isOpen && modalRef.current) {
@@ -83,13 +181,13 @@ export function GameOverModal({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !isReplaying) {
-        onExit();
+        onClose();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, isReplaying, onExit]);
+  }, [isOpen, isReplaying, onClose]);
 
   const handlePlayAgain = async () => {
     if (isReplaying) {
@@ -117,33 +215,104 @@ export function GameOverModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          <div ref={modalRef} style={gameOverModalStyles.modal}>
+          <div ref={modalRef} style={gameOverModalStyles.modal(isMobile, isWinner)}>
             <div style={gameOverModalStyles.aura} />
-            <div style={gameOverModalStyles.badge}>Final table</div>
-            <div style={gameOverModalStyles.headerCopy}>
-              <div style={gameOverModalStyles.title(isWinner)}>
-                {outcomeTitle}
+            <div style={gameOverModalStyles.scrollArea}>
+              <div style={gameOverModalStyles.topBar}>
+                <div style={gameOverModalStyles.badge}>Final table</div>
+                <button
+                  type="button"
+                  style={gameOverModalStyles.topCloseButton}
+                  onClick={onClose}
+                  disabled={isReplaying || isSharingWin}
+                  aria-label="Close game over modal"
+                >
+                  <CloseIcon />
+                </button>
               </div>
-              <div style={gameOverModalStyles.subtitle}>{subtitle}</div>
+              <div style={gameOverModalStyles.compactHero(isMobile)}>
+                <div style={gameOverModalStyles.headerCopy}>
+                  <div style={gameOverModalStyles.title(isWinner)}>
+                    {outcomeTitle}
+                  </div>
+                  <div style={gameOverModalStyles.subtitle}>{subtitle}</div>
+                </div>
+                <div style={gameOverModalStyles.heroIdentity(isMobile)}>
+                  <div style={gameOverModalStyles.markWrap}>
+                    <CrownMark />
+                  </div>
+                  <div style={gameOverModalStyles.winnerName}>{winnerName}</div>
+                </div>
+              </div>
+              <div style={gameOverModalStyles.summaryCard(isWinner)}>
+                <div style={gameOverModalStyles.summaryHeader}>
+                  <div style={gameOverModalStyles.summaryEyebrow(isWinner)}>
+                    {isWinner ? "Finish quality" : "Next round"}
+                  </div>
+                  {isWinner && victoryCardDesign && (
+                    <div style={gameOverModalStyles.summaryThemeNote}>
+                      {victoryCardDesign.themeLabel}
+                    </div>
+                  )}
+                </div>
+                <div style={gameOverModalStyles.summaryText}>{resultSummary}</div>
+              </div>
+              {previewSrc && (
+                <div style={gameOverModalStyles.previewShell(isMobile)}>
+                  <div style={gameOverModalStyles.previewChrome}>
+                    <span style={gameOverModalStyles.previewLabel}>{previewLabel}</span>
+                    <div style={gameOverModalStyles.previewActions}>
+                      <button
+                        type="button"
+                        style={gameOverModalStyles.iconButton(isReplaying || isSharingWin)}
+                        onClick={() => void onShareWin?.()}
+                        disabled={isReplaying || isSharingWin}
+                        aria-label={isSharingWin ? "Preparing share card" : "Share victory card"}
+                        title={isSharingWin ? "Preparing..." : "Share victory card"}
+                      >
+                        <ShareIcon />
+                      </button>
+                      <button
+                        type="button"
+                        style={gameOverModalStyles.iconButton(isReplaying || isSharingWin)}
+                        onClick={() => void onDownloadWin?.()}
+                        disabled={isReplaying || isSharingWin}
+                        aria-label={isSharingWin ? "Preparing download" : "Download victory card"}
+                        title={isSharingWin ? "Preparing..." : "Download victory card"}
+                      >
+                        <DownloadIcon />
+                      </button>
+                    </div>
+                  </div>
+                  <img
+                    src={previewSrc}
+                    alt={`Victory card preview for ${winnerName || "winner"}`}
+                    style={gameOverModalStyles.previewImage(isMobile)}
+                  />
+                </div>
+              )}
             </div>
-            <div style={gameOverModalStyles.markWrap}>
-              <CrownMark />
-            </div>
-            <div style={gameOverModalStyles.winnerName}>{winnerName}</div>
-            <div style={gameOverModalStyles.buttonRow}>
+            {isAwaitingHostReset && (
+              <div style={gameOverModalStyles.footerNote}>
+                Waiting for the host to reopen the room.
+              </div>
+            )}
+            <div style={gameOverModalStyles.buttonRow(showPrimaryAction)}>
+              {showPrimaryAction && (
+                <button
+                  style={gameOverModalStyles.primaryButton(isReplaying)}
+                  onClick={handlePlayAgain}
+                  disabled={isReplaying || isSharingWin}
+                >
+                  {isReplaying ? primaryActionPendingLabel : primaryActionLabel}
+                </button>
+              )}
               <button
                 style={gameOverModalStyles.secondaryButton}
                 onClick={onExit}
-                disabled={isReplaying}
+                disabled={isReplaying || isSharingWin}
               >
                 Exit
-              </button>
-              <button
-                style={gameOverModalStyles.primaryButton(isReplaying)}
-                onClick={handlePlayAgain}
-                disabled={isReplaying}
-              >
-                {isReplaying ? "Returning..." : "Play Again"}
               </button>
             </div>
           </div>

@@ -19,11 +19,18 @@ import { useGameAudio } from "@/hooks/useGameAudio";
 import { ACTION_RULES } from "@/models/action";
 import {
   Character,
-  CHARACTER_ABILITIES,
+  CHARACTER_GUIDE_DETAILS,
   CHARACTER_LABELS,
+  CHARACTER_TEXT_COLORS,
 } from "@/models/card";
 import { LeaderboardEntry } from "@/models/lobby";
 import { useActionPanel } from "@/containers/ActionPanel/ActionPanel.hooks";
+import {
+  chooseVictoryCardDesign,
+  downloadVictoryCard,
+  shareVictoryCard,
+  type VictoryCardDesign,
+} from "@/utils/shareVictoryCard";
 import { gameBoardStyles } from "./GameBoard.styles";
 import { useGameBoard } from "./GameBoard.hooks";
 
@@ -151,18 +158,20 @@ const CoinIcon = ({ size = 16 }: { size?: number }) => (
 export interface GameBoardProps {
   gameId: string;
   playerId: string;
+  lobbyId?: string;
   onPlayAgain: () => void | Promise<void>;
+  showPlayAgainAction?: boolean;
+  playAgainLabel?: string;
+  playAgainPendingLabel?: string;
   onExit?: () => void;
   roomLeaderboard?: LeaderboardEntry[];
 }
 
 const CONFETTI_COLORS = [
   "#F6C445",
-  "#7DD3FC",
-  "#34D399",
-  "#FB7185",
-  "#C084FC",
-  "#F97316",
+  "#EDE4CF",
+  "#8CCBFF",
+  "#F7B7A3",
 ];
 const CONFETTI_PIECES = Array.from({ length: 44 }, (_, index) => ({
   id: index,
@@ -171,6 +180,15 @@ const CONFETTI_PIECES = Array.from({ length: 44 }, (_, index) => ({
   duration: 2.8 + (index % 5) * 0.45,
   rotation: -140 + ((index * 29) % 280),
   color: CONFETTI_COLORS[index % CONFETTI_COLORS.length],
+}));
+const CONFETTI_DUST = Array.from({ length: 22 }, (_, index) => ({
+  id: index,
+  x: (index * 23 + 9) % 100,
+  delay: (index % 8) * 0.12,
+  duration: 3.8 + (index % 4) * 0.55,
+  drift: -40 + ((index * 19) % 80),
+  size: 4 + (index % 3) * 2,
+  color: CONFETTI_COLORS[(index + 1) % CONFETTI_COLORS.length],
 }));
 
 const PINNED_CHARACTERS = [
@@ -210,13 +228,31 @@ const GAME_START_COUNTDOWN = [
 
 const GAME_START_STEP_MS = 700;
 const GAME_START_EXIT_MS = 200;
+const GAME_OVER_HOLD_MS = 3000;
+const VICTORY_CONFETTI_DURATION_MS = 10000;
+const PINNED_GUIDE_MIN_WIDTH = 300;
+const PINNED_GUIDE_MAX_WIDTH = 520;
+const PINNED_GUIDE_MIN_HEIGHT = 250;
+const PINNED_GUIDE_MAX_HEIGHT = 620;
+const POST_GAME_TRAY_MIN_WIDTH = 228;
+const POST_GAME_TRAY_MAX_WIDTH = 360;
+const POST_GAME_TRAY_MIN_HEIGHT = 148;
+const POST_GAME_TRAY_MAX_HEIGHT = 280;
 const gameStartCountdownStorageKey = (gameId: string) =>
   `coup:game-start-countdown:${gameId}`;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
 
 export function GameBoard({
   gameId,
   playerId,
+  lobbyId,
   onPlayAgain,
+  showPlayAgainAction = true,
+  playAgainLabel = "Play Again",
+  playAgainPendingLabel = "Returning...",
   onExit,
   roomLeaderboard = [],
 }: GameBoardProps) {
@@ -246,7 +282,38 @@ export function GameBoard({
   const [countdownStepIndex, setCountdownStepIndex] = useState<number | null>(
     null,
   );
+  const [showGameOverModal, setShowGameOverModal] = useState(false);
+  const [isReplayPending, setIsReplayPending] = useState(false);
+  const [isSharingVictory, setIsSharingVictory] = useState(false);
+  const [showVictoryConfetti, setShowVictoryConfetti] = useState(false);
+  const [victoryCardDesign, setVictoryCardDesign] =
+    useState<VictoryCardDesign | null>(null);
+  const [isMobilePostGameTrayExpanded, setIsMobilePostGameTrayExpanded] =
+    useState(false);
+  const [postGameTraySize, setPostGameTraySize] = useState({
+    width: 296,
+    height: 188,
+  });
+  const [pinnedGuideSize, setPinnedGuideSize] = useState({
+    width: 348,
+    height: 364,
+  });
+  const postGameTrayDragControls = useDragControls();
   const pinnedGuideDragControls = useDragControls();
+  const postGameTrayResizeRef = React.useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    startWidth: number;
+    startHeight: number;
+  } | null>(null);
+  const pinnedGuideResizeRef = React.useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    startWidth: number;
+    startHeight: number;
+  } | null>(null);
   const [timelinePreferenceTouched, setTimelinePreferenceTouched] =
     useState(false);
   const isMobile = useIsMobile();
@@ -279,10 +346,154 @@ export function GameBoard({
   }, [actionHint]);
 
   useEffect(() => {
-    if (isMyTurn || isGameOver) {
+    if (isMyTurn) {
       setActionHint(null);
     }
-  }, [isMyTurn, isGameOver]);
+  }, [isMyTurn]);
+
+  useEffect(() => {
+    if (!showPinnedGuide) {
+      return undefined;
+    }
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const resizeState = pinnedGuideResizeRef.current;
+      if (!resizeState || event.pointerId !== resizeState.pointerId) {
+        return;
+      }
+
+      const maxWidth = Math.min(PINNED_GUIDE_MAX_WIDTH, window.innerWidth - 80);
+      const maxHeight = Math.min(
+        PINNED_GUIDE_MAX_HEIGHT,
+        window.innerHeight - 140,
+      );
+
+      setPinnedGuideSize({
+        width: clamp(
+          resizeState.startWidth + event.clientX - resizeState.startX,
+          PINNED_GUIDE_MIN_WIDTH,
+          Math.max(PINNED_GUIDE_MIN_WIDTH, maxWidth),
+        ),
+        height: clamp(
+          resizeState.startHeight + event.clientY - resizeState.startY,
+          PINNED_GUIDE_MIN_HEIGHT,
+          Math.max(PINNED_GUIDE_MIN_HEIGHT, maxHeight),
+        ),
+      });
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      if (pinnedGuideResizeRef.current?.pointerId === event.pointerId) {
+        pinnedGuideResizeRef.current = null;
+      }
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerUp);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
+    };
+  }, [showPinnedGuide]);
+
+  useEffect(() => {
+    if (isMobile) {
+      return undefined;
+    }
+
+    const postGameTray = isGameOver && !showGameOverModal;
+    if (!postGameTray) {
+      return undefined;
+    }
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const resizeState = postGameTrayResizeRef.current;
+      if (!resizeState || event.pointerId !== resizeState.pointerId) {
+        return;
+      }
+
+      const maxWidth = Math.min(POST_GAME_TRAY_MAX_WIDTH, window.innerWidth - 24);
+      const maxHeight = Math.min(POST_GAME_TRAY_MAX_HEIGHT, window.innerHeight - 110);
+
+      setPostGameTraySize({
+        width: clamp(
+          resizeState.startWidth + event.clientX - resizeState.startX,
+          POST_GAME_TRAY_MIN_WIDTH,
+          Math.max(POST_GAME_TRAY_MIN_WIDTH, maxWidth),
+        ),
+        height: clamp(
+          resizeState.startHeight + event.clientY - resizeState.startY,
+          POST_GAME_TRAY_MIN_HEIGHT,
+          Math.max(POST_GAME_TRAY_MIN_HEIGHT, maxHeight),
+        ),
+      });
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      if (postGameTrayResizeRef.current?.pointerId === event.pointerId) {
+        postGameTrayResizeRef.current = null;
+      }
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerUp);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
+    };
+  }, [isGameOver, isMobile, showGameOverModal]);
+
+  useEffect(() => {
+    if (!isGameOver) {
+      setShowGameOverModal(false);
+      setIsReplayPending(false);
+      setIsSharingVictory(false);
+      setShowVictoryConfetti(false);
+      setVictoryCardDesign(null);
+      setIsMobilePostGameTrayExpanded(false);
+      return undefined;
+    }
+
+    setVictoryCardDesign(
+      chooseVictoryCardDesign(
+        `${gameId}:${winnerName || playerId || "winner"}:${gameState?.turnNumber ?? 0}`,
+      ),
+    );
+    setPostGameTraySize(
+      isMobile
+        ? { width: 228, height: isWinner ? 146 : 136 }
+        : { width: 304, height: isWinner ? 196 : 176 },
+    );
+    setIsMobilePostGameTrayExpanded(false);
+    setShowGameOverModal(false);
+    const timerId = window.setTimeout(() => {
+      setShowGameOverModal(true);
+    }, GAME_OVER_HOLD_MS);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [gameId, gameState?.turnNumber, isGameOver, isMobile, isWinner, playerId, winnerName]);
+
+  useEffect(() => {
+    if (!isGameOver || !isWinner) {
+      setShowVictoryConfetti(false);
+      return undefined;
+    }
+
+    setShowVictoryConfetti(true);
+    const timerId = window.setTimeout(() => {
+      setShowVictoryConfetti(false);
+    }, VICTORY_CONFETTI_DURATION_MS);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [isGameOver, isWinner]);
 
   useEffect(() => {
     if (isMyTurn && !previousIsMyTurnRef.current && !isGameOver) {
@@ -383,12 +594,19 @@ export function GameBoard({
             : activeEvent.title;
 
   if (!gameState) {
+    const loadingLabel =
+      status === "connecting"
+        ? "Connecting to table..."
+        : status === "error" || status === "disconnected"
+          ? "Reconnecting to table..."
+          : "Loading game...";
+
     return (
       <div
         style={{ ...s.wrapper, alignItems: "center", justifyContent: "center" }}
       >
         <div style={{ color: "#8B95A8", fontSize: 16 }}>
-          {status === "connecting" ? "Connecting..." : "Loading game..."}
+          {loadingLabel}
         </div>
       </div>
     );
@@ -521,6 +739,7 @@ export function GameBoard({
       exit={mobilePanel ? { x: 40, opacity: 0 } : { x: 18, opacity: 0 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
       aria-label="Game timeline"
+      onClick={mobilePanel ? (event) => event.stopPropagation() : undefined}
     >
       <div style={s.sidePanelHeader}>
         <div style={s.sidePanelHeadingGroup}>
@@ -544,7 +763,7 @@ export function GameBoard({
     </motion.aside>
   );
 
-  const handleExitConfirmed = () => {
+  const handleExitHome = () => {
     setShowExitConfirm(false);
     if (onExit) {
       onExit();
@@ -553,27 +772,331 @@ export function GameBoard({
     router.push("/");
   };
 
+  const handlePlayAgain = async () => {
+    if (!showPlayAgainAction || isReplayPending) {
+      return;
+    }
+
+    setShowGameOverModal(false);
+    setIsReplayPending(true);
+    try {
+      await onPlayAgain();
+    } catch {
+      setIsReplayPending(false);
+      setActionHint("Unable to start the next round.");
+    }
+  };
+
+  const handleShareWin = async () => {
+    if (!isWinner || isSharingVictory || !victoryCardDesign) {
+      return;
+    }
+
+    setIsSharingVictory(true);
+    try {
+      const outcome = await shareVictoryCard(
+        winnerName || myPlayer?.name || "Winner",
+        victoryCardDesign,
+      );
+      setActionHint(outcome === "shared" ? "Victory card shared." : "Victory card downloaded.");
+    } catch {
+      setActionHint("Could not prepare the victory card.");
+    } finally {
+      setIsSharingVictory(false);
+    }
+  };
+
+  const handleDownloadWin = async () => {
+    if (!isWinner || isSharingVictory || !victoryCardDesign) {
+      return;
+    }
+
+    setIsSharingVictory(true);
+    try {
+      await downloadVictoryCard(
+        winnerName || myPlayer?.name || "Winner",
+        victoryCardDesign,
+      );
+      setActionHint("Victory card downloaded.");
+    } catch {
+      setActionHint("Could not export the victory card.");
+    } finally {
+      setIsSharingVictory(false);
+    }
+  };
+
+  const postGameTray = isGameOver && !showGameOverModal;
+  const shouldShowPostGameTray =
+    postGameTray && !(isMobile && (showTimeline || showDashboard || showGuide));
+  const showMobileTopPostGameRecap = shouldShowPostGameTray && isMobile;
+  const postGameTrayTitle = isWinner
+    ? "You won the table"
+    : `${winnerName || "Winner"} won the table`;
+  const postGameTrayCopy = lobbyId
+    ? showPlayAgainAction
+      ? "Open the summary, then pull the whole room back to the lobby when you are ready."
+      : "The host controls the return. Stay here and you will be pulled back to the lobby automatically."
+    : isWinner
+      ? victoryCardDesign?.tagline ?? "Share the finish or run the room again."
+      : "Open the summary for the result, then reset when you are ready.";
+  const widthRatio =
+    (pinnedGuideSize.width - PINNED_GUIDE_MIN_WIDTH) /
+    (PINNED_GUIDE_MAX_WIDTH - PINNED_GUIDE_MIN_WIDTH);
+  const heightRatio =
+    (pinnedGuideSize.height - PINNED_GUIDE_MIN_HEIGHT) /
+    (PINNED_GUIDE_MAX_HEIGHT - PINNED_GUIDE_MIN_HEIGHT);
+  const pinnedGuideScale = 0.94 + clamp((widthRatio + heightRatio) / 2, 0, 1) * 0.22;
+
+  const handlePinnedGuideResizeStart = (
+    event: React.PointerEvent<HTMLButtonElement>,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    pinnedGuideResizeRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startWidth: pinnedGuideSize.width,
+      startHeight: pinnedGuideSize.height,
+    };
+  };
+
+  const handlePostGameTrayResizeStart = (
+    event: React.PointerEvent<HTMLButtonElement>,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    postGameTrayResizeRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startWidth: postGameTraySize.width,
+      startHeight: postGameTraySize.height,
+    };
+  };
+
+  const renderPinnedGuideSegments = (character: Character) =>
+    CHARACTER_GUIDE_DETAILS[character].segments.map((segment, index) => {
+      if (segment.tone === "action") {
+        return (
+          <span
+            key={`${character}-guide-${index}`}
+            style={s.pinnedGuideInlineAction(CHARACTER_TEXT_COLORS[character])}
+          >
+            {segment.text}
+          </span>
+        );
+      }
+
+      if (segment.tone === "card") {
+        return (
+          <span
+            key={`${character}-guide-${index}`}
+            style={s.pinnedGuideInlineCard(CHARACTER_TEXT_COLORS[character])}
+          >
+            {segment.text}
+          </span>
+        );
+      }
+
+      return (
+        <React.Fragment key={`${character}-guide-${index}`}>
+          {segment.text}
+        </React.Fragment>
+      );
+    });
+
   return (
     <div style={s.wrapper}>
       <CoupBackgroundSVG />
       <div style={s.topBar}>
         <div style={s.topBarLeft}>
           {isMobile ? (
-            <div
-              style={s.mobileStatusPill(commandTone)}
-              title={`WebSocket: ${status}`}
-            >
-              <span style={s.mobileConnectionDot(status)} />
-              <div style={s.mobileStatusCopy}>
-                <span style={s.mobileStatusEyebrow}>{navEyebrow}</span>
-                <span style={s.mobileStatusTitle}>{mobileNavTitle}</span>
+            showMobileTopPostGameRecap ? (
+              <div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  maxWidth: "100%",
+                }}
+              >
+                <div
+                  style={{
+                    width: "100%",
+                    borderRadius: 18,
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    background:
+                      "linear-gradient(140deg, rgba(12,20,37,0.94), rgba(18,30,53,0.96))",
+                    boxShadow: "0 12px 28px rgba(0,0,0,0.28)",
+                    backdropFilter: "blur(16px)",
+                    padding: 10,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div
+                      style={{
+                        color: isWinner ? "#F6C445" : "#9CC8FF",
+                        fontSize: 10,
+                        fontWeight: 800,
+                        letterSpacing: 1.1,
+                        textTransform: "uppercase",
+                        marginBottom: 3,
+                      }}
+                    >
+                      {isWinner ? "Victory recap" : "Round summary"}
+                    </div>
+                    <div
+                      style={{
+                        color: "#F5F7FB",
+                        fontSize: 13,
+                        fontWeight: 800,
+                        lineHeight: 1.25,
+                      }}
+                    >
+                      {postGameTrayTitle}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobilePostGameTrayExpanded(false);
+                        setShowGameOverModal(true);
+                      }}
+                      style={{
+                        padding: "8px 10px",
+                        borderRadius: 10,
+                        border: "1px solid rgba(125,211,252,0.18)",
+                        background: "rgba(125,211,252,0.08)",
+                        color: "#D6F2FF",
+                        fontWeight: 800,
+                        fontSize: 11,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Summary
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setIsMobilePostGameTrayExpanded((value) => !value)
+                      }
+                      style={{
+                        padding: "8px 10px",
+                        borderRadius: 10,
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        background: "rgba(255,255,255,0.05)",
+                        color: "#DCE6F6",
+                        fontWeight: 800,
+                        fontSize: 11,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {isMobilePostGameTrayExpanded ? "Hide" : "More"}
+                    </button>
+                  </div>
+                </div>
+                {isMobilePostGameTrayExpanded && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 8px)",
+                      left: 0,
+                      right: 0,
+                      borderRadius: 18,
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      background:
+                        "linear-gradient(140deg, rgba(12,20,37,0.98), rgba(18,30,53,0.99))",
+                      boxShadow: "0 14px 32px rgba(0,0,0,0.34)",
+                      backdropFilter: "blur(16px)",
+                      padding: 10,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: "#B7C4D8",
+                        fontSize: 11,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {postGameTrayCopy}
+                    </div>
+                    {isWinner && victoryCardDesign && (
+                      <div
+                        style={{
+                          display: "inline-flex",
+                          alignSelf: "flex-start",
+                          alignItems: "center",
+                          gap: 6,
+                          padding: "5px 9px",
+                          borderRadius: 999,
+                          background: "rgba(255,193,7,0.1)",
+                          border: "1px solid rgba(255,193,7,0.18)",
+                          color: "#F6C445",
+                          fontSize: 10,
+                          fontWeight: 800,
+                        }}
+                      >
+                        {victoryCardDesign.themeLabel}
+                      </div>
+                    )}
+                    {showPlayAgainAction && (
+                      <button
+                        type="button"
+                        onClick={() => void handlePlayAgain()}
+                        disabled={isReplayPending}
+                        style={{
+                          minWidth: 0,
+                          padding: "10px 12px",
+                          borderRadius: 12,
+                          border: "1px solid rgba(255,193,7,0.42)",
+                          background:
+                            "linear-gradient(135deg, rgba(255,193,7,0.2), rgba(255,143,0,0.15))",
+                          color: "#F6C445",
+                          fontWeight: 900,
+                          fontSize: 12,
+                          letterSpacing: 0.5,
+                          cursor: isReplayPending ? "wait" : "pointer",
+                          opacity: isReplayPending ? 0.72 : 1,
+                        }}
+                      >
+                        {isReplayPending ? playAgainPendingLabel : playAgainLabel}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
-              {!isGameOver && timerRemaining > 0 && (
-                <span style={s.mobileTimerChip(commandTone)}>
-                  {timerRemaining}s
-                </span>
-              )}
-            </div>
+            ) : (
+              <div
+                style={s.mobileStatusPill(commandTone)}
+                title={`WebSocket: ${status}`}
+              >
+                <span style={s.mobileConnectionDot(status)} />
+                <div style={s.mobileStatusCopy}>
+                  <span style={s.mobileStatusEyebrow}>{navEyebrow}</span>
+                  <span style={s.mobileStatusTitle}>{mobileNavTitle}</span>
+                </div>
+                {!isGameOver && timerRemaining > 0 && (
+                  <span style={s.mobileTimerChip(commandTone)}>
+                    {timerRemaining}s
+                  </span>
+                )}
+              </div>
+            )
           ) : (
             <div style={s.topStatusGroup}>
               <div
@@ -821,13 +1344,25 @@ export function GameBoard({
       </AnimatePresence>
 
       <AnimatePresence>
-        {isGameOver && isWinner && (
+        {isGameOver && isWinner && showVictoryConfetti && (
           <motion.div
             style={s.confettiLayer}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
+            <motion.div
+              style={s.victoryHalo}
+              animate={{
+                opacity: [0.42, 0.82, 0.42],
+                scale: [0.92, 1.05, 0.96],
+              }}
+              transition={{
+                duration: 2.6,
+                ease: "easeInOut",
+                repeat: Infinity,
+              }}
+            />
             {CONFETTI_PIECES.map((piece) => (
               <motion.span
                 key={piece.id}
@@ -844,6 +1379,26 @@ export function GameBoard({
                   ease: "easeInOut",
                   repeat: Infinity,
                   repeatDelay: 0.7,
+                }}
+              />
+            ))}
+            {CONFETTI_DUST.map((particle) => (
+              <motion.span
+                key={`dust-${particle.id}`}
+                style={s.confettiDust(particle.x, particle.size, particle.color)}
+                initial={{ x: 0, y: "-6vh", opacity: 0, scale: 0.72 }}
+                animate={{
+                  x: [0, particle.drift * 0.45, particle.drift],
+                  y: ["-6vh", "38vh", "106vh"],
+                  opacity: [0, 0.75, 0.42, 0],
+                  scale: [0.72, 1, 0.9],
+                }}
+                transition={{
+                  duration: particle.duration,
+                  delay: particle.delay,
+                  ease: "easeInOut",
+                  repeat: Infinity,
+                  repeatDelay: 1.1,
                 }}
               />
             ))}
@@ -1030,18 +1585,209 @@ export function GameBoard({
 
       {/* Game over modal */}
       <GameOverModal
-        isOpen={isGameOver}
+        isOpen={isGameOver && showGameOverModal}
         winnerName={winnerName}
         isWinner={isWinner}
-        onPlayAgain={onPlayAgain}
+        onPlayAgain={handlePlayAgain}
+        showPrimaryAction={showPlayAgainAction}
+        primaryActionLabel={playAgainLabel}
+        primaryActionPendingLabel={playAgainPendingLabel}
+        onClose={() => setShowGameOverModal(false)}
+        onShareWin={handleShareWin}
+        onDownloadWin={handleDownloadWin}
+        isSharingWin={isSharingVictory}
+        victoryCardDesign={victoryCardDesign}
         onExit={() => {
-          if (onExit) {
-            onExit();
-            return;
-          }
-          router.push("/");
+          setShowGameOverModal(false);
+          setShowExitConfirm(true);
         }}
       />
+
+      <AnimatePresence>
+        {shouldShowPostGameTray && !isMobile && (
+          <motion.div
+            drag
+            dragControls={postGameTrayDragControls}
+            dragListener={false}
+            dragMomentum={false}
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            style={{
+              position: "fixed",
+              top: isMobile
+                ? "calc(env(safe-area-inset-top, 0px) + 58px)"
+                : "calc(env(safe-area-inset-top, 0px) + 98px)",
+              right: isMobile ? 10 : 24,
+              zIndex: 220,
+              display: "flex",
+              justifyContent: "flex-end",
+              pointerEvents: "auto",
+            }}
+          >
+            <div
+              style={{
+                width: isMobile
+                  ? `min(84vw, ${postGameTraySize.width}px)`
+                  : `${postGameTraySize.width}px`,
+                minHeight: postGameTraySize.height,
+                borderRadius: 18,
+                border: "1px solid rgba(255,255,255,0.1)",
+                background:
+                  "linear-gradient(140deg, rgba(12,20,37,0.94), rgba(18,30,53,0.96))",
+                boxShadow: "0 14px 30px rgba(0,0,0,0.28)",
+                backdropFilter: "blur(16px)",
+                padding: isMobile ? 12 : 14,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "stretch",
+                gap: 10,
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 10,
+                  cursor: "grab",
+                }}
+                onPointerDown={(event) => postGameTrayDragControls.start(event)}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div
+                    style={{
+                      color: isWinner ? "#F6C445" : "#9CC8FF",
+                      fontSize: 10,
+                      fontWeight: 800,
+                      letterSpacing: 1.1,
+                      textTransform: "uppercase",
+                      marginBottom: 3,
+                    }}
+                  >
+                    {isWinner ? "Victory recap" : "Round summary"}
+                  </div>
+                  <div
+                    style={{
+                      color: "#F5F7FB",
+                      fontSize: isMobile ? 14 : 15,
+                      fontWeight: 800,
+                      marginBottom: 2,
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {postGameTrayTitle}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handlePostGameTrayResizeStart}
+                  aria-label="Resize summary tray"
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 10,
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "rgba(255,255,255,0.05)",
+                    color: "#DCE6F6",
+                    cursor: "nwse-resize",
+                    flexShrink: 0,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 14,
+                    fontWeight: 900,
+                  }}
+                >
+                  +
+                </button>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  minHeight: 0,
+                  justifyContent: "space-between",
+                  flex: 1,
+                }}
+              >
+                <div
+                  style={{
+                    color: "#B7C4D8",
+                    fontSize: 12,
+                    lineHeight: 1.55,
+                  }}
+                >
+                  {postGameTrayCopy}
+                </div>
+                {isWinner && victoryCardDesign && (
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignSelf: "flex-start",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "6px 10px",
+                      borderRadius: 999,
+                      background: "rgba(255,193,7,0.1)",
+                      border: "1px solid rgba(255,193,7,0.18)",
+                      color: "#F6C445",
+                      fontSize: 11,
+                      fontWeight: 800,
+                    }}
+                  >
+                    {victoryCardDesign.themeLabel}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowGameOverModal(true)}
+                  style={{
+                    minWidth: 0,
+                    padding: isMobile ? "10px 12px" : "11px 14px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(125,211,252,0.18)",
+                    background: "rgba(125,211,252,0.08)",
+                    color: "#D6F2FF",
+                    fontWeight: 800,
+                    fontSize: 12,
+                    letterSpacing: 0.5,
+                    cursor: "pointer",
+                  }}
+                >
+                  Summary
+                </button>
+                {showPlayAgainAction && (
+                  <button
+                    type="button"
+                    onClick={() => void handlePlayAgain()}
+                    disabled={isReplayPending}
+                    style={{
+                      minWidth: 0,
+                      padding: isMobile ? "10px 12px" : "11px 14px",
+                      borderRadius: 12,
+                      border: "1px solid rgba(255,193,7,0.42)",
+                      background:
+                        "linear-gradient(135deg, rgba(255,193,7,0.2), rgba(255,143,0,0.15))",
+                      color: "#F6C445",
+                      fontWeight: 900,
+                      fontSize: 12,
+                      letterSpacing: 0.5,
+                      cursor: isReplayPending ? "wait" : "pointer",
+                      opacity: isReplayPending ? 0.72 : 1,
+                    }}
+                  >
+                    {isReplayPending ? playAgainPendingLabel : playAgainLabel}
+                  </button>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Guide modal */}
       <GuideModal
@@ -1064,15 +1810,17 @@ export function GameBoard({
             animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, x: 16, y: 6 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            style={s.pinnedGuidePanel}
+            style={s.pinnedGuidePanel(pinnedGuideSize.width, pinnedGuideSize.height)}
           >
             <div
               style={s.pinnedGuideHandle}
               onPointerDown={(event) => pinnedGuideDragControls.start(event)}
             >
-              <span style={s.pinnedGuideHandleLabel}>Character Actions</span>
+              <span style={s.pinnedGuideHandleLabel(pinnedGuideScale)}>
+                Character Actions
+              </span>
               <div style={s.pinnedGuideHandleActions}>
-                <span style={s.pinnedGuideGrabber}>Drag</span>
+                <span style={s.pinnedGuideGrabber(pinnedGuideScale)}>Drag</span>
                 <button
                   type="button"
                   style={s.pinnedGuideCloseBtn}
@@ -1083,18 +1831,41 @@ export function GameBoard({
                 </button>
               </div>
             </div>
-            <div style={s.pinnedGuideBody}>
+            <div style={s.pinnedGuideBody(pinnedGuideSize.height)}>
               {PINNED_CHARACTERS.map((character) => (
                 <div key={character} style={s.pinnedGuideRow}>
-                  <span style={s.pinnedGuideName}>
-                    {CHARACTER_LABELS[character]}
-                  </span>
-                  <span style={s.pinnedGuideText}>
-                    {CHARACTER_ABILITIES[character]}
+                  <div style={s.pinnedGuideTitleRow}>
+                    <span
+                      style={s.pinnedGuideName(
+                        CHARACTER_TEXT_COLORS[character],
+                        pinnedGuideScale,
+                      )}
+                    >
+                      {CHARACTER_LABELS[character]}
+                    </span>
+                    <span
+                      style={s.pinnedGuideActionBadge(
+                        CHARACTER_TEXT_COLORS[character],
+                        pinnedGuideScale,
+                      )}
+                    >
+                      {CHARACTER_GUIDE_DETAILS[character].actionLabel}
+                    </span>
+                  </div>
+                  <span style={s.pinnedGuideText(pinnedGuideScale)}>
+                    {renderPinnedGuideSegments(character)}
                   </span>
                 </div>
               ))}
             </div>
+            <button
+              type="button"
+              aria-label="Resize pinned guide"
+              onPointerDown={handlePinnedGuideResizeStart}
+              style={s.pinnedGuideResizeHandle}
+            >
+              <span style={s.pinnedGuideResizeGlyph}>↘</span>
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1123,8 +1894,7 @@ export function GameBoard({
                       <span style={s.modalEyebrow}>Exit game</span>
                       <span style={s.modalTitle}>Leave this match?</span>
                       <span style={s.modalSubtitle}>
-                        You will leave the table and return to the home screen.
-                        The match will continue for anyone still connected.
+                        Leave the table and return to the home screen. The match will continue for anyone still connected.
                       </span>
                     </div>
                     <button
@@ -1140,13 +1910,13 @@ export function GameBoard({
                       style={s.confirmModalCancelBtn}
                       onClick={() => setShowExitConfirm(false)}
                     >
-                      Stay
+                      Cancel
                     </button>
                     <button
                       style={s.confirmModalDangerBtn}
-                      onClick={handleExitConfirmed}
+                      onClick={handleExitHome}
                     >
-                      Exit game
+                      Quit
                     </button>
                   </div>
                 </motion.div>
@@ -1262,12 +2032,7 @@ export function GameBoard({
             exit={{ opacity: 0 }}
             onClick={closeTimeline}
           >
-            <div
-              style={s.mobileSidePanelShell}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {renderTimelinePanel(true)}
-            </div>
+            {renderTimelinePanel(true)}
           </motion.div>
         )}
       </AnimatePresence>

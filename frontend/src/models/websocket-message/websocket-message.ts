@@ -62,6 +62,7 @@ export enum ServerMessageType {
   GAME_OVER = "game_over",
   PLAYER_JOINED = "player_joined",
   PLAYER_LEFT = "player_left",
+  RETURN_TO_LOBBY = "return_to_lobby",
   ERROR = "error",
   EXCHANGE_CARDS = "exchange_cards",
 }

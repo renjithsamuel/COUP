@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dependency_injector import containers, providers
 
+from app.config import settings
 from app.engine.game_engine import GameEngine
 from app.entities.base import async_session_factory
 from app.repositories.game_repository import GameRepository
@@ -33,7 +34,10 @@ class AppContainer(containers.DeclarativeContainer):
     )
 
     # Services
-    lobby_service = providers.Singleton(LobbyService)
+    lobby_service = providers.Singleton(
+        LobbyService,
+        inactive_player_seconds=settings.reconnect_grace_seconds,
+    )
 
     game_service = providers.Factory(
         GameService,

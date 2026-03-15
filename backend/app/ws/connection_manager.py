@@ -21,6 +21,12 @@ class ConnectionManager:
     async def connect(
         self, websocket: WebSocket, game_id: str, player_id: str
     ) -> None:
+        previous = self._connections.get(game_id, {}).get(player_id)
+        if previous is not None and previous is not websocket:
+            try:
+                await previous.close()
+            except Exception:
+                logger.debug("Failed to close stale websocket for %s in %s", player_id, game_id)
         await websocket.accept()
         if game_id not in self._connections:
             self._connections[game_id] = {}

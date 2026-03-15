@@ -223,6 +223,48 @@ class TestLobbyAPI:
         assert data["player_id"]
 
     @pytest.mark.asyncio
+    async def test_create_ai_match_supports_lethal_difficulty(self, client: AsyncClient):
+        resp = await client.post(
+            "/api/games/ai-match",
+            json={
+                "player_name": "Alice",
+                "bot_count": 2,
+                "difficulty": "lethal",
+                "profile_id": "profile-alice",
+            },
+        )
+
+        assert resp.status_code == 200
+        assert resp.json()["game_id"]
+
+    @pytest.mark.asyncio
+    async def test_start_game_can_fill_with_bots(self, client: AsyncClient):
+        create_resp = await client.post(
+            "/api/lobbies", json={"host_name": "Alice", "profile_id": "profile-alice"}
+        )
+        lobby_id = create_resp.json()["id"]
+
+        await client.post(
+            f"/api/lobbies/{lobby_id}/join",
+            json={"player_name": "Bob", "profile_id": "profile-bob"},
+        )
+
+        start_resp = await client.post(
+            f"/api/lobbies/{lobby_id}/start",
+            json={
+                "turn_timer_seconds": 30,
+                "challenge_window_seconds": 10,
+                "block_window_seconds": 10,
+                "starting_coins": 2,
+                "bot_count": 2,
+                "bot_difficulty": "hard",
+            },
+        )
+
+        assert start_resp.status_code == 200
+        assert start_resp.json()["game_id"] is not None
+
+    @pytest.mark.asyncio
     async def test_can_start_same_room_again_after_reset(self, client: AsyncClient):
         create_resp = await client.post(
             "/api/lobbies", json={"host_name": "Alice", "profile_id": "profile-alice"}
@@ -239,7 +281,9 @@ class TestLobbyAPI:
         first_start_resp = await client.post(f"/api/lobbies/{lobby_id}/start")
         assert first_start_resp.status_code == 200
 
-        reset_resp = await client.post(f"/api/lobbies/{lobby_id}/reset")
+        reset_resp = await client.post(
+            f"/api/lobbies/{lobby_id}/reset?session_token={host_token}"
+        )
         assert reset_resp.status_code == 200
 
         host_lobby_resp = await client.get(
@@ -256,3 +300,25 @@ class TestLobbyAPI:
         second_start_resp = await client.post(f"/api/lobbies/{lobby_id}/start")
         assert second_start_resp.status_code == 200
         assert second_start_resp.json()["game_id"] != first_start_resp.json()["game_id"]
+
+    @pytest.mark.asyncio
+    async def test_only_host_can_reset_same_room(self, client: AsyncClient):
+        create_resp = await client.post(
+            "/api/lobbies", json={"host_name": "Alice", "profile_id": "profile-alice"}
+        )
+        lobby_id = create_resp.json()["id"]
+
+        join_resp = await client.post(
+            f"/api/lobbies/{lobby_id}/join",
+            json={"player_name": "Bob", "profile_id": "profile-bob"},
+        )
+
+        start_resp = await client.post(f"/api/lobbies/{lobby_id}/start")
+        assert start_resp.status_code == 200
+
+        reset_resp = await client.post(
+            f"/api/lobbies/{lobby_id}/reset?session_token={join_resp.json()['session_token']}"
+        )
+
+        assert reset_resp.status_code == 403
+        assert reset_resp.json()["detail"] == "Only the host can reset the lobby"

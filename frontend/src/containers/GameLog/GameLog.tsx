@@ -4,10 +4,39 @@ import React, { useRef, useEffect, useMemo, useState } from "react";
 import { ActionGlyph } from "@/components/ActionGlyph";
 import { useGameContext } from "@/context/GameContext";
 import { ACTION_PRESENTATIONS, ACTION_RULES } from "@/models/action";
+import {
+  Character,
+  CHARACTER_LABELS,
+  CHARACTER_TEXT_COLORS,
+} from "@/models/card";
 import { gameLogStyles } from "./GameLog.styles";
 
 export interface GameLogProps {
   variant?: "panel" | "modal";
+}
+
+const PLAYER_COLORS = [
+  "#8FB8FF",
+  "#7BE0B8",
+  "#F6C445",
+  "#F99DB1",
+  "#C9A8FF",
+  "#78D6FF",
+];
+
+const CHARACTER_COLOR_BY_LABEL = new Map(
+  Object.entries(CHARACTER_LABELS).map(([character, label]) => [
+    label.toLowerCase(),
+    CHARACTER_TEXT_COLORS[character as Character],
+  ]),
+);
+
+function getPlayerAccent(name: string) {
+  const seed = [...name].reduce(
+    (total, char, index) => total + char.charCodeAt(0) * (index + 1),
+    0,
+  );
+  return PLAYER_COLORS[seed % PLAYER_COLORS.length];
 }
 
 function getEntryVisual(
@@ -68,6 +97,72 @@ export function GameLog({ variant = "modal" }: GameLogProps) {
   const [autoPinnedToTop, setAutoPinnedToTop] = useState(true);
   const entries = useMemo(() => [...state.gameLog].reverse(), [state.gameLog]);
 
+  const renderMessage = (
+    entry: (typeof entries)[number],
+    visual: ReturnType<typeof getEntryVisual>,
+  ) => {
+    if (!entry.segments || entry.segments.length === 0) {
+      return <span style={gameLogStyles.messagePlain}>{entry.message}</span>;
+    }
+
+    return entry.segments.map((segment, index) => {
+      if (segment.tone === "player") {
+        return (
+          <span
+            key={`${entry.id}-segment-${index}`}
+            style={gameLogStyles.messagePlayer(getPlayerAccent(segment.text))}
+          >
+            {segment.text}
+          </span>
+        );
+      }
+
+      if (segment.tone === "action") {
+        const accent = entry.actionType
+          ? ACTION_PRESENTATIONS[entry.actionType]?.accent ?? visual.accent
+          : visual.accent;
+        return (
+          <span
+            key={`${entry.id}-segment-${index}`}
+            style={gameLogStyles.messageAction(accent)}
+          >
+            {segment.text}
+          </span>
+        );
+      }
+
+      if (segment.tone === "card") {
+        const accent =
+          CHARACTER_COLOR_BY_LABEL.get(segment.text.toLowerCase()) ?? "#F3C969";
+        return (
+          <span
+            key={`${entry.id}-segment-${index}`}
+            style={gameLogStyles.messageCard(accent)}
+          >
+            {segment.text}
+          </span>
+        );
+      }
+
+      if (segment.tone === "error") {
+        return (
+          <span
+            key={`${entry.id}-segment-${index}`}
+            style={gameLogStyles.messageError}
+          >
+            {segment.text}
+          </span>
+        );
+      }
+
+      return (
+        <span key={`${entry.id}-segment-${index}`} style={gameLogStyles.messagePlain}>
+          {segment.text}
+        </span>
+      );
+    });
+  };
+
   useEffect(() => {
     if (!scrollRef.current || !autoPinnedToTop) {
       return;
@@ -120,7 +215,7 @@ export function GameLog({ variant = "modal" }: GameLogProps) {
                       {actionLabel}
                     </span>
                   )}
-                  <div style={gameLogStyles.message}>{entry.message}</div>
+                  <div style={gameLogStyles.message}>{renderMessage(entry, visual)}</div>
                 </div>
               </div>
             </article>

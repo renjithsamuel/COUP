@@ -12,13 +12,15 @@ router = APIRouter(prefix="/api/lobbies", tags=["lobbies"])
 # Will be injected via dependency
 _lobby_service = None
 _game_service = None
+_connection_manager = None
 
 
-def init_lobby_router(lobby_service, game_service) -> None:
+def init_lobby_router(lobby_service, game_service, connection_manager) -> None:
     """Wire services into the router (called from main.py after DI setup)."""
-    global _lobby_service, _game_service
+    global _lobby_service, _game_service, _connection_manager
     _lobby_service = lobby_service
     _game_service = game_service
+    _connection_manager = connection_manager
 
 
 @router.post("", response_model=LobbyResponse)
@@ -109,23 +111,65 @@ async def start_game(lobby_id: str, body: GameConfig | None = None) -> dict:
         config = body or GameConfig()
         game_state = await _game_service.create_game_from_lobby(lobby, config)
         _lobby_service.mark_started(lobby_id, game_state.id)
+        # Instant notification to all lobby WebSocket clients
+        lobby_key = f"lobby:{lobby_id.upper()}"
+        await _connection_manager.broadcast_to_game(lobby_key, {
+            "type": "LOBBY_GAME_STARTED",
+            "payload": {"gameId": game_state.id},
+        })
         return {"ok": True, "game_id": game_state.id}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/{lobby_id}/reset", response_model=LobbyResponse)
-async def reset_lobby(lobby_id: str) -> LobbyResponse:
+async def reset_lobby(
+    lobby_id: str,
+    player_id: str | None = Query(default=None),
+    session_token: str | None = Query(default=None),
+) -> LobbyResponse:
     try:
         lobby = _lobby_service.get_lobby_model(lobby_id.upper())
         if lobby is None:
             raise ValueError("Lobby not found")
 
-        if lobby.game_id:
-            game = await _game_service.get_game(lobby.game_id)
-            if game is not None and game.phase != GamePhase.GAME_OVER:
-                await _game_service.delete_game(lobby.game_id)
+        _lobby_service.require_host(
+            lobby_id.upper(),
+            player_id=player_id,
+            session_token=session_token,
+        )
 
-        return _lobby_service.reset_lobby(lobby_id.upper())
+        game_config_payload: dict | None = None
+        game_id = lobby.game_id
+
+        if game_id:
+            game = await _game_service.get_game(game_id)
+            if game is not None:
+                game_config_payload = {
+                    "turn_timer_seconds": game.config.turn_timer_seconds,
+                    "challenge_window_seconds": game.config.challenge_window_seconds,
+                    "block_window_seconds": game.config.block_window_seconds,
+                    "starting_coins": game.config.starting_coins,
+                }
+            if game is not None and game.phase != GamePhase.GAME_OVER:
+                await _game_service.delete_game(game_id)
+
+        reset_lobby_response = _lobby_service.reset_lobby(lobby_id.upper())
+
+        if game_id:
+            await _connection_manager.broadcast_to_game(
+                game_id,
+                {
+                    "type": "RETURN_TO_LOBBY",
+                    "payload": {
+                        "lobby_id": lobby.id,
+                        "config": game_config_payload,
+                    },
+                },
+            )
+
+        return reset_lobby_response
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

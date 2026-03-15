@@ -4,6 +4,7 @@ import { tokens } from "@/theme/tokens";
 export const lobbyRoomStyles = {
   wrapper: {
     maxWidth: 720,
+    width: "100%",
     margin: "0 auto",
     padding: "clamp(22px, 5vw, 34px)",
     background:
@@ -38,23 +39,23 @@ export const lobbyRoomStyles = {
     zIndex: 1,
     display: "flex",
     flexDirection: "column",
-    gap: 18,
+    gap: 16,
   } satisfies CSSProperties,
 
   hero: {
     display: "flex",
     flexDirection: "column",
-    gap: 14,
+    gap: 12,
   } satisfies CSSProperties,
 
   heroCard: {
-    padding: "16px 18px",
-    borderRadius: 20,
+    padding: "15px 18px",
+    borderRadius: 18,
     background: "rgba(255,255,255,0.04)",
     border: "1px solid rgba(255,255,255,0.08)",
     display: "flex",
     flexDirection: "column",
-    gap: 8,
+    gap: 7,
   } satisfies CSSProperties,
 
   eyebrow: {
@@ -66,7 +67,7 @@ export const lobbyRoomStyles = {
   } satisfies CSSProperties,
 
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: 900,
     color: tokens.text.primary,
     textAlign: "left",
@@ -94,10 +95,10 @@ export const lobbyRoomStyles = {
   } satisfies CSSProperties,
 
   roomCodeValue: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 900,
     color: tokens.text.accent,
-    letterSpacing: 4,
+    letterSpacing: 3.2,
     fontFamily: "monospace",
   } satisfies CSSProperties,
 
@@ -122,8 +123,8 @@ export const lobbyRoomStyles = {
   } satisfies CSSProperties,
 
   statCard: {
-    padding: "14px 16px",
-    borderRadius: 18,
+    padding: "13px 15px",
+    borderRadius: 16,
     background: "rgba(255,255,255,0.035)",
     border: "1px solid rgba(255,255,255,0.07)",
     display: "flex",
@@ -141,7 +142,7 @@ export const lobbyRoomStyles = {
 
   statValue: {
     color: tokens.text.primary,
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 800,
   } satisfies CSSProperties,
 
@@ -285,19 +286,21 @@ export const lobbyRoomStyles = {
   } satisfies CSSProperties,
 
   playerList: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: 12,
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
   } satisfies CSSProperties,
 
   playerRow: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "14px 16px",
+    gap: 10,
+    flexWrap: "wrap",
+    padding: "13px 15px",
     background:
       "linear-gradient(180deg, rgba(20, 31, 53, 0.94) 0%, rgba(12, 18, 32, 0.98) 100%)",
-    borderRadius: 18,
+    borderRadius: 16,
     border: "1px solid rgba(255,255,255,0.08)",
     fontSize: 14,
     color: tokens.text.primary,
@@ -308,12 +311,17 @@ export const lobbyRoomStyles = {
     display: "flex",
     flexDirection: "column",
     gap: 4,
+    flex: "1 1 140px",
+    minWidth: 0,
   } satisfies CSSProperties,
 
   playerName: {
     fontSize: 14,
     fontWeight: 700,
     color: tokens.text.primary,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   } satisfies CSSProperties,
 
   playerCaption: {
@@ -328,7 +336,7 @@ export const lobbyRoomStyles = {
     fontWeight: 700,
     color: tokens.text.accent,
     background: "rgba(255,193,7,0.1)",
-    padding: "2px 10px",
+    padding: "3px 10px",
     borderRadius: 6,
     textTransform: "uppercase",
     letterSpacing: 1,
@@ -340,11 +348,14 @@ export const lobbyRoomStyles = {
     alignItems: "center",
     gap: 8,
     flexShrink: 0,
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+    marginLeft: "auto",
   } satisfies CSSProperties,
 
   kickButton: {
     minWidth: 88,
-    padding: "8px 12px",
+    padding: "7px 11px",
     borderRadius: 999,
     border: "1px solid rgba(239,83,80,0.26)",
     background: "rgba(239,83,80,0.1)",
@@ -361,14 +372,14 @@ export const lobbyRoomStyles = {
   } satisfies CSSProperties,
 
   startButton: {
-    padding: `${tokens.spacing.md}px ${tokens.spacing.lg}px`,
+    padding: `${tokens.spacing.sm + 2}px ${tokens.spacing.lg}px`,
     borderRadius: 14,
     border: "1px solid rgba(76,175,80,0.3)",
     background:
       "linear-gradient(135deg, rgba(46,125,50,0.2), rgba(76,175,80,0.15))",
     color: "#81C784",
     fontWeight: 700,
-    fontSize: 15,
+    fontSize: 14,
     cursor: "pointer",
     boxShadow: tokens.elevation.dp2,
     letterSpacing: 0.5,
@@ -386,25 +397,25 @@ export const lobbyRoomStyles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
     flexWrap: "wrap",
   } satisfies CSSProperties,
 
   footerActions: {
     display: "flex",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
     flexWrap: "wrap",
   } satisfies CSSProperties,
 
   secondaryButton: {
-    padding: `${tokens.spacing.sm}px ${tokens.spacing.md}px`,
+    padding: `${tokens.spacing.sm - 1}px ${tokens.spacing.md}px`,
     borderRadius: 12,
     border: "1px solid rgba(255,255,255,0.1)",
     background: "rgba(255,255,255,0.05)",
     color: tokens.text.primary,
     fontWeight: 700,
-    fontSize: 12,
+    fontSize: 11,
     cursor: "pointer",
     letterSpacing: 0.6,
     textTransform: "uppercase",

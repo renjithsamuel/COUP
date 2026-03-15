@@ -23,7 +23,9 @@ def test_stale_lobby_player_is_pruned_and_host_is_reassigned() -> None:
     host = service.create_lobby("Alice")
     joiner = service.join_lobby(host.id, "Bob")
 
-    stale_time = (service._utc_now() - timedelta(seconds=25)).isoformat()
+    stale_time = (
+        service._utc_now() - timedelta(seconds=service._inactive_player_seconds + 5)
+    ).isoformat()
     service._player_last_seen[host.session_token] = stale_time
 
     refreshed = service.get_lobby(host.id, session_token=joiner.session_token)
@@ -104,3 +106,16 @@ def test_any_player_can_kick_another_but_not_self() -> None:
             bob.player_id,
             session_token=bob.session_token,
         )
+
+
+def test_only_host_can_reset_lobby() -> None:
+    service = LobbyService()
+    host = service.create_lobby("Alice", profile_id="profile-alice")
+    bob = service.join_lobby(host.id, "Bob", profile_id="profile-bob")
+
+    resolved_host_id = service.require_host(host.id, session_token=host.session_token)
+
+    assert resolved_host_id == host.player_id
+
+    with pytest.raises(PermissionError, match="Only the host can reset the lobby"):
+        service.require_host(host.id, session_token=bob.session_token)

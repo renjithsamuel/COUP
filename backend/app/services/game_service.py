@@ -13,10 +13,12 @@ from app.models.action import ActionType, PlayerAction
 from app.models.game import GameConfig, GamePhase, GameState, GameStatus
 from app.models.lobby import AiDifficulty, GameConfig as LobbyGameConfig, LeaderboardEntry, Lobby
 from app.services.bot_logic import (
+    choose_bot_personas,
     choose_bot_block,
     choose_bot_turn_action,
     choose_exchange_keep_indices,
     choose_influence_loss_index,
+    estimate_bot_delay_seconds,
     normalize_difficulty,
     should_bot_challenge,
 )
@@ -47,8 +49,12 @@ class GameService:
         """Create a new game from a lobby and start it."""
         game_id = str(uuid.uuid4())[:8]
         lc = lobby_config or LobbyGameConfig()
+        bot_count = lc.bot_count
+        if len(lobby.players) + bot_count > lobby.max_players:
+            raise ValueError("Bot count exceeds available seats")
+
         config = GameConfig(
-            max_players=lobby.max_players,
+            max_players=len(lobby.players) + bot_count,
             turn_timer_seconds=lc.turn_timer_seconds,
             challenge_window_seconds=lc.challenge_window_seconds,
             block_window_seconds=lc.block_window_seconds,
@@ -64,6 +70,17 @@ class GameService:
                 lp.name,
                 player_id=lp.id,
                 profile_id=lp.profile_id,
+            )
+
+        bot_difficulty = AiDifficulty(lc.bot_difficulty)
+        for index, persona in enumerate(choose_bot_personas(game_id, bot_count)):
+            state, _ = self._engine.add_player(
+                state,
+                persona.name,
+                profile_id=f"bot::{bot_difficulty.value}::{persona.key}::{game_id}::{index + 1}",
+                connected=True,
+                is_bot=True,
+                bot_difficulty=bot_difficulty.value,
             )
 
         # Start the game
@@ -106,11 +123,11 @@ class GameService:
             connected=False,
         )
 
-        for index in range(bot_count):
+        for index, persona in enumerate(choose_bot_personas(game_id, bot_count)):
             state, _ = self._engine.add_player(
                 state,
-                self._build_bot_name(index),
-                profile_id=f"bot::{difficulty.value}::{game_id}::{index + 1}",
+                persona.name,
+                profile_id=f"bot::{difficulty.value}::{persona.key}::{game_id}::{index + 1}",
                 connected=True,
                 is_bot=True,
                 bot_difficulty=difficulty.value,
@@ -193,9 +210,21 @@ class GameService:
             state = await self._get_or_raise(game_id)
 
             if state.phase in (GamePhase.CHALLENGE_WINDOW, GamePhase.BLOCK_CHALLENGE_WINDOW):
+                eligible = self._get_eligible_responders(state)
+                if not eligible:
+                    self._logger.debug(
+                        "Auto-resolving %s in game %s because no eligible responders remain",
+                        state.phase,
+                        game_id,
+                    )
                 if player_id and state.pending_action:
-                    eligible = self._get_eligible_responders(state)
                     if player_id not in eligible:
+                        if not eligible:
+                            state = self._engine.handle_no_challenge(state)
+                            state = self._advance_if_turn_end(state)
+                            state = self._ensure_terminal_state(state)
+                            await self._save(state)
+                            return state, True
                         return state, False
                     if player_id not in state.pending_action.accepted_by:
                         state.pending_action.accepted_by.append(player_id)
@@ -208,9 +237,20 @@ class GameService:
                         return state, False
                 state = self._engine.handle_no_challenge(state)
             elif state.phase == GamePhase.BLOCK_WINDOW:
+                eligible = self._get_eligible_responders(state)
+                if not eligible:
+                    self._logger.debug(
+                        "Auto-resolving block window in game %s because no eligible responders remain",
+                        game_id,
+                    )
                 if player_id and state.pending_action:
-                    eligible = self._get_eligible_responders(state)
                     if player_id not in eligible:
+                        if not eligible:
+                            state = self._engine.handle_no_block(state)
+                            state = self._advance_if_turn_end(state)
+                            state = self._ensure_terminal_state(state)
+                            await self._save(state)
+                            return state, True
                         return state, False
                     if player_id not in state.pending_action.accepted_by:
                         state.pending_action.accepted_by.append(player_id)
@@ -644,16 +684,12 @@ class GameService:
         return elapsed >= self._bot_delay_seconds(state, player.id, player.bot_difficulty, role=role)
 
     def _bot_delay_seconds(self, state: GameState, player_id: str, difficulty: str, *, role: str) -> float:
-        normalized = normalize_difficulty(difficulty)
-        base = {
-            "turn": {"easy": 2.4, "medium": 1.7, "hard": 1.15},
-            "response": {"easy": 1.8, "medium": 1.25, "hard": 0.85},
-            "reveal": {"easy": 1.6, "medium": 1.1, "hard": 0.8},
-            "exchange": {"easy": 1.9, "medium": 1.35, "hard": 0.95},
-        }[role][normalized]
-        signature = f"{state.id}|{self._build_phase_signature(state)}|{player_id}|{role}"
-        jitter = (sum(ord(char) for char in signature) % 7) * 0.18
-        return base + jitter
+        player = state.get_player(player_id)
+        if player is None:
+            normalized = normalize_difficulty(difficulty)
+            fallback = {"easy": 2.0, "medium": 1.8, "hard": 1.6, "lethal": 1.5}[normalized]
+            return fallback
+        return estimate_bot_delay_seconds(state, player, role=role)
 
     def _next_ready_bot_responder(self, state: GameState):
         eligible_ids = self._get_eligible_responders(state)
@@ -702,17 +738,6 @@ class GameService:
                     "playerName": current_player.name if current_player else "",
                 },
             })
-
-    @staticmethod
-    def _build_bot_name(index: int) -> str:
-        names = [
-            "Silk Bot",
-            "Marlow Bot",
-            "Iris Bot",
-            "Vale Bot",
-            "Rook Bot",
-        ]
-        return names[index % len(names)]
 
     @staticmethod
     def _build_phase_signature(state: GameState) -> str:

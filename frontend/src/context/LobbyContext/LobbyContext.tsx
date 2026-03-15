@@ -22,6 +22,7 @@ const initialState: LobbyContextState = {
 type LobbyAction =
   | { type: "SET_LOBBY"; payload: Lobby }
   | { type: "SET_MY_PLAYER_ID"; payload: string }
+  | { type: "CLEAR_MY_PLAYER_ID" }
   | { type: "SET_LOBBIES"; payload: Lobby[] }
   | { type: "PLAYER_JOINED"; payload: LobbyPlayer }
   | { type: "PLAYER_LEFT"; payload: string }
@@ -41,6 +42,8 @@ function lobbyReducer(
       return { ...state, lobby: action.payload, error: null };
     case "SET_MY_PLAYER_ID":
       return { ...state, myPlayerId: action.payload };
+    case "CLEAR_MY_PLAYER_ID":
+      return { ...state, myPlayerId: null };
     case "SET_LOBBIES":
       return { ...state, lobbies: action.payload, isLoading: false };
     case "PLAYER_JOINED":

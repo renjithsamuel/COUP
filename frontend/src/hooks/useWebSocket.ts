@@ -27,11 +27,42 @@ export function useWebSocket({
   const [status, setStatus] = useState<WebSocketStatus>("disconnected");
   const wsRef = useRef<WebSocket | null>(null);
   const retriesRef = useRef(0);
+  const reconnectTimeoutRef = useRef<number | null>(null);
+  const closedManuallyRef = useRef(false);
+  const connectAttemptRef = useRef(0);
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
 
+  const getReconnectDelay = useCallback(
+    (retryCount: number, openedOnce: boolean) => {
+      if (!openedOnce) {
+        return 120;
+      }
+
+      return Math.min(1000 * 2 ** retryCount, 16000);
+    },
+    [],
+  );
+
+  const clearReconnectTimeout = useCallback(() => {
+    if (reconnectTimeoutRef.current != null) {
+      window.clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  }, []);
+
   const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    clearReconnectTimeout();
+    if (
+      wsRef.current?.readyState === WebSocket.OPEN ||
+      wsRef.current?.readyState === WebSocket.CONNECTING
+    ) {
+      return;
+    }
+
+    closedManuallyRef.current = false;
+    const attemptId = ++connectAttemptRef.current;
+    let openedOnce = false;
 
     const encodedPlayerId = encodeURIComponent(playerId);
     const ws = new WebSocket(
@@ -41,8 +72,14 @@ export function useWebSocket({
     setStatus("connecting");
 
     ws.onopen = () => {
+      if (attemptId != connectAttemptRef.current) {
+        ws.close();
+        return;
+      }
+      openedOnce = true;
       setStatus("connected");
       retriesRef.current = 0;
+      clearReconnectTimeout();
     };
 
     ws.onmessage = (event) => {
@@ -56,26 +93,39 @@ export function useWebSocket({
     };
 
     ws.onerror = () => {
-      setStatus("error");
+      if (attemptId === connectAttemptRef.current) {
+        setStatus("error");
+      }
     };
 
     ws.onclose = () => {
+      if (wsRef.current === ws) {
+        wsRef.current = null;
+      }
+      if (attemptId !== connectAttemptRef.current) {
+        return;
+      }
+
       setStatus("disconnected");
-      wsRef.current = null;
-      if (autoReconnect && retriesRef.current < maxRetries) {
+      if (!closedManuallyRef.current && autoReconnect && retriesRef.current < maxRetries) {
         retriesRef.current += 1;
-        const delay = Math.min(1000 * 2 ** retriesRef.current, 16000);
-        setTimeout(connect, delay);
+        const delay = getReconnectDelay(retriesRef.current, openedOnce);
+        reconnectTimeoutRef.current = window.setTimeout(() => {
+          reconnectTimeoutRef.current = null;
+          connect();
+        }, delay);
       }
     };
-  }, [gameId, playerId, autoReconnect, maxRetries]);
+  }, [clearReconnectTimeout, gameId, playerId, autoReconnect, getReconnectDelay, maxRetries]);
 
   const disconnect = useCallback(() => {
+    closedManuallyRef.current = true;
+    clearReconnectTimeout();
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
-  }, []);
+  }, [clearReconnectTimeout]);
 
   const send = useCallback((msg: ClientMessage): boolean => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -98,7 +148,9 @@ export function useWebSocket({
 
   useEffect(() => {
     connect();
-    return disconnect;
+    return () => {
+      disconnect();
+    };
   }, [connect, disconnect]);
 
   return { status, send, disconnect, connect };

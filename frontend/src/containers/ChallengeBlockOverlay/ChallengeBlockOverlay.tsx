@@ -26,6 +26,7 @@ export function ChallengeBlockOverlay({
     iAlreadyAccepted,
     canChallenge,
     canBlock,
+    blockOptions,
     blockableCharacters,
     actorName,
     blockerName,
@@ -95,17 +96,26 @@ export function ChallengeBlockOverlay({
                     </button>
                   )}
                   {canBlock &&
-                    blockableCharacters.map((char) => (
+                    blockOptions.map(({ character, isBluff }) => (
                       <button
-                        key={char}
+                        key={character}
                         type="button"
                         style={s.blockBtn}
-                        onClick={() => onBlock(char)}
+                        onClick={() => onBlock(character)}
                         disabled={submitting}
                       >
-                        {submitting
-                          ? "Sending…"
-                          : `Block as ${CHARACTER_LABELS[char]}`}
+                        {submitting ? (
+                          "Sending…"
+                        ) : (
+                          <span style={s.blockButtonContent}>
+                            <span style={s.blockButtonLabel}>
+                              {`Block as ${CHARACTER_LABELS[character]}`}
+                            </span>
+                            {isBluff && (
+                              <span style={s.blockBluffTag}>Bluff</span>
+                            )}
+                          </span>
+                        )}
                       </button>
                     ))}
                   <button
