@@ -47,6 +47,7 @@ export default function LobbyDetailPage() {
   const [showSeatRecovery, setShowSeatRecovery] = useState(false);
   const [isWaitingForLobbyReset, setIsWaitingForLobbyReset] = useState(false);
   const [isStartingGameLocally, setIsStartingGameLocally] = useState(false);
+  const [isNavigatingToGame, setIsNavigatingToGame] = useState(false);
   const {
     data: lobbyResponse,
     isLoading,
@@ -191,6 +192,7 @@ export default function LobbyDetailPage() {
       try {
         const msg = JSON.parse(event.data);
         if (msg.type === "LOBBY_GAME_STARTED" && msg.payload?.gameId) {
+          setIsNavigatingToGame(true);
           router.push(
             `/game/${msg.payload.gameId}?playerId=${state.myPlayerId}&lobbyId=${lobbyId}`,
           );
@@ -214,6 +216,7 @@ export default function LobbyDetailPage() {
       state.myPlayerId &&
       !isWaitingForLobbyReset
     ) {
+      setIsNavigatingToGame(true);
       router.push(
         `/game/${lobby.gameId}?playerId=${state.myPlayerId}&lobbyId=${lobbyId}`,
       );
@@ -394,7 +397,7 @@ export default function LobbyDetailPage() {
     return null;
   }
 
-  if (isStartingGameLocally) {
+  if (isStartingGameLocally || isNavigatingToGame) {
     return (
       <div
         style={{
@@ -440,7 +443,7 @@ export default function LobbyDetailPage() {
               color: tokens.text.primary,
             }}
           >
-            Dealing the table.
+            {isStartingGameLocally ? "Dealing the table." : "Starting..."}
           </div>
           <div
             style={{
@@ -449,7 +452,9 @@ export default function LobbyDetailPage() {
               fontSize: 14,
             }}
           >
-            Building the match and moving you into the game now.
+            {isStartingGameLocally
+              ? "Building the match and moving you into the game now."
+              : "The host started the match. Joining the table now."}
           </div>
         </div>
       </div>

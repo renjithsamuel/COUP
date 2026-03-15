@@ -1,6 +1,7 @@
 import React from "react";
 import type { Metadata } from "next";
 import { ColorSchemeScript } from "@mantine/core";
+import { Analytics } from "@vercel/analytics/next";
 import "@mantine/core/styles.css";
 import "./globals.css";
 import { AppProviders } from "./providers";
@@ -37,6 +38,7 @@ export default function RootLayout({
         }}
       >
         <AppProviders>{children}</AppProviders>
+        <Analytics />
       </body>
     </html>
   );

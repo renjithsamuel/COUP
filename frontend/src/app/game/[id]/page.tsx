@@ -3,6 +3,9 @@ import { GamePageContent } from "./GamePageContent";
 
 export const dynamic = "force-dynamic";
 
+const BOARD_BG =
+  "radial-gradient(ellipse at 50% 40%, #162033 0%, #111B2E 40%, #0B1120 100%)";
+
 export default function GamePage() {
   return (
     <Suspense
@@ -15,6 +18,7 @@ export default function GamePage() {
             alignItems: "center",
             justifyContent: "center",
             minHeight: "100vh",
+            background: BOARD_BG,
           }}
         >
           Loading…
