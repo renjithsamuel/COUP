@@ -60,6 +60,12 @@ function toPlayerPublic(raw: any): PlayerPublic {
           ? { character: c as Character, isRevealed: true }
           : toCard(c),
     ),
+    showdownCards: (raw.showdown_characters ?? raw.showdownCards ?? []).map(
+      (c: any) =>
+        typeof c === "string"
+          ? { character: c as Character, isRevealed: false }
+          : toCard(c),
+    ),
     isAlive: raw.is_alive ?? raw.isAlive ?? true,
     connected: raw.connected ?? true,
   };

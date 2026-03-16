@@ -11,10 +11,15 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    headers: { "Content-Type": "application/json", ...options.headers },
-    ...options,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      headers: { "Content-Type": "application/json", ...options.headers },
+      ...options,
+    });
+  } catch {
+    throw new ApiError(0, "Connection unavailable");
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ detail: res.statusText }));

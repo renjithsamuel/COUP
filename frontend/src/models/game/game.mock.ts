@@ -46,6 +46,7 @@ export const mockGameStateWaiting: GameStatePublic = {
       coins: 2,
       influenceCount: 2,
       revealedCards: [],
+      showdownCards: [],
       isAlive: true,
     },
     {
@@ -54,6 +55,7 @@ export const mockGameStateWaiting: GameStatePublic = {
       coins: 2,
       influenceCount: 2,
       revealedCards: [],
+      showdownCards: [],
       isAlive: true,
     },
   ],
@@ -79,6 +81,7 @@ export const mockGameStatePlaying: GameStatePublic = {
       coins: 2,
       influenceCount: 2,
       revealedCards: [],
+      showdownCards: [],
       isAlive: true,
     },
     {
@@ -87,6 +90,7 @@ export const mockGameStatePlaying: GameStatePublic = {
       coins: 2,
       influenceCount: 2,
       revealedCards: [],
+      showdownCards: [],
       isAlive: true,
     },
     {
@@ -95,6 +99,7 @@ export const mockGameStatePlaying: GameStatePublic = {
       coins: 5,
       influenceCount: 2,
       revealedCards: [],
+      showdownCards: [],
       isAlive: true,
     },
   ],
@@ -126,6 +131,7 @@ export const mockGameStateOver: GameStatePublic = {
       coins: 8,
       influenceCount: 1,
       revealedCards: [{ character: Character.DUKE, isRevealed: true }],
+      showdownCards: [{ character: Character.CAPTAIN, isRevealed: false }],
       isAlive: true,
     },
     {
@@ -137,6 +143,7 @@ export const mockGameStateOver: GameStatePublic = {
         { character: Character.ASSASSIN, isRevealed: true },
         { character: Character.CONTESSA, isRevealed: true },
       ],
+      showdownCards: [],
       isAlive: false,
     },
   ],

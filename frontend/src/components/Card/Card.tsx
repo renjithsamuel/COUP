@@ -59,7 +59,7 @@ export function Card({
       onClick={disabled ? undefined : onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      role="button"
+      role={disabled ? undefined : "button"}
       tabIndex={disabled ? -1 : 0}
       aria-label={
         showBack ? "Hidden card" : `${CHARACTER_LABELS[character]} card`

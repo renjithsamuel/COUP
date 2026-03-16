@@ -46,7 +46,22 @@ class TestPlayerModel:
         public = to_public(player)
         assert public.influence_count == 1
         assert public.revealed_characters == ["captain"]
+        assert public.showdown_characters == []
         assert public.coins == 5
+
+    def test_to_public_can_expose_hidden_cards_for_showdown(self):
+        player = Player(
+            id="p1",
+            name="Test",
+            influences=[
+                Card(character=Character.DUKE),
+                Card(character=Character.CAPTAIN, revealed=True),
+            ],
+        )
+
+        public = to_public(player, reveal_hidden=True)
+
+        assert public.showdown_characters == ["duke"]
 
 
 class TestActionRules:

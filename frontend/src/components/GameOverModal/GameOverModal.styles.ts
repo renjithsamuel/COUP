@@ -255,6 +255,14 @@ export const gameOverModalStyles = {
     textTransform: "uppercase",
   } satisfies CSSProperties,
 
+  previewFrame: {
+    width: "100%",
+    borderRadius: 18,
+    overflow: "hidden",
+    background: "rgba(5, 10, 18, 0.9)",
+    boxShadow: "0 18px 40px rgba(0,0,0,0.34)",
+  } satisfies CSSProperties,
+
   iconButton: (disabled = false): CSSProperties => ({
     width: 30,
     height: 30,
@@ -275,9 +283,8 @@ export const gameOverModalStyles = {
     width: "100%",
     height: "auto",
     display: "block",
-    borderRadius: 12,
     aspectRatio: "1200 / 630",
-    objectFit: "contain",
+    objectFit: "cover",
     maxHeight: mobile ? 132 : 214,
   }),
 

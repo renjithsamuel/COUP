@@ -340,12 +340,14 @@ export function GameOverModal({
                       </button>
                     </div>
                   </div>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={previewSrc}
-                    alt={`Victory card preview for ${winnerName || "winner"}`}
-                    style={gameOverModalStyles.previewImage(isMobile)}
-                  />
+                  <div style={gameOverModalStyles.previewFrame}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={previewSrc}
+                      alt={`Victory card preview for ${winnerName || "winner"}`}
+                      style={gameOverModalStyles.previewImage(isMobile)}
+                    />
+                  </div>
                 </div>
               )}
             </div>

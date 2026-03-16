@@ -47,6 +47,7 @@ class PlayerPublic(BaseModel):
     coins: int
     influence_count: int
     revealed_characters: list[str]
+    showdown_characters: list[str] = Field(default_factory=list)
     is_alive: bool
     connected: bool
     seat_index: int
@@ -54,14 +55,21 @@ class PlayerPublic(BaseModel):
     bot_difficulty: str = ""
 
 
-def to_public(player: Player) -> PlayerPublic:
-    """Convert a full Player to a public view (no hidden card info)."""
+def to_public(player: Player, reveal_hidden: bool = False) -> PlayerPublic:
+    """Convert a full Player to a public view.
+
+    Hidden influences stay private during live play and become revealable after the
+    table ends when ``reveal_hidden`` is enabled.
+    """
     return PlayerPublic(
         id=player.id,
         name=player.name,
         coins=player.coins,
         influence_count=player.influence_count,
         revealed_characters=[c.character.value for c in player.revealed_influences],
+        showdown_characters=(
+            [c.character.value for c in player.alive_influences] if reveal_hidden else []
+        ),
         is_alive=player.is_alive,
         connected=player.connected,
         seat_index=player.seat_index,

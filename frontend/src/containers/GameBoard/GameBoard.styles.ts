@@ -497,11 +497,18 @@ function s(mobile: boolean) {
       width: 9,
       height: 9,
       borderRadius: "50%",
-      background: status === "connected" ? "#4ADE80" : "#F87171",
+      background:
+        status === "connected"
+          ? "#4ADE80"
+          : status === "connecting"
+            ? "#FACC15"
+            : "#F87171",
       boxShadow:
         status === "connected"
           ? "0 0 10px rgba(74, 222, 128, 0.72)"
-          : "0 0 10px rgba(248, 113, 113, 0.7)",
+          : status === "connecting"
+            ? "0 0 10px rgba(250, 204, 21, 0.68)"
+            : "0 0 10px rgba(248, 113, 113, 0.7)",
       flexShrink: 0,
     }),
 

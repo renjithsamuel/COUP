@@ -125,7 +125,7 @@ python -m pytest -v
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/health` | Health check |
+| `GET` | `/api/health` | Health check, also suitable for lightweight client wake-up probes |
 | `POST` | `/api/games/ai-match` | Start an immediate solo match against 1-5 bots (`{ player_name, bot_count, difficulty, profile_id?, config? }`) |
 | `POST` | `/api/lobbies` | Create lobby (`{ host_name, max_players, profile_id? }`) — returns 6-char room code |
 | `GET` | `/api/lobbies` | List open lobbies |
@@ -174,6 +174,7 @@ Response windows resolve as follows:
 - Untargeted challenge/block windows are still table-wide: any eligible non-actor may challenge or block, and an untargeted window only closes once every eligible responder has allowed it or a valid challenge/block interrupts it.
 - Timed phases are server-authoritative. `GAME_STATE` now includes `phase_started_at` and `phase_deadline_at`, and the backend auto-resolves expired turn, challenge, and block windows even if the acting client stalls or disconnects.
 - If a response window loses its final eligible responder because that player disconnected or was eliminated during the same resolution chain, the backend closes that empty window immediately instead of leaving the table stuck waiting forever.
+- Once the table reaches `GAME_OVER`, each `GAME_STATE.players[]` entry includes `showdown_characters` for any still-hidden surviving influences so clients can offer a post-game reveal interaction without exposing private cards during live play.
 
 #### Server Messages
 

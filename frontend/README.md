@@ -39,15 +39,16 @@ src/
 │   ├── ActionGlyph/        # Shared action and timeline glyphs
 │   ├── Timer/              # Countdown progress bar
 │   ├── GameOverModal/      # Full-screen portal end-of-round modal with delayed reveal, dismiss/reopen flow, replay, exit, and winner-only share actions
+│   ├── ConnectionOverlay/  # Health-backed top connection banner with wake/reconnect states across home, lobby, and game
 │   ├── GuideModal/         # Game rules/help modal with optional desktop pin-to-board shortcut for character actions
 │   ├── CoupBackgroundSVG/  # Subtle abstract ambient background motif
 │   ├── PreGameConfig/      # Pre-game configuration with Simple and Advanced tabs, compact themed Mantine dropdown controls, optional multiplayer fill-bot controls, and reusable host-side lobby editing
 │   └── TurnIndicator/      # Active turn display
 ├── containers/             # Stateful composite containers
-│   ├── GameBoard/          # Main game board (top-bar turn status on every breakpoint, compact mobile connection dot, readable desktop top-bar event toasts, mobile utility dock, winner confetti, a brief premium start countdown, default-open desktop timeline, turn-highlighted player tray, and a pinnable desktop character-action reference)
+│   ├── GameBoard/          # Main game board (top-bar turn status on every breakpoint, health-backed connection overlay plus compact status dots, readable desktop top-bar event toasts, mobile utility dock, winner confetti, a brief premium start countdown, default-open desktop timeline, turn-highlighted player tray, and a pinnable desktop character-action reference)
 │   ├── PlayerHand/         # Current player's compact card hand
 │   ├── ActionPanel/        # Compact action ribbon with dense mobile layout and a desktop two-column side panel beside a tighter local-hand module, plus slimmer mobile standby strip and minimal off-turn chrome
-│   ├── OpponentArea/       # Responsive opponent carousel with centered small-table seats, moderately enlarged desktop card sizing, fixed-width cards, and subtle edge fades
+│   ├── OpponentArea/       # Responsive opponent carousel with centered small-table seats, moderately enlarged desktop card sizing, fixed-width cards, subtle edge fades, and tap-to-reveal final hands after game over
 │   ├── ChallengeBlockOverlay/ # Direct-response dock for challenge/block/allow decisions
 │   ├── GameDashboard/      # Compact live-table standings view used inside the in-game leaderboard modal, including a flattened mobile stat strip for coins, influence, and reveals
 │   ├── GameLog/            # Real-time editorial timeline feed with numbered event rows, action highlights, and newest-first ordering
@@ -58,6 +59,7 @@ src/
 ├── hooks/                  # Global hooks
 │   ├── useGameAudio.ts     # Mild action-button audio, a soft turn chime, and persistent mute preference
 │   ├── useWebSocket.ts     # WebSocket connection + reconnect with stale retry cleanup and single-flight reconnect attempts
+│   ├── useBackendHealth.ts # Lightweight `/api/health` probe for wake-aware connection UI
 │   ├── useCountdown.ts     # Countdown timer
 │   └── useAnimationQueue.ts # Sequential animation queue
 ├── models/                 # TypeScript models + mock data
@@ -180,7 +182,7 @@ Add the export to `src/components/index.ts`.
 - **Response rules**: `src/utils/responseWindows.ts`, `src/containers/GameBoard/GameBoard.hooks.ts`, and `src/containers/ChallengeBlockOverlay/ChallengeBlockOverlay.tsx` mirror backend one-on-one response windows for targeted actions and full-table allow windows for untargeted actions
 - **Response clarity**: `src/containers/ChallengeBlockOverlay/ChallengeBlockOverlay.tsx` renders the bottom decision dock only for the player who can currently respond
 - **Server-authoritative timers**: `src/containers/GameBoard/GameBoard.hooks.ts` reads `phaseStartedAt` and `phaseDeadlineAt` from `GAME_STATE`, so countdowns stay aligned across reconnects and timeout consequences no longer depend on a single client tab
-- **Reconnect hardening**: `src/hooks/useWebSocket.ts` keeps only one live reconnect attempt at a time, cancels stale retry timers, and preserves the active board instead of collapsing back to a cold load whenever possible
+- **Reconnect hardening**: `src/hooks/useWebSocket.ts` keeps only one live reconnect attempt at a time, cancels stale retry timers, and preserves the active board instead of collapsing back to a cold load whenever possible, while `src/hooks/useBackendHealth.ts` powers a simple wake/reconnect banner using `/api/health` so free-hosting cold starts read clearly on home, lobby, and game screens; `src/services/api.ts` also maps network-level fetch failures to recoverable API errors so outages fall back to connection states instead of crashing the route
 - **Timeline narration**: `src/containers/GameBoard/GameBoard.hooks.ts` records richer action, challenge, block, reveal, elimination, and turn messages for the timeline feed
 - **Mobile utility dock**: `src/containers/GameBoard/GameBoard.tsx` keeps leaderboard, timeline, rules, and mute controls in a compact bottom dock on mobile while leaving turn status and Exit in the top bar
 - **Ambient background motif**: `src/components/CoupBackgroundSVG/CoupBackgroundSVG.tsx` provides subtle abstract Coup symbolism, used as full-page ambient art in lobby and as low-opacity atmosphere in-game
@@ -195,8 +197,8 @@ Add the export to `src/components/index.ts`.
 - **Pinned character reference**: `src/components/GuideModal/GuideModal.tsx` can pin a concise character-action panel into the desktop game board, where it can be dragged and dismissed without reopening the full rules modal
 - **AI replay flow**: `src/app/game/[id]/GamePageContent.tsx` reuses the same AI bot count, difficulty, and timer config when `Play Again` is pressed after a solo match
 - **Game entry pacing**: `src/containers/GameBoard/GameBoard.tsx` shows a short 3-2-1-Go countdown overlay before the live board becomes interactive, so both friend matches and AI tables get a smoother start on desktop and mobile
-- **Post-game pacing**: `src/containers/GameBoard/GameBoard.tsx` holds the board in a short celebration state before opening the game-over modal, keeps the table locked after dismissal, uses a draggable, resizable summary tray on desktop, switches mobile to a smaller expand/collapse recap dock anchored in the top status area so the bottom utility dock stays clickable, gives winners a restrained dual-layer confetti treatment, exposes the multiplayer `Back To Lobby` action from the final-table flow, and keeps the exit-confirm modal focused on leaving for home only
-- **Victory share card**: `src/components/GameOverModal/GameOverModal.tsx` now keeps the final-table modal narrower, uses a smaller snapshot preview to avoid inner scrollbars, and retains icon-only share/download controls above the preview card, while `src/utils/shareVictoryCard.ts` generates randomized premium card themes and rotating taglines for both share and direct PNG download
+- **Post-game pacing**: `src/containers/GameBoard/GameBoard.tsx` holds the board in a short celebration state before opening the game-over modal, keeps the table locked after dismissal, uses a draggable, resizable summary tray on desktop, switches mobile to a smaller expand/collapse recap dock anchored in the top status area so the bottom utility dock stays clickable, gives winners a restrained dual-layer confetti treatment, exposes the multiplayer `Back To Lobby` action from the final-table flow, keeps the exit-confirm modal focused on leaving for home only, and now surfaces surviving hidden opponent cards as explicit tap-to-reveal showdown cards after `GAME_OVER`
+- **Victory share card**: `src/components/GameOverModal/GameOverModal.tsx` now keeps the final-table modal narrower, uses a smaller snapshot preview to avoid inner scrollbars, retains icon-only share/download controls above the preview card, and frames the preview so the rounded card silhouette reads cleanly, while `src/utils/shareVictoryCard.ts` generates randomized premium card themes and rotating taglines for both share and direct PNG download with preserved rounded transparent corners
 - **Difficulty controls**: `src/app/page.tsx` keeps all four AI difficulty choices on one row, and `src/components/PreGameConfig/PreGameConfig.tsx` uses the same styled dropdown treatment for multiplayer fill-bot difficulty when at least one bot is enabled
 - **Scroll polish**: `src/containers/OpponentArea/OpponentArea.tsx` supports mouse-wheel horizontal scrolling for the opponent rail without showing a native scrollbar, and `src/app/globals.css` applies a shared minimal themed scrollbar across modals, logs, and the rest of the app
 - **In-game leaderboard tabs**: `src/containers/GameBoard/GameBoard.tsx` presents a full-screen modal with tabs for the live table and the room's cross-game scores

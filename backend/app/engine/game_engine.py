@@ -470,6 +470,7 @@ class GameEngine:
         """Convert to public state for a specific player (hides other cards)."""
         player = state.get_player(for_player_id)
         your_cards = player.influences if player else []
+        reveal_hidden_cards = state.phase == GamePhase.GAME_OVER
 
         # Only show exchange cards to the player doing the exchange
         show_exchange = (
@@ -483,7 +484,7 @@ class GameEngine:
             status=state.status,
             phase=state.phase,
             config=state.config,
-            players=[to_public(p) for p in state.players],
+            players=[to_public(p, reveal_hidden=reveal_hidden_cards) for p in state.players],
             current_turn_player_id=state.current_turn_player_id,
             turn_number=state.turn_number,
             pending_action=state.pending_action,

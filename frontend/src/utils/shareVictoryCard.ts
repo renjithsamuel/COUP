@@ -335,8 +335,7 @@ async function svgToPngFile(
       throw new Error("Unable to render share card");
     }
 
-    context.fillStyle = design.backgroundEnd;
-    context.fillRect(0, 0, 1200, 630);
+    context.clearRect(0, 0, 1200, 630);
     context.drawImage(image, 0, 0);
     const pngBlob = await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((value) => {

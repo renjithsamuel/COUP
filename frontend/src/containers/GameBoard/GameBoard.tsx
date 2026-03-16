@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Timer } from "@/components/Timer";
 import { GameOverModal } from "@/components/GameOverModal";
 import { CoupBackgroundSVG } from "@/components/CoupBackgroundSVG";
+import { ConnectionOverlay } from "@/components/ConnectionOverlay";
 import { OpponentArea } from "@/containers/OpponentArea";
 import { ActionPanel } from "@/containers/ActionPanel";
 import { PlayerHand } from "@/containers/PlayerHand";
@@ -14,6 +15,7 @@ import { ChallengeBlockOverlay } from "@/containers/ChallengeBlockOverlay";
 import { GameLog } from "@/containers/GameLog";
 import { GameDashboard } from "@/containers/GameDashboard";
 import { GuideModal } from "@/components/GuideModal";
+import { useBackendHealth } from "@/hooks/useBackendHealth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useGameAudio } from "@/hooks/useGameAudio";
 import { ACTION_RULES } from "@/models/action";
@@ -283,6 +285,7 @@ export function GameBoard({
   const [showVictoryConfetti, setShowVictoryConfetti] = useState(false);
   const [victoryCardDesign, setVictoryCardDesign] =
     useState<VictoryCardDesign | null>(null);
+  const [showConnectionOverlay, setShowConnectionOverlay] = useState(false);
   const [isMobilePostGameTrayExpanded, setIsMobilePostGameTrayExpanded] =
     useState(false);
   const [postGameTraySize, setPostGameTraySize] = useState({
@@ -317,7 +320,47 @@ export function GameBoard({
   const { isMuted, playActionSound, playTurnSound, toggleMute } =
     useGameAudio();
   const previousIsMyTurnRef = React.useRef(false);
+  const connectionOverlayTimeoutRef = React.useRef<number | null>(null);
+  const previousConnectionOverlayStateRef = React.useRef<
+    "online" | "connecting" | "offline" | null
+  >(null);
   const hasGameLoaded = gameState != null;
+  const { status: backendHealthStatus } = useBackendHealth({
+    websocketStatus: status,
+  });
+  const connectionDisplayStatus =
+    status === "connected" && backendHealthStatus === "online"
+      ? "connected"
+      : status === "error" ||
+          status === "disconnected" ||
+          backendHealthStatus === "offline"
+        ? "disconnected"
+        : "connecting";
+  const connectionOverlayState =
+    connectionDisplayStatus === "connected"
+      ? "online"
+      : connectionDisplayStatus === "connecting"
+        ? "connecting"
+        : "offline";
+  const connectionBadgeLabel =
+    connectionDisplayStatus === "connected"
+      ? "Live"
+      : connectionDisplayStatus === "connecting"
+        ? "Syncing"
+        : "Offline";
+  const connectionTooltip = "Connection status";
+  const connectionOverlayTitle =
+    connectionOverlayState === "online"
+      ? "Connected"
+      : connectionOverlayState === "offline"
+        ? "Disconnected"
+        : "Connecting";
+  const connectionOverlayDetail =
+    connectionOverlayState === "online"
+      ? ""
+      : connectionOverlayState === "offline"
+        ? ""
+        : "Trying to connect...";
 
   useEffect(() => {
     if (timelinePreferenceTouched) {
@@ -345,6 +388,38 @@ export function GameBoard({
       setActionHint(null);
     }
   }, [isMyTurn]);
+
+  useEffect(() => {
+    if (connectionOverlayTimeoutRef.current != null) {
+      window.clearTimeout(connectionOverlayTimeoutRef.current);
+      connectionOverlayTimeoutRef.current = null;
+    }
+
+    const previousState = previousConnectionOverlayStateRef.current;
+
+    if (previousState == null) {
+      previousConnectionOverlayStateRef.current = connectionOverlayState;
+      setShowConnectionOverlay(connectionOverlayState === "connecting");
+      return undefined;
+    }
+
+    if (connectionOverlayState === "connecting") {
+      setShowConnectionOverlay(true);
+      previousConnectionOverlayStateRef.current = connectionOverlayState;
+      return undefined;
+    }
+
+    if (previousState !== connectionOverlayState) {
+      setShowConnectionOverlay(true);
+      connectionOverlayTimeoutRef.current = window.setTimeout(() => {
+        setShowConnectionOverlay(false);
+        connectionOverlayTimeoutRef.current = null;
+      }, 850);
+    }
+
+    previousConnectionOverlayStateRef.current = connectionOverlayState;
+    return undefined;
+  }, [connectionOverlayState]);
 
   useEffect(() => {
     if (!showPinnedGuide) {
@@ -604,9 +679,11 @@ export function GameBoard({
 
   if (!gameState) {
     const loadingLabel =
-      status === "connecting"
+      backendHealthStatus === "offline"
+        ? "Waking free server..."
+        : connectionDisplayStatus === "connecting"
         ? "Connecting to table..."
-        : status === "error" || status === "disconnected"
+        : connectionDisplayStatus === "disconnected"
           ? "Reconnecting to table..."
           : "Loading game...";
 
@@ -922,6 +999,12 @@ export function GameBoard({
   return (
     <div style={s.wrapper}>
       <CoupBackgroundSVG />
+      <ConnectionOverlay
+        isVisible={showConnectionOverlay}
+        state={connectionOverlayState}
+        title={connectionOverlayTitle}
+        detail={connectionOverlayDetail}
+      />
       <div style={s.topBar}>
         <div style={s.topBarLeft}>
           {isMobile ? (
@@ -1098,9 +1181,9 @@ export function GameBoard({
             ) : (
               <div
                 style={s.mobileStatusPill(commandTone)}
-                title={`WebSocket: ${status}`}
+                title={connectionTooltip}
               >
-                <span style={s.mobileConnectionDot(status)} />
+                <span style={s.mobileConnectionDot(connectionDisplayStatus)} />
                 <div style={s.mobileStatusCopy}>
                   <span style={s.mobileStatusEyebrow}>{navEyebrow}</span>
                   <span style={s.mobileStatusTitle}>{mobileNavTitle}</span>
@@ -1115,16 +1198,12 @@ export function GameBoard({
           ) : (
             <div style={s.topStatusGroup}>
               <div
-                style={s.connectionBadge(status)}
-                title={`WebSocket: ${status}`}
+                style={s.connectionBadge(connectionDisplayStatus)}
+                title={connectionTooltip}
               >
-                <span style={s.connectionDot(status)} />
+                <span style={s.connectionDot(connectionDisplayStatus)} />
                 <span style={s.connectionText}>
-                  {status === "connected"
-                    ? "Live"
-                    : status === "connecting"
-                      ? "Retrying"
-                      : "Offline"}
+                  {connectionBadgeLabel}
                 </span>
               </div>
               <div style={s.navStatusPill(commandTone)}>

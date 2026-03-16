@@ -15,6 +15,7 @@ export interface PlayerPublic {
   coins: number;
   influenceCount: number;
   revealedCards: Card[];
+  showdownCards: Card[];
   isAlive: boolean;
   connected?: boolean;
 }

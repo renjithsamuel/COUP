@@ -11,8 +11,10 @@ import {
 } from "@/queries/useLobbyQueries";
 import { useLobbyContext } from "@/context/LobbyContext";
 import { LobbyRoom } from "@/containers/LobbyRoom";
+import { ConnectionOverlay } from "@/components/ConnectionOverlay";
 import { PreGameConfig } from "@/components/PreGameConfig";
 import { CoupBackgroundSVG } from "@/components/CoupBackgroundSVG";
+import { useBackendHealth } from "@/hooks/useBackendHealth";
 import { GameConfig } from "@/models/lobby";
 import {
   lobbyConfigStore,
@@ -55,13 +57,19 @@ export default function LobbyDetailPage() {
     error,
   } = useLobby(lobbyId, sessionToken, { enabled: hasResolvedSession });
   const isLobbyMissing = error instanceof ApiError && error.status === 404;
+  const isLobbyOffline = error instanceof ApiError && error.status === 0;
   const { data: leaderboard = [] } = useLobbyLeaderboard(lobbyId, 6, {
-    enabled: hasResolvedSession && !isLobbyMissing,
+    enabled: hasResolvedSession && !isLobbyMissing && !isLobbyOffline,
   });
   const startGame = useStartGame();
   const [showConfig, setShowConfig] = useState(false);
   const [savedConfig, setSavedConfig] =
     useState<GameConfig>(DEFAULT_LOBBY_CONFIG);
+  const [showConnectionOverlay, setShowConnectionOverlay] = useState(false);
+  const connectionOverlayTimeoutRef = React.useRef<number | null>(null);
+  const previousConnectionOverlayStateRef = React.useRef<
+    "online" | "connecting" | "offline" | null
+  >(null);
 
   const lobby = lobbyResponse?.lobby ?? null;
   const activePlayer = useMemo(
@@ -71,6 +79,87 @@ export default function LobbyDetailPage() {
           null)
         : null,
     [lobby, state.myPlayerId],
+  );
+  const probeStatus =
+    !hasResolvedSession || isLoading
+      ? "connecting"
+      : lobby
+        ? "connected"
+        : isError
+          ? "disconnected"
+          : "connecting";
+  const { status: backendHealthStatus } = useBackendHealth({
+    websocketStatus: probeStatus,
+    enabled: !isLobbyMissing,
+  });
+  const connectionOverlayState =
+    backendHealthStatus === "online"
+      ? "online"
+      : backendHealthStatus === "offline"
+        ? "offline"
+        : "connecting";
+  const connectionOverlayTitle =
+    connectionOverlayState === "online"
+      ? "Connected"
+      : connectionOverlayState === "offline"
+        ? "Disconnected"
+        : "Connecting";
+  const connectionOverlayDetail =
+    connectionOverlayState === "online"
+      ? ""
+      : connectionOverlayState === "offline"
+        ? ""
+        : "Trying to connect...";
+
+  useEffect(() => {
+    if (isLobbyMissing) {
+      setShowConnectionOverlay(false);
+      previousConnectionOverlayStateRef.current = null;
+      return;
+    }
+
+    if (connectionOverlayTimeoutRef.current != null) {
+      window.clearTimeout(connectionOverlayTimeoutRef.current);
+      connectionOverlayTimeoutRef.current = null;
+    }
+
+    const previousState = previousConnectionOverlayStateRef.current;
+
+    if (previousState == null) {
+      previousConnectionOverlayStateRef.current = connectionOverlayState;
+      setShowConnectionOverlay(connectionOverlayState === "connecting");
+      return;
+    }
+
+    if (connectionOverlayState === "connecting") {
+      setShowConnectionOverlay(true);
+      previousConnectionOverlayStateRef.current = connectionOverlayState;
+      return;
+    }
+
+    if (previousState !== connectionOverlayState) {
+      setShowConnectionOverlay(true);
+      connectionOverlayTimeoutRef.current = window.setTimeout(() => {
+        setShowConnectionOverlay(false);
+        connectionOverlayTimeoutRef.current = null;
+      }, 850);
+    }
+
+    previousConnectionOverlayStateRef.current = connectionOverlayState;
+  }, [connectionOverlayState, isLobbyMissing]);
+
+  const renderWithConnectionOverlay = (content: React.ReactNode) => (
+    <>
+      {!isLobbyMissing && (
+        <ConnectionOverlay
+          isVisible={showConnectionOverlay}
+          state={connectionOverlayState}
+          title={connectionOverlayTitle}
+          detail={connectionOverlayDetail}
+        />
+      )}
+      {content}
+    </>
   );
 
   useEffect(() => {
@@ -335,7 +424,7 @@ export default function LobbyDetailPage() {
   };
 
   if (isStartingGameLocally || isNavigatingToGame) {
-    return (
+    return renderWithConnectionOverlay(
       <div
         style={{
           minHeight: "100dvh",
@@ -394,12 +483,12 @@ export default function LobbyDetailPage() {
               : "The host started the match. Joining the table now."}
           </div>
         </div>
-      </div>
+      </div>,
     );
   }
 
-  if (!hasResolvedSession || (isLoading && !lobby)) {
-    return (
+  if (!hasResolvedSession || (isLoading && !lobby) || (isLobbyOffline && !lobby)) {
+    return renderWithConnectionOverlay(
       <div
         style={{
           minHeight: "100vh",
@@ -412,13 +501,13 @@ export default function LobbyDetailPage() {
         }}
       >
         Restoring your lobby seat...
-      </div>
+      </div>,
     );
   }
 
-  if (isLobbyMissing || (isError && !lobby)) {
+  if (isLobbyMissing || (isError && !lobby && !isLobbyOffline)) {
     if (isError) {
-      return (
+      return renderWithConnectionOverlay(
         <div
           style={{
             minHeight: "100vh",
@@ -460,7 +549,7 @@ export default function LobbyDetailPage() {
           >
             Back Home
           </button>
-        </div>
+        </div>,
       );
     }
   }
@@ -470,7 +559,7 @@ export default function LobbyDetailPage() {
   }
 
   if (isWaitingForLobbyReset && lobby.status !== "waiting") {
-    return (
+    return renderWithConnectionOverlay(
       <div
         style={{
           minHeight: "100dvh",
@@ -543,7 +632,7 @@ export default function LobbyDetailPage() {
             Back Home
           </button>
         </div>
-      </div>
+      </div>,
     );
   }
 
@@ -551,7 +640,7 @@ export default function LobbyDetailPage() {
     (p) => p.isHost && p.id === state.myPlayerId,
   );
 
-  return (
+  return renderWithConnectionOverlay(
     <div
       style={{
         minHeight: "100dvh",
@@ -790,6 +879,6 @@ export default function LobbyDetailPage() {
         onConfirm={handleConfirmConfig}
         onCancel={() => setShowConfig(false)}
       />
-    </div>
+    </div>,
   );
 }

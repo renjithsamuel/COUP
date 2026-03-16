@@ -51,6 +51,7 @@ export const mockPlayerPublic1: PlayerPublic = {
   coins: 2,
   influenceCount: 2,
   revealedCards: [],
+  showdownCards: [],
   isAlive: true,
 };
 
@@ -60,6 +61,7 @@ export const mockPlayerPublic2: PlayerPublic = {
   coins: 2,
   influenceCount: 2,
   revealedCards: [],
+  showdownCards: [],
   isAlive: true,
 };
 
@@ -72,6 +74,7 @@ export const mockDeadPlayerPublic: PlayerPublic = {
     { character: Character.ASSASSIN, isRevealed: true },
     { character: Character.CAPTAIN, isRevealed: true },
   ],
+  showdownCards: [],
   isAlive: false,
 };
 

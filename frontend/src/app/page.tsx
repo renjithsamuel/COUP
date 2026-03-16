@@ -16,11 +16,14 @@ import {
   slideUpVariants,
   scalePopVariants,
 } from "@/animations";
+import { ConnectionOverlay } from "@/components/ConnectionOverlay";
 import { CoupBackgroundSVG } from "@/components/CoupBackgroundSVG";
 import { PreGameConfig } from "@/components/PreGameConfig";
+import { useBackendHealth } from "@/hooks/useBackendHealth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { tokens } from "@/theme/tokens";
 import { AiDifficulty, GameConfig } from "@/models/lobby";
+import { ApiError } from "@/services/api";
 import { GAME_CONSTANTS } from "@/utils/constants";
 
 type PlayMode = "friends" | "ai";
@@ -454,6 +457,7 @@ export default function HomePage() {
   const [playerName, setPlayerName] = useState("");
   const [lobbyName, setLobbyName] = useState("");
   const [roomCode, setRoomCode] = useState("");
+  const [createError, setCreateError] = useState("");
   const [joinError, setJoinError] = useState("");
   const [aiError, setAiError] = useState("");
   const [playMode, setPlayMode] = useState<PlayMode>("friends");
@@ -461,9 +465,26 @@ export default function HomePage() {
   const [botCount, setBotCount] = useState(3);
   const [difficulty, setDifficulty] = useState<AiDifficulty>("medium");
   const [showAiConfig, setShowAiConfig] = useState(false);
+  const [isHomeConnecting, setIsHomeConnecting] = useState(false);
   const isMobileIntro = isMobile && mobileFlow === "home";
   const shouldShowNameInput = !isMobile || mobileFlow !== "home";
   const showCompactMobileHero = isMobile && mobileFlow !== "home";
+  const hasPendingAction =
+    createLobby.isPending || joinLobby.isPending || createAiMatch.isPending;
+  const { status: backendHealthStatus } = useBackendHealth({
+    websocketStatus: hasPendingAction || isHomeConnecting ? "connecting" : "disconnected",
+    enabled: hasPendingAction || isHomeConnecting,
+  });
+
+  useEffect(() => {
+    if (!isHomeConnecting || hasPendingAction) {
+      return;
+    }
+
+    if (backendHealthStatus === "online") {
+      setIsHomeConnecting(false);
+    }
+  }, [backendHealthStatus, hasPendingAction, isHomeConnecting]);
 
   useEffect(() => {
     setMobileFlow(isMobile ? "home" : "mode");
@@ -471,24 +492,34 @@ export default function HomePage() {
 
   const handleCreate = async () => {
     if (!playerName.trim()) return;
-    const res = await createLobby.mutateAsync({
-      name: lobbyName.trim() || `${playerName.trim()}'s lobby`,
-      playerName: playerName.trim(),
-      maxPlayers: GAME_CONSTANTS.MAX_PLAYERS,
-    });
-    if (res.playerId && res.sessionToken) {
-      const isHost =
-        res.lobby.players.find((player) => player.id === res.playerId)
-          ?.isHost ?? true;
-      lobbySessionStore.save(
-        res.lobby.id,
-        res.playerId,
-        res.sessionToken,
-        playerName.trim(),
-        isHost,
-      );
+    setCreateError("");
+    try {
+      const res = await createLobby.mutateAsync({
+        name: lobbyName.trim() || `${playerName.trim()}'s lobby`,
+        playerName: playerName.trim(),
+        maxPlayers: GAME_CONSTANTS.MAX_PLAYERS,
+      });
+      if (res.playerId && res.sessionToken) {
+        const isHost =
+          res.lobby.players.find((player) => player.id === res.playerId)
+            ?.isHost ?? true;
+        lobbySessionStore.save(
+          res.lobby.id,
+          res.playerId,
+          res.sessionToken,
+          playerName.trim(),
+          isHost,
+        );
+      }
+      router.push(`/lobby/${res.lobby.id}?playerId=${res.playerId}`);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 0) {
+        setCreateError("");
+        setIsHomeConnecting(true);
+      } else {
+        setCreateError("Unable to create a room right now.");
+      }
     }
-    router.push(`/lobby/${res.lobby.id}?playerId=${res.playerId}`);
   };
 
   const handleJoin = async () => {
@@ -604,9 +635,13 @@ export default function HomePage() {
           style={s.input}
           placeholder="Room name (optional)"
           value={lobbyName}
-          onChange={(event) => setLobbyName(event.target.value)}
+          onChange={(event) => {
+            setLobbyName(event.target.value);
+            setCreateError("");
+          }}
           maxLength={30}
         />
+        {createError && <div style={s.error}>{createError}</div>}
         <motion.button
           style={{
             ...s.createBtn,
@@ -758,326 +793,338 @@ export default function HomePage() {
   );
 
   return (
-    <motion.div
-      style={s.page}
-      variants={fadeInVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          justifyContent: "flex-end",
-          pointerEvents: "none",
-          opacity: 0.88,
-          zIndex: 0,
-        }}
+    <>
+      <ConnectionOverlay
+        isVisible={hasPendingAction || isHomeConnecting}
+        state="connecting"
+        title="Connecting to server"
+        detail=""
+      />
+      <motion.div
+        style={s.page}
+        variants={fadeInVariants}
+        initial="hidden"
+        animate="visible"
       >
         <div
+          aria-hidden
           style={{
-            width: "64vw",
-            minWidth: 360,
-            maxWidth: 940,
-            height: "100%",
-            transform: "translateX(12%)",
-            maskImage:
-              "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.86) 30%, rgba(0,0,0,1) 100%)",
-            WebkitMaskImage:
-              "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.86) 30%, rgba(0,0,0,1) 100%)",
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            justifyContent: "flex-end",
+            pointerEvents: "none",
+            opacity: 0.88,
+            zIndex: 0,
           }}
         >
-          <CoupBackgroundSVG />
+          <div
+            style={{
+              width: "64vw",
+              minWidth: 360,
+              maxWidth: 940,
+              height: "100%",
+              transform: "translateX(12%)",
+              maskImage:
+                "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.86) 30%, rgba(0,0,0,1) 100%)",
+              WebkitMaskImage:
+                "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.86) 30%, rgba(0,0,0,1) 100%)",
+            }}
+          >
+            <CoupBackgroundSVG />
+          </div>
         </div>
-      </div>
 
-      <div style={s.stage}>
-        <motion.section
-          style={{
-            ...s.heroCard,
-            minHeight: showCompactMobileHero ? "auto" : isMobile ? 300 : 500,
-            padding: showCompactMobileHero ? "18px 20px" : s.heroCard.padding,
-            justifyContent: showCompactMobileHero
-              ? "center"
-              : s.heroCard.justifyContent,
-          }}
-          variants={slideUpVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <div style={s.heroGlow} />
-          {showCompactMobileHero ? (
-            <div style={{ ...s.title, marginBottom: 0, textAlign: "center" }}>
-              COUP
-            </div>
-          ) : (
-            <>
-              <div>
-                <div style={s.heroEyebrow}>Realtime multiplayer bluffing</div>
-                <div style={{ marginBottom: isMobile ? 12 : 14 }}>
-                  <CoupLogo compact={isMobile} />
-                </div>
-                <div style={s.title}>COUP</div>
-                <div style={s.subtitle}>
-                  Run the table with clean reads, false confidence, and timed
-                  pressure. Every action is public. Every bluff can be
-                  challenged. The last player with influence wins.
-                </div>
+        <div style={s.stage}>
+          <motion.section
+            style={{
+              ...s.heroCard,
+              minHeight: showCompactMobileHero ? "auto" : isMobile ? 300 : 500,
+              padding: showCompactMobileHero ? "18px 20px" : s.heroCard.padding,
+              justifyContent: showCompactMobileHero
+                ? "center"
+                : s.heroCard.justifyContent,
+            }}
+            variants={slideUpVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <div style={s.heroGlow} />
+            {showCompactMobileHero ? (
+              <div style={{ ...s.title, marginBottom: 0, textAlign: "center" }}>
+                COUP
               </div>
-
-              <div
-                style={{
-                  ...s.featureGrid,
-                  gridTemplateColumns: isMobile
-                    ? "1fr"
-                    : s.featureGrid.gridTemplateColumns,
-                }}
-              >
-                <div style={s.featureCard}>
-                  <div style={s.featureTitle}>Play Your Way</div>
-                  <div style={s.featureText}>
-                    Jump into a private room with friends or start a solo table
-                    instantly against bots.
-                  </div>
-                </div>
-                {!isMobile && (
-                  <div style={s.featureCard}>
-                    <div style={s.featureTitle}>Human-Like Bots</div>
-                    <div style={s.featureText}>
-                      Bots bluff, pass, and challenge with difficulty-based
-                      mistakes instead of perfect play.
-                    </div>
-                  </div>
-                )}
-                {!isMobile && (
-                  <div style={s.featureCard}>
-                    <div style={s.featureTitle}>Same Live Board</div>
-                    <div style={s.featureText}>
-                      AI matches use the same real-time game board, turn
-                      windows, and reveal flow as multiplayer games.
-                    </div>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </motion.section>
-
-        <motion.section
-          style={s.actionColumn}
-          variants={fadeInVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <div style={s.actionShell}>
-            <div style={s.actionHeader}>
-              <div style={s.actionTitle}>
-                {isMobileIntro ? "Quick start" : "Choose your table"}
-              </div>
-              <div style={s.actionSubtitle}>
-                {isMobileIntro
-                  ? "Start clean on mobile, then choose friends or AI on the next screen."
-                  : "Set your name once, then pick friends or AI and jump into the matching flow."}
-              </div>
-            </div>
-
-            {shouldShowNameInput && playerNameInput}
-
-            {isMobile && mobileFlow === "home" && (
-              <button
-                style={s.mobilePlayButton}
-                onClick={() => setMobileFlow("mode")}
-              >
-                Play
-              </button>
-            )}
-
-            {!isMobile && (
+            ) : (
               <>
-                {modeCards}
-                {playMode === "friends" ? (
-                  friendsCards
-                ) : (
-                  <motion.div
-                    style={s.card}
-                    variants={slideUpVariants}
-                    initial="hidden"
-                    animate="visible"
-                  >
-                    {aiContent}
-                  </motion.div>
-                )}
+                <div>
+                  <div style={s.heroEyebrow}>Realtime multiplayer bluffing</div>
+                  <div style={{ marginBottom: isMobile ? 12 : 14 }}>
+                    <CoupLogo compact={isMobile} />
+                  </div>
+                  <div style={s.title}>COUP</div>
+                  <div style={s.subtitle}>
+                    Run the table with clean reads, false confidence, and timed
+                    pressure. Every action is public. Every bluff can be
+                    challenged. The last player with influence wins.
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    ...s.featureGrid,
+                    gridTemplateColumns: isMobile
+                      ? "1fr"
+                      : s.featureGrid.gridTemplateColumns,
+                  }}
+                >
+                  <div style={s.featureCard}>
+                    <div style={s.featureTitle}>Play Your Way</div>
+                    <div style={s.featureText}>
+                      Jump into a private room with friends or start a solo table
+                      instantly against bots.
+                    </div>
+                  </div>
+                  {!isMobile && (
+                    <div style={s.featureCard}>
+                      <div style={s.featureTitle}>Human-Like Bots</div>
+                      <div style={s.featureText}>
+                        Bots bluff, pass, and challenge with difficulty-based
+                        mistakes instead of perfect play.
+                      </div>
+                    </div>
+                  )}
+                  {!isMobile && (
+                    <div style={s.featureCard}>
+                      <div style={s.featureTitle}>Same Live Board</div>
+                      <div style={s.featureText}>
+                        AI matches use the same real-time game board, turn
+                        windows, and reveal flow as multiplayer games.
+                      </div>
+                    </div>
+                  )}
+                </div>
               </>
             )}
+          </motion.section>
 
-            {isMobile && mobileFlow === "mode" && <>{modeCards}</>}
+          <motion.section
+            style={s.actionColumn}
+            variants={fadeInVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <div style={s.actionShell}>
+              <div style={s.actionHeader}>
+                <div style={s.actionTitle}>
+                  {isMobileIntro ? "Quick start" : "Choose your table"}
+                </div>
+                <div style={s.actionSubtitle}>
+                  {isMobileIntro
+                    ? "Start clean on mobile, then choose friends or AI on the next screen."
+                    : "Set your name once, then pick friends or AI and jump into the matching flow."}
+                </div>
+              </div>
 
-            {isMobile && mobileFlow === "friends" && (
-              <motion.div
-                style={s.card}
-                variants={slideUpVariants}
-                initial="hidden"
-                animate="visible"
-              >
+              {shouldShowNameInput && playerNameInput}
+
+              {isMobile && mobileFlow === "home" && (
                 <button
-                  style={s.mobileBackButton}
+                  style={s.mobilePlayButton}
                   onClick={() => setMobileFlow("mode")}
                 >
-                  Back
+                  Play
                 </button>
-                <div style={s.cardTitle}>Play With Friends</div>
-                <div style={s.helperText}>
-                  Keep the existing room flow: create a private lobby or join
-                  one by code.
-                </div>
-                <div style={{ ...s.modeGrid, gridTemplateColumns: "1fr 1fr" }}>
+              )}
+
+              {!isMobile && (
+                <>
+                  {modeCards}
+                  {playMode === "friends" ? (
+                    friendsCards
+                  ) : (
+                    <motion.div
+                      style={s.card}
+                      variants={slideUpVariants}
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      {aiContent}
+                    </motion.div>
+                  )}
+                </>
+              )}
+
+              {isMobile && mobileFlow === "mode" && <>{modeCards}</>}
+
+              {isMobile && mobileFlow === "friends" && (
+                <motion.div
+                  style={s.card}
+                  variants={slideUpVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
                   <button
-                    style={s.modeCard}
-                    onClick={() => setMobileFlow("create")}
+                    style={s.mobileBackButton}
+                    onClick={() => setMobileFlow("mode")}
                   >
-                    Create Room
+                    Back
                   </button>
+                  <div style={s.cardTitle}>Play With Friends</div>
+                  <div style={s.helperText}>
+                    Keep the existing room flow: create a private lobby or join
+                    one by code.
+                  </div>
+                  <div style={{ ...s.modeGrid, gridTemplateColumns: "1fr 1fr" }}>
+                    <button
+                      style={s.modeCard}
+                      onClick={() => setMobileFlow("create")}
+                    >
+                      Create Room
+                    </button>
+                    <button
+                      style={s.modeCard}
+                      onClick={() => setMobileFlow("join")}
+                    >
+                      Join Room
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {isMobile && mobileFlow === "create" && (
+                <motion.div
+                  style={s.card}
+                  variants={slideUpVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
                   <button
-                    style={s.modeCard}
-                    onClick={() => setMobileFlow("join")}
+                    style={s.mobileBackButton}
+                    onClick={() => setMobileFlow("friends")}
                   >
-                    Join Room
+                    Back
                   </button>
-                </div>
-              </motion.div>
-            )}
+                  <div style={s.cardTitle}>Create Room</div>
+                  <input
+                    style={s.input}
+                    placeholder="Room name (optional)"
+                    value={lobbyName}
+                    onChange={(event) => {
+                      setLobbyName(event.target.value);
+                      setCreateError("");
+                    }}
+                    maxLength={30}
+                  />
+                  {createError && <div style={s.error}>{createError}</div>}
+                  <motion.button
+                    style={{
+                      ...s.createBtn,
+                      opacity: !playerName.trim() ? 0.5 : 1,
+                      cursor: !playerName.trim() ? "not-allowed" : "pointer",
+                    }}
+                    variants={scalePopVariants}
+                    whileHover={
+                      playerName.trim() ? interactiveHoverMotion : undefined
+                    }
+                    whileTap={
+                      playerName.trim() ? interactiveTapMotion : undefined
+                    }
+                    onClick={handleCreate}
+                    disabled={createLobby.isPending || !playerName.trim()}
+                  >
+                    {createLobby.isPending ? "Creating..." : "Create Room"}
+                  </motion.button>
+                </motion.div>
+              )}
 
-            {isMobile && mobileFlow === "create" && (
-              <motion.div
-                style={s.card}
-                variants={slideUpVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                <button
-                  style={s.mobileBackButton}
-                  onClick={() => setMobileFlow("friends")}
+              {isMobile && mobileFlow === "join" && (
+                <motion.div
+                  style={s.card}
+                  variants={slideUpVariants}
+                  initial="hidden"
+                  animate="visible"
                 >
-                  Back
-                </button>
-                <div style={s.cardTitle}>Create Room</div>
-                <input
-                  style={s.input}
-                  placeholder="Room name (optional)"
-                  value={lobbyName}
-                  onChange={(event) => setLobbyName(event.target.value)}
-                  maxLength={30}
-                />
-                <motion.button
-                  style={{
-                    ...s.createBtn,
-                    opacity: !playerName.trim() ? 0.5 : 1,
-                    cursor: !playerName.trim() ? "not-allowed" : "pointer",
-                  }}
-                  variants={scalePopVariants}
-                  whileHover={
-                    playerName.trim() ? interactiveHoverMotion : undefined
-                  }
-                  whileTap={
-                    playerName.trim() ? interactiveTapMotion : undefined
-                  }
-                  onClick={handleCreate}
-                  disabled={createLobby.isPending || !playerName.trim()}
-                >
-                  {createLobby.isPending ? "Creating..." : "Create Room"}
-                </motion.button>
-              </motion.div>
-            )}
+                  <button
+                    style={s.mobileBackButton}
+                    onClick={() => setMobileFlow("friends")}
+                  >
+                    Back
+                  </button>
+                  <div style={s.cardTitle}>Join Room</div>
+                  <input
+                    style={s.input}
+                    placeholder="Room code"
+                    value={roomCode}
+                    onChange={(event) => {
+                      setRoomCode(event.target.value);
+                      setJoinError("");
+                    }}
+                    maxLength={8}
+                  />
+                  {joinError && <div style={s.error}>{joinError}</div>}
+                  <motion.button
+                    style={{
+                      ...s.joinBtn,
+                      opacity: !playerName.trim() || !roomCode.trim() ? 0.5 : 1,
+                      cursor:
+                        !playerName.trim() || !roomCode.trim()
+                          ? "not-allowed"
+                          : "pointer",
+                    }}
+                    variants={scalePopVariants}
+                    whileHover={
+                      playerName.trim() && roomCode.trim()
+                        ? interactiveHoverMotion
+                        : undefined
+                    }
+                    whileTap={
+                      playerName.trim() && roomCode.trim()
+                        ? interactiveTapMotion
+                        : undefined
+                    }
+                    onClick={handleJoin}
+                    disabled={
+                      joinLobby.isPending ||
+                      !playerName.trim() ||
+                      !roomCode.trim()
+                    }
+                  >
+                    {joinLobby.isPending ? "Joining..." : "Join Room"}
+                  </motion.button>
+                </motion.div>
+              )}
 
-            {isMobile && mobileFlow === "join" && (
-              <motion.div
-                style={s.card}
-                variants={slideUpVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                <button
-                  style={s.mobileBackButton}
-                  onClick={() => setMobileFlow("friends")}
+              {isMobile && mobileFlow === "ai" && (
+                <motion.div
+                  style={s.card}
+                  variants={slideUpVariants}
+                  initial="hidden"
+                  animate="visible"
                 >
-                  Back
-                </button>
-                <div style={s.cardTitle}>Join Room</div>
-                <input
-                  style={s.input}
-                  placeholder="Room code"
-                  value={roomCode}
-                  onChange={(event) => {
-                    setRoomCode(event.target.value);
-                    setJoinError("");
-                  }}
-                  maxLength={8}
-                />
-                {joinError && <div style={s.error}>{joinError}</div>}
-                <motion.button
-                  style={{
-                    ...s.joinBtn,
-                    opacity: !playerName.trim() || !roomCode.trim() ? 0.5 : 1,
-                    cursor:
-                      !playerName.trim() || !roomCode.trim()
-                        ? "not-allowed"
-                        : "pointer",
-                  }}
-                  variants={scalePopVariants}
-                  whileHover={
-                    playerName.trim() && roomCode.trim()
-                      ? interactiveHoverMotion
-                      : undefined
-                  }
-                  whileTap={
-                    playerName.trim() && roomCode.trim()
-                      ? interactiveTapMotion
-                      : undefined
-                  }
-                  onClick={handleJoin}
-                  disabled={
-                    joinLobby.isPending ||
-                    !playerName.trim() ||
-                    !roomCode.trim()
-                  }
-                >
-                  {joinLobby.isPending ? "Joining..." : "Join Room"}
-                </motion.button>
-              </motion.div>
-            )}
+                  <button
+                    style={s.mobileBackButton}
+                    onClick={() => setMobileFlow("mode")}
+                  >
+                    Back
+                  </button>
+                  {aiContent}
+                </motion.div>
+              )}
+            </div>
+          </motion.section>
+        </div>
 
-            {isMobile && mobileFlow === "ai" && (
-              <motion.div
-                style={s.card}
-                variants={slideUpVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                <button
-                  style={s.mobileBackButton}
-                  onClick={() => setMobileFlow("mode")}
-                >
-                  Back
-                </button>
-                {aiContent}
-              </motion.div>
-            )}
-          </div>
-        </motion.section>
-      </div>
-
-      <PreGameConfig
-        isOpen={showAiConfig}
-        playerCount={botCount + 1}
-        showBotFillControls={false}
-        onCancel={() => setShowAiConfig(false)}
-        onConfirm={async (config) => {
-          setShowAiConfig(false);
-          await handleStartAi(config);
-        }}
-      />
-    </motion.div>
+        <PreGameConfig
+          isOpen={showAiConfig}
+          playerCount={botCount + 1}
+          showBotFillControls={false}
+          onCancel={() => setShowAiConfig(false)}
+          onConfirm={async (config) => {
+            setShowAiConfig(false);
+            await handleStartAi(config);
+          }}
+        />
+      </motion.div>
+    </>
   );
 }

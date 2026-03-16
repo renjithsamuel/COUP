@@ -13,6 +13,7 @@ import { useGameContext } from "@/context/GameContext";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { Card } from "@/components/Card";
 import { Character } from "@/models/card";
+import { GamePhase } from "@/models/game";
 import { ActionType, ACTION_RULES } from "@/models/action";
 import { getOpponentAreaStyles } from "./OpponentArea.styles";
 
@@ -45,6 +46,9 @@ export function OpponentArea({
   const previousCurrentPlayerIdRef = useRef<string | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [revealedShowdownCards, setRevealedShowdownCards] = useState<
+    Record<string, boolean[]>
+  >({});
 
   const updateScrollState = useCallback(() => {
     const node = scrollRef.current;
@@ -155,15 +159,81 @@ export function OpponentArea({
     [isMobile],
   );
 
-  if (!gs) return null;
-
-  const opponents = gs.players.filter((p) => p.id !== state.myPlayerId);
+  const opponents = gs?.players.filter((p) => p.id !== state.myPlayerId) ?? [];
+  const showdownSignature = opponents
+    .map(
+      (opp) =>
+        `${opp.id}:${opp.showdownCards.map((card) => card.character).join(",")}`,
+    )
+    .join("|");
   const s = getOpponentAreaStyles(isMobile, opponents.length);
   const cardSize = isMobile ? "xs" : "sm";
   const targetActionLabel = targetModeAction
     ? ACTION_RULES[targetModeAction].label
     : null;
   const showRailMargins = isMobile && opponents.length > 2;
+
+  useEffect(() => {
+    if (!gs || gs.phase !== GamePhase.GAME_OVER) {
+      setRevealedShowdownCards({});
+      return;
+    }
+
+    setRevealedShowdownCards((current) => {
+      const next: Record<string, boolean[]> = {};
+      let didChange = false;
+
+      for (const opponent of opponents) {
+        const currentFlags = current[opponent.id] ?? [];
+        const nextFlags = opponent.showdownCards.map(
+          (_, index) => currentFlags[index] ?? false,
+        );
+        next[opponent.id] = nextFlags;
+
+        if (
+          !didChange &&
+          (currentFlags.length !== nextFlags.length ||
+            currentFlags.some((value, index) => value !== nextFlags[index]))
+        ) {
+          didChange = true;
+        }
+      }
+
+      if (
+        !didChange &&
+        Object.keys(current).every((playerId) => playerId in next)
+      ) {
+        return current;
+      }
+
+      return next;
+    });
+  }, [gs?.phase, opponents, showdownSignature]);
+
+  const handleRevealShowdownCard = useCallback(
+    (playerId: string, cardIndex: number) => {
+      if (!gs || gs.phase !== GamePhase.GAME_OVER) {
+        return;
+      }
+
+      setRevealedShowdownCards((current) => {
+        const currentFlags = current[playerId] ?? [];
+        if (currentFlags[cardIndex]) {
+          return current;
+        }
+
+        const nextFlags = [...currentFlags];
+        nextFlags[cardIndex] = true;
+        return {
+          ...current,
+          [playerId]: nextFlags,
+        };
+      });
+    },
+    [gs],
+  );
+
+  if (!gs) return null;
 
   return (
     <div style={s.shell}>
@@ -295,15 +365,78 @@ export function OpponentArea({
                     disabled
                   />
                 ))}
-                {Array.from({ length: opp.influenceCount }).map((_, i) => (
-                  <Card
-                    key={`hidden-${i}`}
-                    character={Character.DUKE}
-                    isFaceDown
-                    size={cardSize}
-                    disabled
-                  />
-                ))}
+                {gs.phase === GamePhase.GAME_OVER && opp.showdownCards.length > 0
+                  ? opp.showdownCards.map((card, index) => {
+                      const isRevealed =
+                        revealedShowdownCards[opp.id]?.[index] ?? false;
+
+                      return (
+                        <motion.div
+                          key={`showdown-${opp.id}-${index}-${card.character}`}
+                          style={s.showdownCardShell(!isRevealed)}
+                          initial={false}
+                          animate={
+                            isRevealed
+                              ? {
+                                  y: [0, -10, -4],
+                                  scale: [1, 1.06, 1.02],
+                                  filter: [
+                                    "drop-shadow(0 0 0 rgba(255,193,7,0))",
+                                    "drop-shadow(0 0 18px rgba(255,193,7,0.28))",
+                                    "drop-shadow(0 0 10px rgba(255,193,7,0.14))",
+                                  ],
+                                }
+                              : undefined
+                          }
+                          transition={{ duration: 0.48, ease: "easeOut" }}
+                          whileHover={!isRevealed ? { y: -4, scale: 1.03 } : undefined}
+                          whileTap={!isRevealed ? { scale: 0.98 } : undefined}
+                          onClick={() => handleRevealShowdownCard(opp.id, index)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              handleRevealShowdownCard(opp.id, index);
+                            }
+                          }}
+                          role={isRevealed ? undefined : "button"}
+                          tabIndex={isRevealed ? -1 : 0}
+                          aria-label={
+                            isRevealed
+                              ? `${opp.name} final card ${index + 1}`
+                              : `Reveal ${opp.name} final card ${index + 1}`
+                          }
+                        >
+                          <Card
+                            character={card.character}
+                            isFaceDown={!isRevealed}
+                            size={cardSize}
+                            disabled
+                          />
+                          {!isRevealed && (
+                            <motion.span
+                              style={s.showdownRevealBadge}
+                              animate={{ opacity: [0.7, 1, 0.7] }}
+                              transition={{
+                                duration: 1.6,
+                                ease: "easeInOut",
+                                repeat: Number.POSITIVE_INFINITY,
+                              }}
+                            >
+                              Reveal
+                            </motion.span>
+                          )}
+                        </motion.div>
+                      );
+                    })
+                  : Array.from({ length: opp.influenceCount }).map((_, i) => (
+                      <Card
+                        key={`hidden-${i}`}
+                        character={Character.DUKE}
+                        isFaceDown
+                        size={cardSize}
+                        disabled
+                      />
+                    ))}
               </div>
               <div style={s.statsRow}>
                 <span style={s.coinBadge}>

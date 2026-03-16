@@ -4,7 +4,7 @@ import pytest
 
 from app.engine.game_engine import GameEngine
 from app.models.action import ActionType, PlayerAction
-from app.models.card import Character
+from app.models.card import Card, Character
 from app.models.game import GameConfig, GamePhase, GameState, GameStatus
 
 
@@ -352,6 +352,31 @@ class TestPublicState:
         other = next(p for p in public.players if p.id == p2.id)
         assert other.influence_count == 2
         assert len(other.revealed_characters) == 0
+        assert other.showdown_characters == []
+
+    def test_game_over_state_exposes_showdown_characters(
+        self, engine: GameEngine, two_player_game: GameState
+    ):
+        state = two_player_game
+        winner = state.players[0]
+        loser = state.players[1]
+
+        winner.influences = [
+            Card(character=Character.DUKE),
+            Card(character=Character.CAPTAIN),
+        ]
+        loser.influences[0].revealed = True
+        loser.influences[1].revealed = True
+        loser.is_alive = False
+        state.phase = GamePhase.GAME_OVER
+        state.status = GameStatus.FINISHED
+        state.winner_id = winner.id
+
+        public = engine.to_public_state(state, loser.id)
+        winner_public = next(p for p in public.players if p.id == winner.id)
+
+        assert winner_public.revealed_characters == []
+        assert winner_public.showdown_characters == ["duke", "captain"]
 
     def test_shows_deck_count_not_contents(self, engine: GameEngine, two_player_game: GameState):
         public = engine.to_public_state(two_player_game, two_player_game.players[0].id)

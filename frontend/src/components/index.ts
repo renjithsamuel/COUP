@@ -17,3 +17,5 @@ export type { GuideModalProps } from "./GuideModal";
 export { PreGameConfig } from "./PreGameConfig";
 export type { PreGameConfigProps } from "./PreGameConfig";
 export { CoupBackgroundSVG } from "./CoupBackgroundSVG";
+export { ConnectionOverlay } from "./ConnectionOverlay";
+export type { ConnectionOverlayProps } from "./ConnectionOverlay";
