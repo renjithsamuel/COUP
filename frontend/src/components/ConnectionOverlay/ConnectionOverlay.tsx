@@ -13,7 +13,13 @@ export interface ConnectionOverlayProps {
 
 function CheckIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+    >
       <motion.path
         d="M4 10.5 8 14.5 16 6"
         stroke="currentColor"
@@ -30,7 +36,13 @@ function CheckIcon() {
 
 function CrossIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+    >
       <motion.path
         d="M5 5 15 15"
         stroke="currentColor"
@@ -142,11 +154,16 @@ export function ConnectionOverlay({
               )}
             </div>
             <div style={styles.copyWrap}>
-              <span style={{ ...styles.title, color: palette.text }}>{title}</span>
+              <span style={{ ...styles.title, color: palette.text }}>
+                {title}
+              </span>
               <span style={styles.detail}>{detail}</span>
             </div>
             <motion.div
-              style={{ ...styles.progressBar, background: `${palette.accent}28` }}
+              style={{
+                ...styles.progressBar,
+                background: `${palette.accent}28`,
+              }}
               animate={
                 state === "connecting"
                   ? { scaleX: [0.2, 1, 0.35], opacity: [0.55, 1, 0.65] }

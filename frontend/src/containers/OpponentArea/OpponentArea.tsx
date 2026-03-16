@@ -365,7 +365,8 @@ export function OpponentArea({
                     disabled
                   />
                 ))}
-                {gs.phase === GamePhase.GAME_OVER && opp.showdownCards.length > 0
+                {gs.phase === GamePhase.GAME_OVER &&
+                opp.showdownCards.length > 0
                   ? opp.showdownCards.map((card, index) => {
                       const isRevealed =
                         revealedShowdownCards[opp.id]?.[index] ?? false;
@@ -389,9 +390,13 @@ export function OpponentArea({
                               : undefined
                           }
                           transition={{ duration: 0.48, ease: "easeOut" }}
-                          whileHover={!isRevealed ? { y: -4, scale: 1.03 } : undefined}
+                          whileHover={
+                            !isRevealed ? { y: -4, scale: 1.03 } : undefined
+                          }
                           whileTap={!isRevealed ? { scale: 0.98 } : undefined}
-                          onClick={() => handleRevealShowdownCard(opp.id, index)}
+                          onClick={() =>
+                            handleRevealShowdownCard(opp.id, index)
+                          }
                           onKeyDown={(event) => {
                             if (event.key === "Enter" || event.key === " ") {
                               event.preventDefault();

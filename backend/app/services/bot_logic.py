@@ -188,6 +188,10 @@ def _build_bot_personas() -> tuple[BotPersona, ...]:
 BOT_PERSONAS = _build_bot_personas()
 
 _PERSONAS_BY_KEY = {persona.key: persona for persona in BOT_PERSONAS}
+_PERSONAS_BY_WORKSHOP: dict[str, list[BotPersona]] = {}
+for persona in BOT_PERSONAS:
+    workshop_key = persona.key.rsplit("-", 1)[0]
+    _PERSONAS_BY_WORKSHOP.setdefault(workshop_key, []).append(persona)
 
 _BLUFF_CHANCE = {
     "easy": 0.34,
@@ -228,11 +232,36 @@ _REVEAL_NOISE = {
 def choose_bot_personas(game_id: str, bot_count: int) -> list[BotPersona]:
     seed = sum(ord(char) for char in game_id)
     rng = random.Random(seed)
-    roster = list(BOT_PERSONAS)
-    rng.shuffle(roster)
-    if bot_count <= len(roster):
-        return roster[:bot_count]
-    return [roster[index % len(roster)] for index in range(bot_count)]
+    if bot_count <= 0:
+        return []
+
+    # Keep archetypes diverse by taking one persona from each workshop first.
+    workshop_keys = [workshop.key for workshop in BOT_WORKSHOPS]
+    rng.shuffle(workshop_keys)
+
+    selected: list[BotPersona] = []
+    selected_keys: set[str] = set()
+
+    for workshop_key in workshop_keys:
+        personas = list(_PERSONAS_BY_WORKSHOP.get(workshop_key, []))
+        if not personas:
+            continue
+        rng.shuffle(personas)
+        persona = personas[0]
+        selected.append(persona)
+        selected_keys.add(persona.key)
+        if len(selected) >= bot_count:
+            return selected
+
+    remaining = [persona for persona in BOT_PERSONAS if persona.key not in selected_keys]
+    rng.shuffle(remaining)
+    if not remaining:
+        return selected
+
+    while len(selected) < bot_count:
+        selected.append(remaining[(len(selected) - len(selected_keys)) % len(remaining)])
+
+    return selected
 
 
 def _personality_seed(bot: Player) -> int:

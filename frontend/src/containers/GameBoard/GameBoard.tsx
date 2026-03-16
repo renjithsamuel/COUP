@@ -682,10 +682,10 @@ export function GameBoard({
       backendHealthStatus === "offline"
         ? "Waking free server..."
         : connectionDisplayStatus === "connecting"
-        ? "Connecting to table..."
-        : connectionDisplayStatus === "disconnected"
-          ? "Reconnecting to table..."
-          : "Loading game...";
+          ? "Connecting to table..."
+          : connectionDisplayStatus === "disconnected"
+            ? "Reconnecting to table..."
+            : "Loading game...";
 
     return (
       <div
@@ -1202,9 +1202,7 @@ export function GameBoard({
                 title={connectionTooltip}
               >
                 <span style={s.connectionDot(connectionDisplayStatus)} />
-                <span style={s.connectionText}>
-                  {connectionBadgeLabel}
-                </span>
+                <span style={s.connectionText}>{connectionBadgeLabel}</span>
               </div>
               <div style={s.navStatusPill(commandTone)}>
                 <div style={s.navStatusCopy}>

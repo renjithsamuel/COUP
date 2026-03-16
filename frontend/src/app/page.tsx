@@ -472,7 +472,8 @@ export default function HomePage() {
   const hasPendingAction =
     createLobby.isPending || joinLobby.isPending || createAiMatch.isPending;
   const { status: backendHealthStatus } = useBackendHealth({
-    websocketStatus: hasPendingAction || isHomeConnecting ? "connecting" : "disconnected",
+    websocketStatus:
+      hasPendingAction || isHomeConnecting ? "connecting" : "disconnected",
     enabled: hasPendingAction || isHomeConnecting,
   });
 
@@ -880,8 +881,8 @@ export default function HomePage() {
                   <div style={s.featureCard}>
                     <div style={s.featureTitle}>Play Your Way</div>
                     <div style={s.featureText}>
-                      Jump into a private room with friends or start a solo table
-                      instantly against bots.
+                      Jump into a private room with friends or start a solo
+                      table instantly against bots.
                     </div>
                   </div>
                   {!isMobile && (
@@ -974,7 +975,9 @@ export default function HomePage() {
                     Keep the existing room flow: create a private lobby or join
                     one by code.
                   </div>
-                  <div style={{ ...s.modeGrid, gridTemplateColumns: "1fr 1fr" }}>
+                  <div
+                    style={{ ...s.modeGrid, gridTemplateColumns: "1fr 1fr" }}
+                  >
                     <button
                       style={s.modeCard}
                       onClick={() => setMobileFlow("create")}

@@ -487,7 +487,11 @@ export default function LobbyDetailPage() {
     );
   }
 
-  if (!hasResolvedSession || (isLoading && !lobby) || (isLobbyOffline && !lobby)) {
+  if (
+    !hasResolvedSession ||
+    (isLoading && !lobby) ||
+    (isLobbyOffline && !lobby)
+  ) {
     return renderWithConnectionOverlay(
       <div
         style={{
