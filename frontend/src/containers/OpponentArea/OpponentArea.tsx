@@ -159,7 +159,10 @@ export function OpponentArea({
     [isMobile],
   );
 
-  const opponents = gs?.players.filter((p) => p.id !== state.myPlayerId) ?? [];
+  const opponents = useMemo(
+    () => gs?.players.filter((p) => p.id !== state.myPlayerId) ?? [],
+    [gs?.players, state.myPlayerId],
+  );
   const showdownSignature = opponents
     .map(
       (opp) =>
@@ -175,7 +178,9 @@ export function OpponentArea({
 
   useEffect(() => {
     if (!gs || gs.phase !== GamePhase.GAME_OVER) {
-      setRevealedShowdownCards({});
+      setRevealedShowdownCards((current) =>
+        Object.keys(current).length === 0 ? current : {},
+      );
       return;
     }
 

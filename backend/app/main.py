@@ -207,7 +207,7 @@ def create_app() -> FastAPI:
         except WebSocketDisconnect:
             pass
         finally:
-            connection_manager.disconnect(lobby_key, player_id)
+            connection_manager.disconnect(lobby_key, player_id, websocket)
 
     return application
 

@@ -26,8 +26,151 @@ import { AiDifficulty, GameConfig } from "@/models/lobby";
 import { ApiError } from "@/services/api";
 import { GAME_CONSTANTS } from "@/utils/constants";
 
-type PlayMode = "friends" | "ai";
-type MobileFlow = "home" | "mode" | "friends" | "create" | "join" | "ai";
+type PlayMode = "friends" | "ai" | "quick";
+type MobileFlow =
+  | "home"
+  | "mode"
+  | "friends"
+  | "create"
+  | "join"
+  | "ai"
+  | "quick";
+const QUICK_PLAY_DEFAULT_CONFIG: GameConfig = {
+  turnTimerSeconds: GAME_CONSTANTS.TURN_TIMER_SECONDS,
+  challengeWindowSeconds: GAME_CONSTANTS.CHALLENGE_WINDOW_SECONDS,
+  blockWindowSeconds: GAME_CONSTANTS.BLOCK_WINDOW_SECONDS,
+  startingCoins: GAME_CONSTANTS.STARTING_COINS,
+};
+
+const neutralNamePrefixes = [
+  "Ash",
+  "Aster",
+  "Birch",
+  "Brisk",
+  "Cinder",
+  "Cobalt",
+  "Coral",
+  "Drift",
+  "Echo",
+  "Ember",
+  "Fjord",
+  "Flint",
+  "Frost",
+  "Gale",
+  "Glade",
+  "Granite",
+  "Harbor",
+  "Haze",
+  "Juniper",
+  "Lumen",
+  "Maple",
+  "Meadow",
+  "Mica",
+  "Mist",
+  "Nimbus",
+  "Nova",
+  "Oak",
+  "Onyx",
+  "Pebble",
+  "Quartz",
+  "Reed",
+  "River",
+  "Sage",
+  "Shale",
+  "Slate",
+  "Sol",
+  "Spruce",
+  "Stone",
+  "Terra",
+  "Vale",
+  "Wisp",
+  "Yarrow",
+  "Zephyr",
+];
+
+const neutralNameSuffixes = [
+  "Aster",
+  "Bay",
+  "Bloom",
+  "Brook",
+  "Cove",
+  "Crest",
+  "Dawn",
+  "Dune",
+  "Fern",
+  "Fox",
+  "Glen",
+  "Grove",
+  "Harbor",
+  "Hollow",
+  "Iris",
+  "Jet",
+  "Kite",
+  "Lake",
+  "Lark",
+  "Leaf",
+  "Lyric",
+  "Marsh",
+  "Mesa",
+  "Moss",
+  "Nook",
+  "Orchid",
+  "Orbit",
+  "Peak",
+  "Pine",
+  "Quill",
+  "Ridge",
+  "Rook",
+  "Rune",
+  "Shore",
+  "Snow",
+  "Sparrow",
+  "Star",
+  "Thorn",
+  "Trail",
+  "Vale",
+  "Wave",
+  "Willow",
+  "Wren",
+  "Yard",
+  "Zen",
+];
+
+const RANDOM_NAME_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+const getRandomInt = (min: number, max: number): number => {
+  const size = max - min + 1;
+  if (size <= 0) {
+    return min;
+  }
+
+  if (typeof crypto !== "undefined" && "getRandomValues" in crypto) {
+    const values = new Uint32Array(1);
+    crypto.getRandomValues(values);
+    return min + (values[0] % size);
+  }
+
+  return min + Math.floor(Math.random() * size);
+};
+
+const pickRandom = (items: string[]) =>
+  items[getRandomInt(0, items.length - 1)] ?? "Player";
+
+const createRandomTag = () => {
+  const first =
+    RANDOM_NAME_ALPHABET[getRandomInt(0, RANDOM_NAME_ALPHABET.length - 1)] ??
+    "A";
+  const second =
+    RANDOM_NAME_ALPHABET[getRandomInt(0, RANDOM_NAME_ALPHABET.length - 1)] ??
+    "B";
+  const number = String(getRandomInt(1000, 9999));
+  return `${first}${second}${number}`;
+};
+
+const createRandomNeutralPlayerName = () => {
+  const base = `${pickRandom(neutralNamePrefixes)}${pickRandom(neutralNameSuffixes)}`;
+  return `${base.slice(0, 14)}${createRandomTag()}`;
+};
 
 function CoupLogo({ compact = false }: { compact?: boolean }) {
   const size = compact ? 64 : 88;
@@ -233,7 +376,7 @@ const s = {
   },
   modeGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
     gap: 10,
   },
   modeCard: {
@@ -411,6 +554,68 @@ const s = {
     cursor: "pointer",
     boxShadow: tokens.elevation.dp8,
   },
+  mobileQuickButton: {
+    padding: "14px 18px",
+    borderRadius: 16,
+    border: "1px solid rgba(76,175,80,0.28)",
+    background:
+      "linear-gradient(135deg, rgba(46,125,50,0.24), rgba(76,175,80,0.12))",
+    color: tokens.text.primary,
+    fontSize: 15,
+    fontWeight: 800,
+    letterSpacing: 0.8,
+    textTransform: "uppercase" as const,
+    cursor: "pointer",
+    boxShadow: tokens.elevation.dp8,
+  },
+  mobileEntryGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 10,
+  },
+  mobileFeatureDiff: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 8,
+  },
+  mobileFeatureChip: {
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(255,255,255,0.03)",
+    padding: "10px 10px 11px",
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 4,
+  },
+  mobileFeatureChipTitle: {
+    fontSize: 11,
+    textTransform: "uppercase" as const,
+    letterSpacing: 1,
+    color: tokens.text.primary,
+    fontWeight: 800,
+  },
+  mobileFeatureChipText: {
+    fontSize: 11,
+    lineHeight: 1.45,
+    color: tokens.text.secondary,
+  },
+  quickHeaderRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center" as const,
+    gap: 8,
+  },
+  quickBadge: {
+    borderRadius: 999,
+    border: "1px solid rgba(76,175,80,0.25)",
+    background: "rgba(76,175,80,0.12)",
+    color: "#9ad39b",
+    fontSize: 10,
+    textTransform: "uppercase" as const,
+    letterSpacing: 1,
+    fontWeight: 800,
+    padding: "4px 8px",
+  },
   mobileBackButton: {
     alignSelf: "flex-start",
     padding: "6px 10px",
@@ -438,12 +643,17 @@ const modeOptions: Array<{ key: PlayMode; title: string; text: string }> = [
   {
     key: "friends",
     title: "Play With Friends",
-    text: "Create a private room or join by code. Same waiting room and replay flow as now.",
+    text: "Create or join private rooms.",
   },
   {
     key: "ai",
     title: "Play With AI",
-    text: "Start immediately against 1 to 5 bots with difficulty-based bluff logic.",
+    text: "Configurable bots, full setup.",
+  },
+  {
+    key: "quick",
+    title: "Quick Play",
+    text: "Bot count only, instant start.",
   },
 ];
 
@@ -465,6 +675,8 @@ export default function HomePage() {
   const [botCount, setBotCount] = useState(3);
   const [difficulty, setDifficulty] = useState<AiDifficulty>("medium");
   const [showAiConfig, setShowAiConfig] = useState(false);
+  const [quickBotCount, setQuickBotCount] = useState(3);
+  const [quickError, setQuickError] = useState("");
   const [isHomeConnecting, setIsHomeConnecting] = useState(false);
   const isMobileIntro = isMobile && mobileFlow === "home";
   const shouldShowNameInput = !isMobile || mobileFlow !== "home";
@@ -490,6 +702,10 @@ export default function HomePage() {
   useEffect(() => {
     setMobileFlow(isMobile ? "home" : "mode");
   }, [isMobile]);
+
+  useEffect(() => {
+    setPlayerName(createRandomNeutralPlayerName());
+  }, []);
 
   const handleCreate = async () => {
     if (!playerName.trim()) return;
@@ -568,22 +784,35 @@ export default function HomePage() {
     }
   };
 
-  const handleStartAi = async (config: GameConfig) => {
+  const handleStartAi = async (
+    config: GameConfig,
+    options?: {
+      selectedBotCount?: number;
+      selectedDifficulty?: AiDifficulty;
+      onError?: (message: string) => void;
+    },
+  ) => {
     if (!playerName.trim()) return;
-    setAiError("");
+    const selectedBotCount = options?.selectedBotCount ?? botCount;
+    const selectedDifficulty = options?.selectedDifficulty ?? difficulty;
+
+    if (!options?.onError) {
+      setAiError("");
+    }
+
     try {
       const res = await createAiMatch.mutateAsync({
         playerName: playerName.trim(),
-        botCount,
-        difficulty,
+        botCount: selectedBotCount,
+        difficulty: selectedDifficulty,
         config,
       });
       const params = new URLSearchParams({
         playerId: res.playerId,
         ai: "1",
         playerName: playerName.trim(),
-        botCount: String(botCount),
-        difficulty,
+        botCount: String(selectedBotCount),
+        difficulty: selectedDifficulty,
         turnTimerSeconds: String(config.turnTimerSeconds),
         challengeWindowSeconds: String(config.challengeWindowSeconds),
         blockWindowSeconds: String(config.blockWindowSeconds),
@@ -591,15 +820,36 @@ export default function HomePage() {
       });
       router.push(`/game/${res.gameId}?${params.toString()}`);
     } catch {
-      setAiError("Unable to start an AI table right now.");
+      const message = "Unable to start an AI table right now.";
+      if (options?.onError) {
+        options.onError(message);
+        return;
+      }
+
+      setAiError(message);
     }
+  };
+
+  const handleQuickPlay = async () => {
+    if (!playerName.trim()) {
+      return;
+    }
+
+    setQuickError("");
+    await handleStartAi(QUICK_PLAY_DEFAULT_CONFIG, {
+      selectedBotCount: quickBotCount,
+      selectedDifficulty: "medium",
+      onError: (message) => setQuickError(message),
+    });
   };
 
   const modeCards = (
     <div
       style={{
         ...s.modeGrid,
-        gridTemplateColumns: isMobile ? "1fr" : s.modeGrid.gridTemplateColumns,
+        gridTemplateColumns: isMobile
+          ? "1fr"
+          : s.modeGrid.gridTemplateColumns,
       }}
     >
       {modeOptions.map((mode) => {
@@ -611,7 +861,17 @@ export default function HomePage() {
             onClick={() => {
               setPlayMode(mode.key);
               if (isMobile) {
-                setMobileFlow(mode.key === "friends" ? "friends" : "ai");
+                if (mode.key === "friends") {
+                  setMobileFlow("friends");
+                  return;
+                }
+
+                if (mode.key === "ai") {
+                  setMobileFlow("ai");
+                  return;
+                }
+
+                setMobileFlow("quick");
               }
             }}
           >
@@ -783,12 +1043,69 @@ export default function HomePage() {
     </>
   );
 
+  const quickContent = (
+    <>
+      <div style={s.quickHeaderRow}>
+        <div style={s.cardTitle}>Quick Play</div>
+        <div style={s.quickBadge}>Medium preset</div>
+      </div>
+      <div style={s.helperText}>
+        Fast start against bots with balanced timers. Choose only how many
+        opponents to face.
+      </div>
+
+      <div style={s.optionSection}>
+        <div style={s.optionLabel}>Bots to face</div>
+        <div style={s.optionGridWide}>
+          {[1, 2, 3, 4, 5].map((count) => (
+            <button
+              key={`quick-${count}`}
+              style={{
+                ...s.optionButton,
+                ...(quickBotCount === count ? s.optionButtonActive : {}),
+              }}
+              onClick={() => {
+                setQuickBotCount(count);
+                setQuickError("");
+              }}
+            >
+              {count}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {quickError && <div style={s.error}>{quickError}</div>}
+
+      <motion.button
+        style={{
+          ...s.joinBtn,
+          opacity: !playerName.trim() ? 0.5 : 1,
+          cursor: !playerName.trim() ? "not-allowed" : "pointer",
+        }}
+        variants={scalePopVariants}
+        whileHover={playerName.trim() ? interactiveHoverMotion : undefined}
+        whileTap={playerName.trim() ? interactiveTapMotion : undefined}
+        onClick={handleQuickPlay}
+        disabled={createAiMatch.isPending || !playerName.trim()}
+      >
+        {createAiMatch.isPending
+          ? "Starting..."
+          : `Quick Play vs ${quickBotCount} Bot${quickBotCount > 1 ? "s" : ""}`}
+      </motion.button>
+    </>
+  );
+
   const playerNameInput = (
     <input
       style={s.input}
       placeholder="Your name"
       value={playerName}
-      onChange={(event) => setPlayerName(event.target.value)}
+      onChange={(event) => {
+        setPlayerName(event.target.value);
+        setAiError("");
+        setQuickError("");
+      }}
       maxLength={20}
     />
   );
@@ -921,20 +1238,45 @@ export default function HomePage() {
                 </div>
                 <div style={s.actionSubtitle}>
                   {isMobileIntro
-                    ? "Start clean on mobile, then choose friends or AI on the next screen."
-                    : "Set your name once, then pick friends or AI and jump into the matching flow."}
+                    ? "Pick a full setup flow or jump straight into a bot match in one tap."
+                    : "Set your name once, then choose a full flow or launch quick play with balanced defaults."}
                 </div>
               </div>
 
               {shouldShowNameInput && playerNameInput}
 
               {isMobile && mobileFlow === "home" && (
-                <button
-                  style={s.mobilePlayButton}
-                  onClick={() => setMobileFlow("mode")}
-                >
-                  Play
-                </button>
+                <>
+                  <div style={s.mobileEntryGrid}>
+                    <button
+                      style={s.mobilePlayButton}
+                      onClick={() => setMobileFlow("mode")}
+                    >
+                      Play
+                    </button>
+                    <button
+                      style={s.mobileQuickButton}
+                      onClick={() => setMobileFlow("quick")}
+                    >
+                      Quick Play
+                    </button>
+                  </div>
+                  <div style={s.mobileFeatureDiff}>
+                    <div style={s.mobileFeatureChip}>
+                      <div style={s.mobileFeatureChipTitle}>Play</div>
+                      <div style={s.mobileFeatureChipText}>
+                        Friends rooms, AI setup, and full config control.
+                      </div>
+                    </div>
+                    <div style={s.mobileFeatureChip}>
+                      <div style={s.mobileFeatureChipTitle}>Quick Play</div>
+                      <div style={s.mobileFeatureChipText}>
+                        One setting only: bot count. Medium bots, balanced
+                        timers.
+                      </div>
+                    </div>
+                  </div>
+                </>
               )}
 
               {!isMobile && (
@@ -942,6 +1284,15 @@ export default function HomePage() {
                   {modeCards}
                   {playMode === "friends" ? (
                     friendsCards
+                  ) : playMode === "quick" ? (
+                    <motion.div
+                      style={s.card}
+                      variants={slideUpVariants}
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      {quickContent}
+                    </motion.div>
                   ) : (
                     <motion.div
                       style={s.card}
@@ -955,7 +1306,34 @@ export default function HomePage() {
                 </>
               )}
 
-              {isMobile && mobileFlow === "mode" && <>{modeCards}</>}
+              {isMobile && mobileFlow === "mode" && (
+                <>
+                  <button
+                    style={s.mobileBackButton}
+                    onClick={() => setMobileFlow("home")}
+                  >
+                    Back
+                  </button>
+                  {modeCards}
+                </>
+              )}
+
+              {isMobile && mobileFlow === "quick" && (
+                <motion.div
+                  style={s.card}
+                  variants={slideUpVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  <button
+                    style={s.mobileBackButton}
+                    onClick={() => setMobileFlow("home")}
+                  >
+                    Back
+                  </button>
+                  {quickContent}
+                </motion.div>
+              )}
 
               {isMobile && mobileFlow === "friends" && (
                 <motion.div

@@ -22,7 +22,7 @@ Next.js 14 (App Router) frontend for the multiplayer Coup card game with real-ti
 src/
 ├── app/                    # Next.js App Router pages
 │   ├── layout.tsx          # Root layout + providers + metadata icons
-│   ├── page.tsx            # Home page with Play with Friends / Play with AI entry modes, AI bot+difficulty setup including lethal mode, and shared pre-game timer config modal
+│   ├── page.tsx            # Home page with random neutral name prefill, full Play flows, and a one-step Quick Play path (bot count only, medium difficulty, balanced timers)
 │   ├── providers.tsx       # Client-side providers
 │   ├── global-error.tsx    # Error boundary
 │   ├── lobby/[id]/page.tsx # Lobby detail page
@@ -173,7 +173,7 @@ Add the export to `src/components/index.ts`.
 - **Opponent carousel**: `src/containers/OpponentArea/OpponentArea.tsx` keeps opponents in a fixed-height horizontal rail on both desktop and mobile, centers one- and two-opponent tables without changing order, auto-centers the active seat, and uses subtle edge fades so the strip stays readable when many players join
 - **Static app icon**: `public/icon.svg` serves the browser icon directly so local navigation and multi-tab dev sessions do not depend on the app icon route
 - **Unified turn status**: `src/containers/GameBoard/GameBoard.tsx` keeps turn and response context in the top bar on both desktop and mobile, with only a compact mobile status pill plus a connection dot so more of the board stays playable on small screens
-- **Mode-based landing flow**: `src/app/page.tsx` separates Play with Friends and Play with AI, keeps create/join inside the friends branch, opens mobile on a single Play-first screen before asking for name and mode on the next step, and opens the shared pre-game config modal before an AI table starts
+- **Home entry flow**: `src/app/page.tsx` pre-fills a fresh random neutral username each time the home page opens, adds a Quick Play route that asks only for bot count and starts instantly with medium bots plus balanced timers, and keeps the full Play path for friends rooms or configurable AI matches (including pre-game config)
 - **AI difficulty expansion**: `src/app/page.tsx`, `src/models/lobby/lobby.ts`, and `src/app/game/[id]/GamePageContent.tsx` now support `lethal` alongside `easy`, `medium`, and `hard`
 - **Lobby fill-bots**: `src/components/PreGameConfig/PreGameConfig.tsx` and `src/app/lobby/[id]/page.tsx` let waiting-room hosts add fill-bots up to the 6-player cap, with the difficulty selector appearing only when at least one bot is added
 - **Branding**: `src/app/page.tsx` renders a custom Coup logo and `public/icon.svg` provides the browser tab icon
@@ -209,7 +209,7 @@ Add the export to `src/components/index.ts`.
 
 | Route         | Page  | Description                                                                                    |
 | ------------- | ----- | ---------------------------------------------------------------------------------------------- |
-| `/`           | Home  | Choose Play with Friends or Play with AI; create/join rooms or configure and start an AI table |
+| `/`           | Home  | Use Quick Play for instant medium-difficulty bot matches (bot count only) or use Play for full friends/AI setup |
 | `/lobby/[id]` | Lobby | Waiting room before game                                                                       |
 | `/game/[id]`  | Game  | Live game board                                                                                |
 

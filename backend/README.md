@@ -192,7 +192,7 @@ Response windows resolve as follows:
 | `RETURN_TO_LOBBY` | Host-triggered replay reset; clients should leave the board and reopen the waiting room with the included `lobby_id` and saved config |
 | `ERROR` | Error message |
 
-Connection presence is reflected in `players[].connected` inside `GAME_STATE`. On connect/disconnect, the server emits `PLAYER_CONNECTED`/`PLAYER_DISCONNECTED` and then sends updated game state so other players can see presence changes immediately. Reconnecting with the same `player_id` replaces any stale socket for that seat without tearing down the shared game service.
+Connection presence is reflected in `players[].connected` inside `GAME_STATE`. On connect/disconnect, the server emits `PLAYER_CONNECTED`/`PLAYER_DISCONNECTED` and then sends updated game state so other players can see presence changes immediately. Reconnecting with the same `player_id` replaces any stale socket for that seat without tearing down the shared game service, and stale socket cleanup is ignored if a newer socket is already active for that seat.
 
 Lobby presence is tracked separately from in-game WebSocket presence. Lobby reads that include a valid `session_token` refresh the player's lobby session, and waiting-room players who stop refreshing are evicted automatically after a short grace period so offline hosts cannot block a new game from starting. When a room is reset for replay, the reset call is host-authoritative and the server broadcasts `RETURN_TO_LOBBY` before reopening the room so every connected client can navigate back together without dropping the room leaderboard.
 

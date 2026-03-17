@@ -64,16 +64,17 @@ class GameWSHandler:
             logger.error(f"Error in WS handler: {e}")
         finally:
             if connected:
-                self._cm.disconnect(game_id, player_id)
-                await self._gs.set_player_connected(game_id, player_id, False)
-                # Auto-accept on behalf of disconnected player if in a response window
-                await self._handle_disconnect_accept(game_id, player_id)
-                await self._cm.broadcast_to_game(
-                    game_id,
-                    {"type": ServerMessageType.PLAYER_DISCONNECTED.value, "payload": {"playerId": player_id}},
-                )
-                # Broadcast state after any presence and phase change so remaining players refresh immediately.
-                await self._broadcast_state(game_id)
+                was_active_connection = self._cm.disconnect(game_id, player_id, websocket)
+                if was_active_connection:
+                    await self._gs.set_player_connected(game_id, player_id, False)
+                    # Auto-accept on behalf of disconnected player if in a response window
+                    await self._handle_disconnect_accept(game_id, player_id)
+                    await self._cm.broadcast_to_game(
+                        game_id,
+                        {"type": ServerMessageType.PLAYER_DISCONNECTED.value, "payload": {"playerId": player_id}},
+                    )
+                    # Broadcast state after any presence and phase change so remaining players refresh immediately.
+                    await self._broadcast_state(game_id)
 
     async def _process_message(
         self, game_id: str, player_id: str, raw: str

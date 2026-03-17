@@ -33,12 +33,33 @@ class ConnectionManager:
         self._connections[game_id][player_id] = websocket
         logger.info(f"Player {player_id} connected to game {game_id}")
 
-    def disconnect(self, game_id: str, player_id: str) -> None:
-        if game_id in self._connections:
-            self._connections[game_id].pop(player_id, None)
-            if not self._connections[game_id]:
-                del self._connections[game_id]
+    def disconnect(
+        self,
+        game_id: str,
+        player_id: str,
+        websocket: WebSocket | None = None,
+    ) -> bool:
+        connections = self._connections.get(game_id)
+        if not connections:
+            return False
+
+        current = connections.get(player_id)
+        if current is None:
+            return False
+
+        if websocket is not None and current is not websocket:
+            logger.debug(
+                "Ignoring stale disconnect for %s in %s",
+                player_id,
+                game_id,
+            )
+            return False
+
+        connections.pop(player_id, None)
+        if not connections:
+            del self._connections[game_id]
         logger.info(f"Player {player_id} disconnected from game {game_id}")
+        return True
 
     async def send_to_player(
         self, game_id: str, player_id: str, message: dict[str, Any]
@@ -49,7 +70,7 @@ class ConnectionManager:
                 await ws.send_text(json.dumps(message))
             except Exception:
                 logger.warning(f"Failed to send to {player_id} in {game_id}")
-                self.disconnect(game_id, player_id)
+                self.disconnect(game_id, player_id, ws)
 
     async def broadcast_to_game(
         self, game_id: str, message: dict[str, Any], exclude: str | None = None
@@ -62,7 +83,7 @@ class ConnectionManager:
                 await ws.send_text(json.dumps(message))
             except Exception:
                 logger.warning(f"Failed to broadcast to {player_id}")
-                self.disconnect(game_id, player_id)
+                self.disconnect(game_id, player_id, ws)
 
     async def send_personal_states(
         self, game_id: str, get_state_for_player
@@ -75,7 +96,7 @@ class ConnectionManager:
                 await ws.send_text(json.dumps(state))
             except Exception:
                 logger.warning(f"Failed to send state to {player_id}")
-                self.disconnect(game_id, player_id)
+                self.disconnect(game_id, player_id, ws)
 
     def get_connected_players(self, game_id: str) -> list[str]:
         return list(self._connections.get(game_id, {}).keys())
